@@ -14,7 +14,116 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      bookings: {
+        Row: {
+          created_at: string
+          id: string
+          passenger_id: string
+          ride_id: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          passenger_id: string
+          ride_id: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          passenger_id?: string
+          ride_id?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bookings_ride_id_fkey"
+            columns: ["ride_id"]
+            isOneToOne: false
+            referencedRelation: "rides"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          created_at: string
+          email: string
+          full_name: string
+          id: string
+          institution_id: string | null
+          rating: number
+          rating_count: number
+          total_ratings: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          email?: string
+          full_name?: string
+          id?: string
+          institution_id?: string | null
+          rating?: number
+          rating_count?: number
+          total_ratings?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          full_name?: string
+          id?: string
+          institution_id?: string | null
+          rating?: number
+          rating_count?: number
+          total_ratings?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      rides: {
+        Row: {
+          available_seats: number
+          created_at: string
+          departure_time: string
+          destination: string
+          driver_id: string
+          id: string
+          origin: string
+          total_seats: number
+          updated_at: string
+        }
+        Insert: {
+          available_seats?: number
+          created_at?: string
+          departure_time: string
+          destination?: string
+          driver_id: string
+          id?: string
+          origin: string
+          total_seats?: number
+          updated_at?: string
+        }
+        Update: {
+          available_seats?: number
+          created_at?: string
+          departure_time?: string
+          destination?: string
+          driver_id?: string
+          id?: string
+          origin?: string
+          total_seats?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
