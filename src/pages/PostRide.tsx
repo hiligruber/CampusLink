@@ -7,9 +7,9 @@ import BottomNav from "@/components/BottomNav";
 import { toast } from "sonner";
 import { MapPin, Calendar, Clock, Users } from "lucide-react";
 import { motion } from "framer-motion";
-import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useQueryClient } from "@tanstack/react-query";
+import { postRide } from "@/lib/mta-api";
 
 const PostRide = () => {
   const { user } = useAuth();
@@ -19,6 +19,7 @@ const PostRide = () => {
   const [date, setDate] = useState("");
   const [time, setTime] = useState("");
   const [seats, setSeats] = useState("3");
+  const [notes, setNotes] = useState("");
   const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -28,29 +29,29 @@ const PostRide = () => {
       return;
     }
     setLoading(true);
-    const departureTime = new Date(`${date}T${time}`).toISOString();
-    const totalSeats = parseInt(seats);
 
-    const { error } = await supabase.from("rides").insert({
-      driver_id: user.id,
-      origin,
-      destination,
-      departure_time: departureTime,
-      total_seats: totalSeats,
-      available_seats: totalSeats,
-    });
-
-    setLoading(false);
-    if (error) {
+    try {
+      await postRide({
+        user_id: user.id,
+        from_city: origin,
+        to_campus: destination,
+        ride_date: date,
+        ride_time: time,
+        seats: parseInt(seats),
+        notes,
+      });
+      toast.success("Ride posted successfully!", { description: `${origin} → ${destination}` });
+      queryClient.invalidateQueries({ queryKey: ["rides"] });
+      setOrigin("");
+      setDate("");
+      setTime("");
+      setSeats("3");
+      setNotes("");
+    } catch {
       toast.error("Failed to post ride");
-      return;
+    } finally {
+      setLoading(false);
     }
-    toast.success("Ride posted successfully!", { description: `${origin} → ${destination}` });
-    queryClient.invalidateQueries({ queryKey: ["rides"] });
-    setOrigin("");
-    setDate("");
-    setTime("");
-    setSeats("3");
   };
 
   return (
@@ -98,6 +99,12 @@ const PostRide = () => {
                 <Users className="w-3.5 h-3.5 text-primary" /> Available Seats
               </Label>
               <Input id="seats" type="number" min="1" max="6" value={seats} onChange={(e) => setSeats(e.target.value)} />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="notes" className="flex items-center gap-1.5 text-sm font-medium">
+                Notes (optional)
+              </Label>
+              <Input id="notes" placeholder="e.g. No smoking" value={notes} onChange={(e) => setNotes(e.target.value)} />
             </div>
             <Button type="submit" className="w-full rounded-full h-11 text-sm font-semibold" disabled={loading}>
               {loading ? "Posting..." : "Post Ride"}
