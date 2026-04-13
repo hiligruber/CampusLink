@@ -1,7 +1,7 @@
 import { useState, useMemo } from "react";
 import { Input } from "@/components/ui/input";
 import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { fetchRides, mtaRideToAppRide } from "@/lib/mta-api";
 import RideCard from "@/components/RideCard";
 import AppHeader from "@/components/AppHeader";
 import BottomNav from "@/components/BottomNav";
@@ -13,20 +13,13 @@ const SearchRides = () => {
 
   const { data: rides, isLoading } = useQuery({
     queryKey: ["rides"],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("rides")
-        .select("*, profiles!rides_driver_id_fkey(full_name, rating)")
-        .gte("departure_time", new Date().toISOString())
-        .order("departure_time", { ascending: true });
-      if (error) throw error;
-      return data;
-    },
+    queryFn: fetchRides,
   });
 
+  const appRides = rides?.map(mtaRideToAppRide) ?? [];
+
   const filtered = useMemo(() => {
-    if (!rides) return [];
-    return rides.filter((r) => {
+    return appRides.filter((r) => {
       const matchesQuery =
         !query ||
         r.origin.toLowerCase().includes(query.toLowerCase()) ||
@@ -35,7 +28,7 @@ const SearchRides = () => {
         !dateFilter || r.departure_time.startsWith(dateFilter);
       return matchesQuery && matchesDate;
     });
-  }, [query, dateFilter, rides]);
+  }, [query, dateFilter, appRides]);
 
   return (
     <div className="min-h-screen bg-background pb-20">
@@ -61,21 +54,7 @@ const SearchRides = () => {
             ) : (
               <div className="space-y-3">
                 {filtered.map((ride, i) => (
-                  <RideCard
-                    key={ride.id}
-                    ride={{
-                      id: ride.id,
-                      driver_id: ride.driver_id,
-                      driver_name: (ride.profiles as any)?.full_name || "Unknown",
-                      driver_rating: (ride.profiles as any)?.rating || 5.0,
-                      origin: ride.origin,
-                      destination: ride.destination,
-                      departure_time: ride.departure_time,
-                      total_seats: ride.total_seats,
-                      available_seats: ride.available_seats,
-                    }}
-                    index={i}
-                  />
+                  <RideCard key={ride.id} ride={ride} index={i} />
                 ))}
               </div>
             )}

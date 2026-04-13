@@ -1,11 +1,11 @@
-import { MapPin, Clock, Users, Star } from "lucide-react";
+import { Clock, Users, Star } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Ride } from "@/lib/mock-data";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
-import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useQueryClient } from "@tanstack/react-query";
+import { joinRide } from "@/lib/mta-api";
 
 interface RideCardProps {
   ride: Ride;
@@ -23,29 +23,15 @@ const RideCard = ({ ride, index }: RideCardProps) => {
 
   const handleJoin = async () => {
     if (!user) return;
-    const { error } = await supabase.from("bookings").insert({
-      ride_id: ride.id,
-      passenger_id: user.id,
-    });
-    if (error) {
-      if (error.code === "23505") {
-        toast.error("You already requested this ride");
-      } else {
-        toast.error("Failed to join ride");
-      }
-      return;
+    try {
+      await joinRide(ride.id, user.id);
+      queryClient.invalidateQueries({ queryKey: ["rides"] });
+      toast.success(`Request sent to ${ride.driver_name}!`, {
+        description: `${ride.origin} → ${ride.destination}`,
+      });
+    } catch {
+      toast.error("Failed to join ride");
     }
-
-    // Decrement available seats
-    await supabase
-      .from("rides")
-      .update({ available_seats: ride.available_seats - 1 })
-      .eq("id", ride.id);
-
-    queryClient.invalidateQueries({ queryKey: ["rides"] });
-    toast.success(`Request sent to ${ride.driver_name}!`, {
-      description: `${ride.origin} → ${ride.destination}`,
-    });
   };
 
   return (
