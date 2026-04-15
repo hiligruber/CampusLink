@@ -10,6 +10,8 @@ import { motion } from "framer-motion";
 import { useAuth } from "@/contexts/AuthContext";
 import { useQueryClient } from "@tanstack/react-query";
 import { postRide } from "@/lib/mta-api";
+import PlacesAutocomplete from "@/components/PlacesAutocomplete";
+import RouteMap from "@/components/RouteMap";
 
 const PostRide = () => {
   const { user } = useAuth();
@@ -72,13 +74,13 @@ const PostRide = () => {
               <Label htmlFor="origin" className="flex items-center gap-1.5 text-sm font-medium">
                 <MapPin className="w-3.5 h-3.5 text-primary" /> Origin
               </Label>
-              <Input id="origin" placeholder="e.g. Tel Aviv - Dizengoff Center" value={origin} onChange={(e) => setOrigin(e.target.value)} />
+              <PlacesAutocomplete id="origin" placeholder="e.g. Tel Aviv - Dizengoff Center" value={origin} onChange={setOrigin} />
             </div>
             <div className="space-y-2">
               <Label htmlFor="destination" className="flex items-center gap-1.5 text-sm font-medium">
                 <MapPin className="w-3.5 h-3.5 text-primary" /> Destination
               </Label>
-              <Input id="destination" value={destination} onChange={(e) => setDestination(e.target.value)} />
+              <PlacesAutocomplete id="destination" placeholder="MTA College" value={destination} onChange={setDestination} />
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-2">
@@ -111,8 +113,10 @@ const PostRide = () => {
             </Button>
           </form>
         </div>
-        <div className="mt-4 bg-accent/50 rounded-2xl border border-border p-4 text-center">
-          <p className="text-xs text-muted-foreground">🗺️ Google Maps route preview coming soon</p>
+
+        {/* Route Map Preview */}
+        <div className="mt-4">
+          <RouteMap origin={origin} destination={destination} height="220px" />
         </div>
       </motion.main>
       <BottomNav />
