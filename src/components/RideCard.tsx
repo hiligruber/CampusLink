@@ -99,6 +99,15 @@ const RideCard = ({ ride, index }: RideCardProps) => {
             size="icon"
             variant="ghost"
             className="rounded-full w-8 h-8"
+            onClick={handleAddToCalendar}
+            title="Add to Google Calendar"
+          >
+            <CalendarPlus className="w-4 h-4" />
+          </Button>
+          <Button
+            size="icon"
+            variant="ghost"
+            className="rounded-full w-8 h-8"
             onClick={() => setShowMap(!showMap)}
           >
             <Map className="w-4 h-4" />
