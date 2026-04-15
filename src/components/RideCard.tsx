@@ -18,7 +18,6 @@ const RideCard = ({ ride, index }: RideCardProps) => {
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const [showMap, setShowMap] = useState(false);
-  const queryClient = useQueryClient();
   const departureDate = new Date(ride.departure_time);
   const timeStr = departureDate.toLocaleTimeString("en-IL", { hour: "2-digit", minute: "2-digit" });
   const dateStr = departureDate.toLocaleDateString("en-IL", { weekday: "short", month: "short", day: "numeric" });
