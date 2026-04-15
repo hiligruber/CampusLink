@@ -1,11 +1,13 @@
-import { Clock, Users, Star } from "lucide-react";
+import { useState } from "react";
+import { Clock, Users, Star, Map } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Ride } from "@/lib/mock-data";
 import { toast } from "sonner";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "@/contexts/AuthContext";
 import { useQueryClient } from "@tanstack/react-query";
 import { joinRide } from "@/lib/mta-api";
+import RouteMap from "@/components/RouteMap";
 
 interface RideCardProps {
   ride: Ride;
@@ -14,6 +16,8 @@ interface RideCardProps {
 
 const RideCard = ({ ride, index }: RideCardProps) => {
   const { user } = useAuth();
+  const queryClient = useQueryClient();
+  const [showMap, setShowMap] = useState(false);
   const queryClient = useQueryClient();
   const departureDate = new Date(ride.departure_time);
   const timeStr = departureDate.toLocaleTimeString("en-IL", { hour: "2-digit", minute: "2-digit" });
@@ -78,15 +82,39 @@ const RideCard = ({ ride, index }: RideCardProps) => {
             </span>
           </div>
         </div>
-        <Button
-          size="sm"
-          onClick={handleJoin}
-          disabled={ride.available_seats === 0 || isOwnRide}
-          className="rounded-full px-5"
-        >
-          {isOwnRide ? "Your Ride" : ride.available_seats === 0 ? "Full" : "Join Ride"}
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button
+            size="icon"
+            variant="ghost"
+            className="rounded-full w-8 h-8"
+            onClick={() => setShowMap(!showMap)}
+          >
+            <Map className="w-4 h-4" />
+          </Button>
+          <Button
+            size="sm"
+            onClick={handleJoin}
+            disabled={ride.available_seats === 0 || isOwnRide}
+            className="rounded-full px-5"
+          >
+            {isOwnRide ? "Your Ride" : ride.available_seats === 0 ? "Full" : "Join Ride"}
+          </Button>
+        </div>
       </div>
+
+      <AnimatePresence>
+        {showMap && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.3 }}
+            className="overflow-hidden mt-3"
+          >
+            <RouteMap origin={ride.origin} destination={ride.destination} height="160px" />
+          </motion.div>
+        )}
+      </AnimatePresence>
     </motion.div>
   );
 };
