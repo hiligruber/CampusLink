@@ -24,6 +24,19 @@ const RideCard = ({ ride, index }: RideCardProps) => {
 
   const isOwnRide = user?.id === ride.driver_id;
 
+  const handleAddToCalendar = () => {
+    const start = departureDate;
+    const end = new Date(start.getTime() + 60 * 60 * 1000); // +1 hour
+    const fmt = (d: Date) => d.toISOString().replace(/[-:]/g, "").replace(/\.\d{3}/, "");
+    const url = new URL("https://calendar.google.com/calendar/render");
+    url.searchParams.set("action", "TEMPLATE");
+    url.searchParams.set("text", `🚗 Ride: ${ride.origin} → ${ride.destination}`);
+    url.searchParams.set("dates", `${fmt(start)}/${fmt(end)}`);
+    url.searchParams.set("details", `Driver: ${ride.driver_name}\nSeats: ${ride.available_seats}/${ride.total_seats}\nPosted via CampusLink`);
+    url.searchParams.set("location", ride.origin);
+    window.open(url.toString(), "_blank");
+  };
+
   const handleJoin = async () => {
     if (!user) return;
     try {
