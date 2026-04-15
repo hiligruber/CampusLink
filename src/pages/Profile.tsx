@@ -26,9 +26,7 @@ const Profile = () => {
   });
 
   const handleCalendarSync = () => {
-    toast.info("Google Calendar sync coming soon", {
-      description: "Confirmed rides will appear in your calendar",
-    });
+    window.open("https://calendar.google.com", "_blank");
   };
 
   const handleSignOut = async () => {
