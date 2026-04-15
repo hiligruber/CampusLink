@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Clock, Users, Star, Map } from "lucide-react";
+import { Clock, Users, Star, Map, CalendarPlus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Ride } from "@/lib/mock-data";
 import { toast } from "sonner";
