@@ -1,4 +1,4 @@
-const MTA_BASE_URL = "https://amirdo.mtacloud.co.il";
+const MTA_BASE_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/mta-proxy`;
 
 export interface MtaRide {
   id: string;
