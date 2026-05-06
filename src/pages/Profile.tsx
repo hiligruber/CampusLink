@@ -1,15 +1,19 @@
 import { useAuth } from "@/contexts/AuthContext";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { useVerificationStatus } from "@/hooks/use-verification";
 import AppHeader from "@/components/AppHeader";
 import BottomNav from "@/components/BottomNav";
 import { Button } from "@/components/ui/button";
-import { Star, Mail, Building2, LogOut, Calendar, Loader2 } from "lucide-react";
+import { Star, Mail, Building2, LogOut, Calendar, Loader2, ShieldCheck } from "lucide-react";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
+import { useNavigate } from "react-router-dom";
 
 const Profile = () => {
   const { user, signOut } = useAuth();
+  const { isAdmin } = useVerificationStatus();
+  const navigate = useNavigate();
 
   const { data: profile, isLoading } = useQuery({
     queryKey: ["profile", user?.id],
@@ -54,7 +58,7 @@ const Profile = () => {
         <div className="bg-card rounded-2xl border border-border p-5 shadow-sm text-center">
           <div className="w-20 h-20 rounded-full bg-primary/10 mx-auto flex items-center justify-center mb-3">
             <span className="text-2xl font-bold text-primary">
-              {(profile?.full_name || "?").split(" ").map((n) => n[0]).join("")}
+              {(profile?.full_name || "?").split(" ").map((n: string) => n[0]).join("")}
             </span>
           </div>
           <h2 className="text-lg font-bold text-foreground">{profile?.full_name || "Student"}</h2>
@@ -62,7 +66,7 @@ const Profile = () => {
             <Mail className="w-3.5 h-3.5" /> {profile?.email || user?.email}
           </p>
           <p className="text-sm text-muted-foreground flex items-center justify-center gap-1 mt-0.5">
-            <Building2 className="w-3.5 h-3.5" /> MTA - Academic College of Tel Aviv-Yaffo
+            <Building2 className="w-3.5 h-3.5" /> {profile?.institution || "MTA - Academic College"}
           </p>
           <div className="mt-4 inline-flex items-center gap-1.5 bg-accent rounded-full px-4 py-1.5">
             <Star className="w-4 h-4 fill-warning text-warning" />
@@ -74,6 +78,12 @@ const Profile = () => {
         </div>
 
         <div className="space-y-2">
+          {isAdmin && (
+            <Button variant="outline" className="w-full justify-start gap-2 h-12 rounded-xl" onClick={() => navigate("/admin")}>
+              <ShieldCheck className="w-4 h-4 text-primary" />
+              פאנל ניהול - אימות סטודנטים
+            </Button>
+          )}
           <Button variant="outline" className="w-full justify-start gap-2 h-12 rounded-xl" onClick={handleCalendarSync}>
             <Calendar className="w-4 h-4 text-primary" />
             Sync with Google Calendar
