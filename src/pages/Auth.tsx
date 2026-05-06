@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -8,6 +9,7 @@ import { Bus, Mail, Lock, User } from "lucide-react";
 import { motion } from "framer-motion";
 
 const Auth = () => {
+  const navigate = useNavigate();
   const [isSignUp, setIsSignUp] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -25,15 +27,16 @@ const Auth = () => {
           password,
           options: {
             data: { full_name: fullName },
-            emailRedirectTo: window.location.origin,
+            emailRedirectTo: `${window.location.origin}/verify`,
           },
         });
         if (error) throw error;
-        toast.success("Check your email to confirm your account!");
+        toast.success("נרשמת בהצלחה! המשך לאימות סטודנט");
+        navigate("/verify");
       } else {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
-        toast.success("Welcome back!");
+        toast.success("ברוך הבא!");
       }
     } catch (error: any) {
       toast.error(error.message);
@@ -42,11 +45,6 @@ const Auth = () => {
     }
   };
 
-  const handleSSOPlaceholder = () => {
-    toast.info("MTA College SSO login will be integrated here", {
-      description: "OAuth2 integration with the college authentication system",
-    });
-  };
 
   return (
     <div className="min-h-screen bg-background flex flex-col items-center justify-center px-4">
@@ -118,23 +116,6 @@ const Auth = () => {
               {loading ? "..." : isSignUp ? "Create Account" : "Sign In"}
             </Button>
           </form>
-
-          <div className="relative my-4">
-            <div className="absolute inset-0 flex items-center">
-              <span className="w-full border-t border-border" />
-            </div>
-            <div className="relative flex justify-center text-xs">
-              <span className="bg-card px-2 text-muted-foreground">or</span>
-            </div>
-          </div>
-
-          <Button
-            variant="outline"
-            className="w-full rounded-full h-11"
-            onClick={handleSSOPlaceholder}
-          >
-            Sign in with MTA College SSO
-          </Button>
         </div>
 
         <p className="text-center text-sm text-muted-foreground">

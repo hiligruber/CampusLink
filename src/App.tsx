@@ -5,19 +5,33 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import GoogleMapsProvider from "@/components/GoogleMapsProvider";
+import { useVerificationStatus } from "@/hooks/use-verification";
 import Index from "./pages/Index";
 import PostRide from "./pages/PostRide";
 import SearchRides from "./pages/SearchRides";
 import Profile from "./pages/Profile";
 import Auth from "./pages/Auth";
+import StudentVerification from "./pages/StudentVerification";
+import Admin from "./pages/Admin";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { user, loading } = useAuth();
-  if (loading) return <div className="min-h-screen bg-background" />;
+  const { isVerified, loading: vLoading } = useVerificationStatus();
+  if (loading || vLoading) return <div className="min-h-screen bg-background" />;
   if (!user) return <Navigate to="/auth" replace />;
+  if (!isVerified) return <Navigate to="/verify" replace />;
+  return <>{children}</>;
+};
+
+const VerifyRoute = ({ children }: { children: React.ReactNode }) => {
+  const { user, loading } = useAuth();
+  const { isVerified, loading: vLoading } = useVerificationStatus();
+  if (loading || vLoading) return <div className="min-h-screen bg-background" />;
+  if (!user) return <Navigate to="/auth" replace />;
+  if (isVerified) return <Navigate to="/" replace />;
   return <>{children}</>;
 };
 
@@ -38,10 +52,12 @@ const App = () => (
           <BrowserRouter>
             <Routes>
               <Route path="/auth" element={<AuthRoute><Auth /></AuthRoute>} />
+              <Route path="/verify" element={<VerifyRoute><StudentVerification /></VerifyRoute>} />
               <Route path="/" element={<ProtectedRoute><Index /></ProtectedRoute>} />
               <Route path="/post" element={<ProtectedRoute><PostRide /></ProtectedRoute>} />
               <Route path="/search" element={<ProtectedRoute><SearchRides /></ProtectedRoute>} />
               <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+              <Route path="/admin" element={<ProtectedRoute><Admin /></ProtectedRoute>} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </BrowserRouter>
