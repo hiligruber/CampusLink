@@ -126,14 +126,14 @@ const AppHeader = ({ title, subtitle }: AppHeaderProps) => {
 
   return (
     <header className="sticky top-0 z-40 bg-background/85 backdrop-blur-xl border-b border-border">
-      <div className="max-w-2xl mx-auto px-4 h-20 flex items-center justify-between gap-3">
-        {/* Logo only — larger */}
+      <div className="max-w-2xl mx-auto px-4 h-24 flex items-center justify-between gap-3">
+        {/* Logo only — large */}
         <button
           onClick={() => navigate("/")}
           className="flex items-center tap-scale"
           aria-label="CampusLink"
         >
-          <img src={logo} alt="CampusLink" className="h-14 w-auto object-contain" />
+          <img src={logo} alt="CampusLink" className="h-20 w-auto object-contain -my-2" />
         </button>
 
         {/* Right cluster */}

@@ -22,6 +22,7 @@ import {
 interface RideCardProps {
   ride: RideRow;
   index: number;
+  driverAvatarUrl?: string | null;
 }
 
 // Deterministic gradient per driver name
@@ -34,7 +35,7 @@ const gradients = [
   "from-indigo-500 to-purple-500",
 ];
 
-const RideCard = ({ ride, index }: RideCardProps) => {
+const RideCard = ({ ride, index, driverAvatarUrl }: RideCardProps) => {
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const { t, lang } = useLang();
@@ -120,8 +121,12 @@ const RideCard = ({ ride, index }: RideCardProps) => {
       {/* Author header — warm tint */}
       <div className="flex items-center gap-3 px-4 pt-4 pb-3 bg-gradient-to-br from-primary/[0.04] via-transparent to-accent/[0.06]">
         <div className="avatar-ring">
-          <div className={`w-11 h-11 rounded-full bg-gradient-to-br ${grad} flex items-center justify-center text-white font-bold text-base`}>
-            {driverInitial}
+          <div className={`w-11 h-11 rounded-full bg-gradient-to-br ${grad} flex items-center justify-center text-white font-bold text-base overflow-hidden`}>
+            {driverAvatarUrl ? (
+              <img src={driverAvatarUrl} alt={driverName} className="w-full h-full object-cover" />
+            ) : (
+              driverInitial
+            )}
           </div>
         </div>
         <div className="flex-1 min-w-0">
