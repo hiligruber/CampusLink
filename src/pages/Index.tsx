@@ -21,45 +21,22 @@ const Index = () => {
     return new Date(b.departure_time).getTime() - new Date(a.departure_time).getTime();
   });
   const activeCount = sorted.filter((r) => getDisplayStatus(r) === "active").length;
-  const today = new Date().toLocaleDateString("he-IL", { weekday: "long", day: "numeric", month: "long" });
 
   return (
     <div className="min-h-screen bg-background pb-24">
-      <AppHeader title="Campus" subtitle={today} />
+      <AppHeader title="Campus" subtitle={`${activeCount} נסיעות פעילות`} />
 
-      <main className="max-w-2xl mx-auto px-5 py-6">
+      <main className="max-w-2xl mx-auto px-4 py-4 space-y-4">
         {isLoading ? (
-          <div className="flex justify-center py-16">
-            <Loader2 className="w-5 h-5 animate-spin text-foreground" strokeWidth={1.5} />
+          <div className="flex justify-center py-20">
+            <Loader2 className="w-6 h-6 animate-spin text-primary" />
           </div>
         ) : sorted.length > 0 ? (
-          <>
-            {/* Masthead stat */}
-            <div className="border-b-2 rule pb-5 mb-6 flex items-end justify-between">
-              <div>
-                <p className="eyebrow mb-2">today's edition</p>
-                <p className="font-display font-light text-5xl leading-none text-foreground">
-                  {activeCount}
-                  <span className="text-accent">.</span>
-                </p>
-                <p className="text-sm font-serif italic text-muted-foreground mt-2">
-                  {activeCount === 1 ? "נסיעה פעילה" : "נסיעות פעילות"} בקמפוס
-                </p>
-              </div>
-              <p className="text-[10px] eyebrow text-right">
-                live<br />feed
-              </p>
-            </div>
-
-            {sorted.map((ride, i) => (
-              <RideCard key={ride.id} ride={ride} index={i} />
-            ))}
-          </>
+          sorted.map((ride, i) => <RideCard key={ride.id} ride={ride} index={i} />)
         ) : (
-          <div className="text-center py-24 border-y-2 rule">
-            <p className="eyebrow mb-3">silence on the road</p>
-            <p className="font-display font-light text-3xl text-foreground mb-2">אין נסיעות עדיין</p>
-            <p className="text-sm font-serif italic text-muted-foreground">היי הראשון לפרסם נסיעה</p>
+          <div className="text-center py-24">
+            <p className="text-lg font-bold mb-1">עוד אין נסיעות</p>
+            <p className="text-sm text-muted-foreground">היי הראשון/ה לפרסם נסיעה לקמפוס</p>
           </div>
         )}
       </main>
