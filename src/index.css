@@ -92,9 +92,9 @@
     font-feature-settings: 'ss01', 'ss03';
     background-color: hsl(var(--background));
     background-image:
-      radial-gradient(circle at 0% 0%, hsl(215 85% 52% / 0.10), transparent 45%),
-      radial-gradient(circle at 100% 0%, hsl(270 80% 60% / 0.12), transparent 45%),
-      radial-gradient(circle at 50% 100%, hsl(245 80% 60% / 0.08), transparent 50%);
+      radial-gradient(circle at 0% 0%, hsl(152 70% 38% / 0.06), transparent 45%),
+      radial-gradient(circle at 100% 0%, hsl(152 65% 48% / 0.04), transparent 45%),
+      radial-gradient(circle at 50% 100%, hsl(145 70% 52% / 0.04), transparent 50%);
     background-attachment: fixed;
   }
 }
