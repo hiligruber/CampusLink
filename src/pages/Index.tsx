@@ -14,6 +14,23 @@ const Index = () => {
     queryFn: fetchRides,
   });
 
+  const driverIds = [...new Set((rides ?? []).map((r) => r.driver_id))];
+  const { data: avatarMap = {} } = useQuery({
+    queryKey: ["driver-avatars", driverIds.sort().join(",")],
+    enabled: driverIds.length > 0,
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("profiles")
+        .select("user_id, avatar_url")
+        .in("user_id", driverIds);
+      const map: Record<string, string | null> = {};
+      (data ?? []).forEach((p) => {
+        map[p.user_id] = p.avatar_url;
+      });
+      return map;
+    },
+  });
+
   const sorted = [...(rides ?? [])].sort((a, b) => {
     const sa = getDisplayStatus(a);
     const sb = getDisplayStatus(b);
@@ -35,7 +52,9 @@ const Index = () => {
             <Loader2 className="w-6 h-6 animate-spin text-primary" />
           </div>
         ) : sorted.length > 0 ? (
-          sorted.map((ride, i) => <RideCard key={ride.id} ride={ride} index={i} />)
+          sorted.map((ride, i) => (
+            <RideCard key={ride.id} ride={ride} index={i} driverAvatarUrl={avatarMap[ride.driver_id] || null} />
+          ))
         ) : (
           <div className="text-center py-24">
             <p className="text-lg font-bold mb-1">{t("no_rides_title")}</p>
