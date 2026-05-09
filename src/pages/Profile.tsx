@@ -85,7 +85,34 @@ const Profile = () => {
           </div>
         </div>
 
+        {(profile?.hobbies || profile?.music_preference) && (
+          <div className="bg-card rounded-2xl border border-border p-5 shadow-sm space-y-3">
+            {profile?.hobbies && (
+              <div className="flex items-start gap-2">
+                <Heart className="w-4 h-4 text-primary mt-0.5 shrink-0" />
+                <div>
+                  <p className="text-xs font-semibold text-muted-foreground">תחביבים</p>
+                  <p className="text-sm text-foreground">{profile.hobbies}</p>
+                </div>
+              </div>
+            )}
+            {profile?.music_preference && (
+              <div className="flex items-start gap-2">
+                <Music className="w-4 h-4 text-primary mt-0.5 shrink-0" />
+                <div>
+                  <p className="text-xs font-semibold text-muted-foreground">מוזיקה / שיחה בנסיעה</p>
+                  <p className="text-sm text-foreground">{profile.music_preference}</p>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
         <div className="space-y-2">
+          <Button variant="outline" className="w-full justify-start gap-2 h-12 rounded-xl" onClick={() => navigate("/profile/edit")}>
+            <UserCog className="w-4 h-4 text-primary" />
+            עריכת פרופיל
+          </Button>
           {isAdmin && (
             <Button variant="outline" className="w-full justify-start gap-2 h-12 rounded-xl" onClick={() => navigate("/admin")}>
               <ShieldCheck className="w-4 h-4 text-primary" />
