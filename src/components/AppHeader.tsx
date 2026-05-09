@@ -178,15 +178,15 @@ const AppHeader = ({ title, subtitle }: AppHeaderProps) => {
                 className="w-[340px] p-0 rounded-2xl border-border shadow-card overflow-hidden"
               >
                 <div className="px-4 py-3 border-b border-border flex items-center justify-between bg-secondary/40">
-                  <h3 className="font-bold text-base">התראות</h3>
-                  {count > 0 && <span className="text-xs text-muted-foreground">{count} ממתינות</span>}
+                  <h3 className="font-bold text-base">{t("notifications")}</h3>
+                  {count > 0 && <span className="text-xs text-muted-foreground">{count} {t("notif_pending")}</span>}
                 </div>
                 <div className="max-h-[400px] overflow-y-auto">
                   {count === 0 ? (
                     <div className="px-4 py-10 text-center">
                       <InboxIcon className="w-8 h-8 mx-auto text-muted-foreground/40 mb-2" strokeWidth={1.5} />
-                      <p className="text-sm font-semibold">הכל שקט כאן</p>
-                      <p className="text-xs text-muted-foreground mt-1">אין בקשות חדשות כרגע</p>
+                      <p className="text-sm font-semibold">{t("notif_empty_title")}</p>
+                      <p className="text-xs text-muted-foreground mt-1">{t("notif_empty_desc")}</p>
                     </div>
                   ) : (
                     notifications.map((n, i) => (
@@ -197,7 +197,7 @@ const AppHeader = ({ title, subtitle }: AppHeaderProps) => {
                         <div className="flex items-baseline justify-between gap-2 mb-1">
                           <p className="text-sm">
                             <span className="font-bold">{n.passenger_name}</span>
-                            <span className="text-muted-foreground"> ביקש/ה להצטרף</span>
+                            <span className="text-muted-foreground">{t("notif_requested")}</span>
                           </p>
                           <span className="text-[10px] text-muted-foreground whitespace-nowrap">{timeAgo(n.created_at)}</span>
                         </div>
@@ -208,10 +208,10 @@ const AppHeader = ({ title, subtitle }: AppHeaderProps) => {
                         )}
                         <div className="flex gap-2">
                           <Button size="sm" className="flex-1 h-8 gap-1 text-xs rounded-lg" onClick={() => respond(n.id, "accepted")}>
-                            <Check className="w-3.5 h-3.5" /> אישור
+                            <Check className="w-3.5 h-3.5" /> {t("accept")}
                           </Button>
                           <Button size="sm" variant="outline" className="flex-1 h-8 gap-1 text-xs rounded-lg" onClick={() => respond(n.id, "rejected")}>
-                            <X className="w-3.5 h-3.5" /> דחייה
+                            <X className="w-3.5 h-3.5" /> {t("reject")}
                           </Button>
                         </div>
                       </div>
@@ -225,7 +225,7 @@ const AppHeader = ({ title, subtitle }: AppHeaderProps) => {
                   }}
                   className="w-full px-4 py-3 border-t border-border text-sm font-semibold text-primary hover:bg-secondary transition-colors"
                 >
-                  צפייה בכל הבקשות
+                  {t("view_all_requests")}
                 </button>
               </DropdownMenuContent>
             </DropdownMenu>
