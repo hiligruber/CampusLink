@@ -18,7 +18,7 @@ const PostRide = () => {
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const [origin, setOrigin] = useState("");
-  const [destination, setDestination] = useState("MTA College");
+  const [destination, setDestination] = useState("");
   const [date, setDate] = useState("");
   const [time, setTime] = useState("");
   const [seats, setSeats] = useState("3");
@@ -94,7 +94,7 @@ const PostRide = () => {
               <Label htmlFor="destination" className="flex items-center gap-1.5 text-sm font-medium">
                 <MapPin className="w-3.5 h-3.5 text-primary" /> Destination
               </Label>
-              <PlacesAutocomplete id="destination" placeholder="MTA College" value={destination} onChange={setDestination} />
+              <PlacesAutocomplete id="destination" placeholder="הקמפוס שלך" value={destination} onChange={setDestination} />
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-2">

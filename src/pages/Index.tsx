@@ -11,7 +11,6 @@ const Index = () => {
     queryFn: fetchRides,
   });
 
-  // Sort: active upcoming first (by date asc), then completed/cancelled (recent first)
   const sorted = [...(rides ?? [])].sort((a, b) => {
     const sa = getDisplayStatus(a);
     const sb = getDisplayStatus(b);
@@ -22,37 +21,49 @@ const Index = () => {
     return new Date(b.departure_time).getTime() - new Date(a.departure_time).getTime();
   });
   const activeCount = sorted.filter((r) => getDisplayStatus(r) === "active").length;
+  const today = new Date().toLocaleDateString("he-IL", { weekday: "long", day: "numeric", month: "long" });
 
   return (
-    <div className="min-h-screen pb-28">
-      <AppHeader title="CampusLink" />
-      <main className="max-w-lg mx-auto px-4 py-4 space-y-3">
+    <div className="min-h-screen bg-background pb-24">
+      <AppHeader title="Campus" subtitle={today} />
+
+      <main className="max-w-2xl mx-auto px-5 py-6">
         {isLoading ? (
-          <div className="flex justify-center py-12">
-            <Loader2 className="w-6 h-6 animate-spin text-primary" />
+          <div className="flex justify-center py-16">
+            <Loader2 className="w-5 h-5 animate-spin text-foreground" strokeWidth={1.5} />
           </div>
         ) : sorted.length > 0 ? (
           <>
-            <div className="flex items-center justify-between mb-1 animate-fade-in">
-              <h2 className="font-display text-2xl font-bold leading-tight">
-                <span className="text-gradient-primary">{activeCount}</span>{" "}
-                <span className="text-foreground">נסיעות פעילות</span>
-              </h2>
-              <span className="text-2xl animate-float">🚗</span>
+            {/* Masthead stat */}
+            <div className="border-b-2 rule pb-5 mb-6 flex items-end justify-between">
+              <div>
+                <p className="eyebrow mb-2">today's edition</p>
+                <p className="font-display font-light text-5xl leading-none text-foreground">
+                  {activeCount}
+                  <span className="text-accent">.</span>
+                </p>
+                <p className="text-sm font-serif italic text-muted-foreground mt-2">
+                  {activeCount === 1 ? "נסיעה פעילה" : "נסיעות פעילות"} בקמפוס
+                </p>
+              </div>
+              <p className="text-[10px] eyebrow text-right">
+                live<br />feed
+              </p>
             </div>
-            <p className="text-xs text-muted-foreground mb-3">בדרך לקמפוס · עדכון בזמן אמת</p>
+
             {sorted.map((ride, i) => (
               <RideCard key={ride.id} ride={ride} index={i} />
             ))}
           </>
         ) : (
-          <div className="text-center py-20 animate-fade-in">
-            <div className="text-6xl mb-4 animate-float">🛣️</div>
-            <p className="font-display text-xl font-bold text-foreground">אין נסיעות עדיין</p>
-            <p className="text-sm text-muted-foreground mt-2">היי הראשון/ה לפרסם נסיעה לקמפוס ✨</p>
+          <div className="text-center py-24 border-y-2 rule">
+            <p className="eyebrow mb-3">silence on the road</p>
+            <p className="font-display font-light text-3xl text-foreground mb-2">אין נסיעות עדיין</p>
+            <p className="text-sm font-serif italic text-muted-foreground">היי הראשון לפרסם נסיעה</p>
           </div>
         )}
       </main>
+
       <BottomNav />
     </div>
   );

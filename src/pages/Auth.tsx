@@ -61,7 +61,7 @@ const Auth = () => {
           </div>
           <h1 className="text-2xl font-bold text-foreground">CampusLink</h1>
           <p className="text-sm text-muted-foreground">
-            Carpool with fellow MTA students
+            Carpool with fellow students on campus
           </p>
         </div>
 

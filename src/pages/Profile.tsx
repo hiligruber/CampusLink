@@ -74,7 +74,7 @@ const Profile = () => {
             <Mail className="w-3.5 h-3.5" /> {profile?.email || user?.email}
           </p>
           <p className="text-sm text-muted-foreground flex items-center justify-center gap-1 mt-0.5">
-            <Building2 className="w-3.5 h-3.5" /> {profile?.institution || "MTA - Academic College"}
+            <Building2 className="w-3.5 h-3.5" /> {profile?.institution || "Academic College"}
           </p>
           <div className="mt-4 inline-flex items-center gap-1.5 bg-accent rounded-full px-4 py-1.5">
             <Star className="w-4 h-4 fill-warning text-warning" />
