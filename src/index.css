@@ -16,30 +16,30 @@
     --popover: 0 0% 100%;
     --popover-foreground: 222 25% 12%;
 
-    /* Friendly indigo-violet primary */
-    --primary: 250 75% 60%;
+    /* Professional CampusLink blue */
+    --primary: 212 78% 42%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 220 25% 94%;
-    --secondary-foreground: 222 25% 18%;
+    --secondary: 215 25% 95%;
+    --secondary-foreground: 215 30% 18%;
 
-    --muted: 220 20% 95%;
-    --muted-foreground: 220 10% 48%;
+    --muted: 215 20% 96%;
+    --muted-foreground: 215 12% 46%;
 
-    --accent: 330 85% 62%;
+    --accent: 200 90% 50%;
     --accent-foreground: 0 0% 100%;
 
     --destructive: 0 75% 58%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 220 18% 90%;
-    --input: 220 18% 90%;
-    --ring: 250 75% 60%;
+    --border: 215 20% 90%;
+    --input: 215 20% 90%;
+    --ring: 212 78% 42%;
 
     --radius: 1rem;
 
-    --shadow-card: 0 1px 2px hsl(220 25% 12% / 0.04), 0 4px 16px -4px hsl(220 25% 12% / 0.06);
-    --shadow-pop: 0 8px 24px -8px hsl(250 75% 60% / 0.35);
+    --shadow-card: 0 1px 2px hsl(215 30% 15% / 0.04), 0 6px 20px -6px hsl(215 30% 15% / 0.08);
+    --shadow-pop: 0 10px 28px -10px hsl(212 78% 42% / 0.4);
 
     --success: 152 60% 45%;
     --warning: 38 92% 55%;
