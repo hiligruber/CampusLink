@@ -13,6 +13,7 @@ import { Button } from "@/components/ui/button";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
 import logo from "@/assets/campuslink-logo.png";
+import { useLang } from "@/contexts/LanguageContext";
 
 interface NotificationBooking {
   id: string;
@@ -35,15 +36,7 @@ const AppHeader = ({ title, subtitle }: AppHeaderProps) => {
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
-  const [lang, setLang] = useState<"EN" | "HE">(() =>
-    (localStorage.getItem("cl_lang") as "EN" | "HE") || "HE"
-  );
-
-  const toggleLang = () => {
-    const next = lang === "EN" ? "HE" : "EN";
-    setLang(next);
-    localStorage.setItem("cl_lang", next);
-  };
+  const { lang, toggle, t } = useLang();
 
   useEffect(() => {
     if (!user) return;
@@ -124,11 +117,11 @@ const AppHeader = ({ title, subtitle }: AppHeaderProps) => {
   const count = notifications.length;
   const timeAgo = (iso: string) => {
     const m = Math.floor((Date.now() - new Date(iso).getTime()) / 60000);
-    if (m < 1) return "עכשיו";
-    if (m < 60) return `${m} ד׳`;
+    if (m < 1) return t("now");
+    if (m < 60) return `${m} ${t("min")}`;
     const h = Math.floor(m / 60);
-    if (h < 24) return `${h} ש׳`;
-    return `${Math.floor(h / 24)} י׳`;
+    if (h < 24) return `${h} ${t("hr")}`;
+    return `${Math.floor(h / 24)} ${t("day")}`;
   };
 
   return (
