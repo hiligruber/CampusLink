@@ -110,8 +110,11 @@ export type Database = {
           departure_time: string
           destination: string
           driver_id: string
+          driver_name: string
           id: string
+          notes: string | null
           origin: string
+          status: string
           total_seats: number
           updated_at: string
         }
@@ -121,8 +124,11 @@ export type Database = {
           departure_time: string
           destination?: string
           driver_id: string
+          driver_name?: string
           id?: string
+          notes?: string | null
           origin: string
+          status?: string
           total_seats?: number
           updated_at?: string
         }
@@ -132,8 +138,11 @@ export type Database = {
           departure_time?: string
           destination?: string
           driver_id?: string
+          driver_name?: string
           id?: string
+          notes?: string | null
           origin?: string
+          status?: string
           total_seats?: number
           updated_at?: string
         }
