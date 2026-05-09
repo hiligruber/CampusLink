@@ -54,16 +54,21 @@ const EditProfile = () => {
     }
     setUploading(true);
     try {
-      const ext = file.name.split(".").pop() || "jpg";
+      const ext = (file.name.split(".").pop() || "jpg").toLowerCase();
       const path = `${user.id}/avatar-${Date.now()}.${ext}`;
       const { error: upErr } = await supabase.storage
         .from("avatars")
-        .upload(path, file, { upsert: true, contentType: file.type });
+        .upload(path, file, { contentType: file.type, cacheControl: "3600" });
       if (upErr) throw upErr;
       const { data: pub } = supabase.storage.from("avatars").getPublicUrl(path);
+      // Persist immediately so it shows everywhere even before "Save"
+      await supabase.from("profiles").update({ avatar_url: pub.publicUrl }).eq("user_id", user.id);
       setAvatarUrl(pub.publicUrl);
+      queryClient.invalidateQueries({ queryKey: ["header-profile"] });
+      queryClient.invalidateQueries({ queryKey: ["profile"] });
       toast.success("התמונה הועלתה");
     } catch (err: any) {
+      console.error("avatar upload failed", err);
       toast.error(err?.message || "העלאה נכשלה");
     } finally {
       setUploading(false);

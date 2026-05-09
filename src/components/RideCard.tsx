@@ -113,12 +113,12 @@ const RideCard = ({ ride, index }: RideCardProps) => {
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: index * 0.05, duration: 0.3 }}
-      className={`bg-card rounded-2xl border border-border shadow-card overflow-hidden hover:shadow-pop/40 transition-shadow ${
+      className={`bg-card rounded-3xl border border-border shadow-card overflow-hidden hover:-translate-y-0.5 hover:shadow-pop transition-all duration-200 ${
         isInactive ? "opacity-60" : ""
       }`}
     >
-      {/* Author header */}
-      <div className="flex items-center gap-3 px-4 pt-4 pb-3">
+      {/* Author header — warm tint */}
+      <div className="flex items-center gap-3 px-4 pt-4 pb-3 bg-gradient-to-br from-primary/[0.04] via-transparent to-accent/[0.06]">
         <div className="avatar-ring">
           <div className={`w-11 h-11 rounded-full bg-gradient-to-br ${grad} flex items-center justify-center text-white font-bold text-base`}>
             {driverInitial}
@@ -223,7 +223,7 @@ const RideCard = ({ ride, index }: RideCardProps) => {
             size="sm"
             onClick={handleJoin}
             disabled={isFull || isInactive}
-            className="flex-[2] rounded-xl text-xs font-bold h-9 shadow-pop"
+            className="flex-[2] rounded-xl text-xs font-bold h-9 shadow-pop bg-gradient-to-r from-primary to-accent hover:opacity-95 border-0"
           >
             {isInactive ? t("closed") : isFull ? t("full") : t("request_join")}
           </Button>
