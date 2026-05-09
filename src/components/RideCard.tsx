@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Clock, Users, Map, CalendarPlus, Ban, ArrowLeft } from "lucide-react";
+import { Clock, Users, Map, CalendarPlus, Ban, MoreHorizontal } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { RideRow, getDisplayStatus, joinRide, cancelRide } from "@/lib/rides-api";
 import { toast } from "sonner";
@@ -23,6 +23,16 @@ interface RideCardProps {
   index: number;
 }
 
+// Deterministic gradient per driver name
+const gradients = [
+  "from-violet-500 to-fuchsia-500",
+  "from-blue-500 to-cyan-500",
+  "from-pink-500 to-rose-500",
+  "from-amber-500 to-orange-500",
+  "from-emerald-500 to-teal-500",
+  "from-indigo-500 to-purple-500",
+];
+
 const RideCard = ({ ride, index }: RideCardProps) => {
   const { user } = useAuth();
   const queryClient = useQueryClient();
@@ -30,13 +40,25 @@ const RideCard = ({ ride, index }: RideCardProps) => {
   const [confirmCancel, setConfirmCancel] = useState(false);
   const departureDate = new Date(ride.departure_time);
   const timeStr = departureDate.toLocaleTimeString("en-IL", { hour: "2-digit", minute: "2-digit" });
-  const dateStr = departureDate.toLocaleDateString("he-IL", { weekday: "long", month: "long", day: "numeric" });
+  const dateStr = departureDate.toLocaleDateString("he-IL", { weekday: "short", day: "numeric", month: "short" });
 
   const isOwnRide = user?.id === ride.driver_id;
   const display = getDisplayStatus(ride);
   const isInactive = display !== "active";
   const isFull = ride.available_seats === 0;
-  const driverInitial = (ride.driver_name || "?").charAt(0).toUpperCase();
+  const driverName = ride.driver_name || "סטודנט";
+  const driverInitial = driverName.charAt(0).toUpperCase();
+  const grad = gradients[(driverName.charCodeAt(0) || 0) % gradients.length];
+
+  const postedAgo = (() => {
+    const created = new Date((ride as any).created_at || ride.departure_time).getTime();
+    const m = Math.floor((Date.now() - created) / 60000);
+    if (m < 1) return "עכשיו";
+    if (m < 60) return `${m} ד׳`;
+    const h = Math.floor(m / 60);
+    if (h < 24) return `${h} ש׳`;
+    return `${Math.floor(h / 24)} י׳`;
+  })();
 
   const handleAddToCalendar = () => {
     const start = departureDate;
@@ -46,7 +68,7 @@ const RideCard = ({ ride, index }: RideCardProps) => {
     url.searchParams.set("action", "TEMPLATE");
     url.searchParams.set("text", `Ride: ${ride.origin} → ${ride.destination}`);
     url.searchParams.set("dates", `${fmt(start)}/${fmt(end)}`);
-    url.searchParams.set("details", `Driver: ${ride.driver_name}\nSeats: ${ride.available_seats}/${ride.total_seats}\nPosted via Campus`);
+    url.searchParams.set("details", `Driver: ${driverName}\nSeats: ${ride.available_seats}/${ride.total_seats}`);
     url.searchParams.set("location", ride.origin);
     window.open(url.toString(), "_blank");
   };
@@ -56,7 +78,7 @@ const RideCard = ({ ride, index }: RideCardProps) => {
     try {
       await joinRide(ride.id, user.id);
       queryClient.invalidateQueries({ queryKey: ["rides"] });
-      toast.success(`הבקשה נשלחה ל${ride.driver_name}`, { description: `${ride.origin} → ${ride.destination}` });
+      toast.success(`הבקשה נשלחה ל${driverName}`, { description: `${ride.origin} → ${ride.destination}` });
     } catch (e: any) {
       toast.error(e?.message || "Failed to join ride");
     }
@@ -75,111 +97,121 @@ const RideCard = ({ ride, index }: RideCardProps) => {
   };
 
   const statusBadge =
-    display === "cancelled" ? "בוטלה" : display === "completed" ? "עברה" : isFull ? "מלאה" : null;
-
-  // Featured layout for first item
-  const featured = index === 0 && !isInactive;
+    display === "cancelled" ? (
+      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-destructive/10 text-destructive">בוטלה</span>
+    ) : display === "completed" ? (
+      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-muted text-muted-foreground">עברה</span>
+    ) : isFull ? (
+      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-warning/15 text-warning">מלאה</span>
+    ) : null;
 
   return (
-    <motion.article
+    <motion.div
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: index * 0.05, duration: 0.4, ease: "easeOut" }}
-      className={`group relative bg-card border-b rule pb-6 mb-6 last:border-b-0 ${
-        isInactive ? "opacity-40" : ""
+      transition={{ delay: index * 0.05, duration: 0.3 }}
+      className={`bg-card rounded-3xl border border-border shadow-card overflow-hidden ${
+        isInactive ? "opacity-60" : ""
       }`}
     >
-      {/* Eyebrow row */}
-      <div className="flex items-center justify-between mb-3">
-        <p className="eyebrow">
-          {featured ? "featured · today" : `no. ${String(index + 1).padStart(2, "0")}`}
-        </p>
-        {statusBadge && (
-          <span className="text-[10px] font-semibold uppercase tracking-widest text-accent">
-            · {statusBadge} ·
+      {/* Author header — social style */}
+      <div className="flex items-center gap-3 px-4 pt-4 pb-3">
+        <div className="avatar-ring">
+          <div className={`w-11 h-11 rounded-full bg-gradient-to-br ${grad} flex items-center justify-center text-white font-bold text-base`}>
+            {driverInitial}
+          </div>
+        </div>
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-1.5">
+            <p className="font-bold text-sm truncate">{driverName}</p>
+            {isOwnRide && (
+              <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-primary/10 text-primary uppercase tracking-wide">את/ה</span>
+            )}
+          </div>
+          <p className="text-[11px] text-muted-foreground">פרסם/ה נסיעה · {postedAgo}</p>
+        </div>
+        <div className="flex items-center gap-1.5">
+          {statusBadge}
+          <button className="text-muted-foreground hover:text-foreground p-1">
+            <MoreHorizontal className="w-4 h-4" />
+          </button>
+        </div>
+      </div>
+
+      {/* Route — square bullet style */}
+      <div className="px-4 pb-3">
+        <div className="bg-secondary/50 rounded-2xl p-4 space-y-3">
+          <div className="flex items-center gap-3">
+            <div className="w-2.5 h-2.5 rounded-sm bg-primary shrink-0" />
+            <p className="text-sm font-bold text-foreground truncate">{ride.origin}</p>
+          </div>
+          <div className="flex items-center gap-3">
+            <div className="w-2.5 h-2.5 rounded-sm bg-accent shrink-0" />
+            <p className="text-sm font-bold text-foreground truncate">{ride.destination}</p>
+          </div>
+        </div>
+
+        {/* Meta chips */}
+        <div className="flex items-center gap-2 mt-3 flex-wrap">
+          <span className="inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-full bg-secondary text-secondary-foreground">
+            <Clock className="w-3 h-3" />
+            {dateStr} · {timeStr}
           </span>
+          <span className="inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-full bg-secondary text-secondary-foreground">
+            <Users className="w-3 h-3" />
+            {ride.available_seats}/{ride.total_seats} מקומות
+          </span>
+        </div>
+
+        {ride.notes && (
+          <p className="text-sm text-foreground/80 mt-3 leading-relaxed">{ride.notes}</p>
         )}
       </div>
 
-      {/* Headline route — editorial */}
-      <div className="mb-4">
-        <h2 className={`font-display font-light text-foreground leading-[0.95] ${featured ? "text-4xl" : "text-2xl"}`}>
-          {ride.origin}
-        </h2>
-        <div className="flex items-center gap-2 my-1.5 text-muted-foreground">
-          <ArrowLeft className="w-3.5 h-3.5" strokeWidth={1.5} />
-          <span className="text-[10px] uppercase tracking-widest">to</span>
-          <div className="flex-1 border-t rule" />
-        </div>
-        <h2 className={`font-display font-light text-foreground leading-[0.95] ${featured ? "text-4xl" : "text-2xl"}`}>
-          {ride.destination}
-        </h2>
-      </div>
-
-      {/* Meta line — magazine-style */}
-      <div className="flex items-baseline gap-3 text-sm font-serif italic text-muted-foreground mb-4">
-        <span className="flex items-baseline gap-1.5">
-          <Clock className="w-3 h-3 self-center not-italic" strokeWidth={1.5} />
-          {dateStr} · {timeStr}
-        </span>
-        <span className="text-border">/</span>
-        <span className="flex items-baseline gap-1.5">
-          <Users className="w-3 h-3 self-center not-italic" strokeWidth={1.5} />
-          {ride.available_seats} מתוך {ride.total_seats}
-        </span>
-      </div>
-
-      {ride.notes && (
-        <blockquote className="border-r-2 border-accent pr-3 mb-4 text-sm font-serif italic text-foreground/80">
-          "{ride.notes}"
-        </blockquote>
-      )}
-
-      {/* Byline */}
-      <div className="flex items-center justify-between gap-3">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-full border-2 rule bg-paper-warm flex items-center justify-center text-sm font-display font-semibold text-foreground">
-            {driverInitial}
-          </div>
-          <div>
-            <p className="eyebrow">by</p>
-            <p className="text-sm font-semibold text-foreground leading-tight">{ride.driver_name || "סטודנט"}</p>
-          </div>
-        </div>
-
-        <div className="flex items-center gap-1">
-          {!isInactive && (
-            <Button size="icon" variant="ghost" className="rounded-none w-9 h-9" onClick={handleAddToCalendar} title="הוסף ליומן">
-              <CalendarPlus className="w-4 h-4" strokeWidth={1.5} />
-            </Button>
-          )}
-          <Button size="icon" variant="ghost" className="rounded-none w-9 h-9" onClick={() => setShowMap(!showMap)}>
-            <Map className="w-4 h-4" strokeWidth={1.5} />
+      {/* Action bar */}
+      <div className="px-3 pb-3 pt-1 flex items-center gap-1.5 border-t border-border/60">
+        <Button
+          variant="ghost"
+          size="sm"
+          className="flex-1 gap-1.5 rounded-xl text-xs font-semibold h-9"
+          onClick={() => setShowMap(!showMap)}
+        >
+          <Map className="w-4 h-4" />
+          מפה
+        </Button>
+        {!isInactive && (
+          <Button
+            variant="ghost"
+            size="sm"
+            className="flex-1 gap-1.5 rounded-xl text-xs font-semibold h-9"
+            onClick={handleAddToCalendar}
+          >
+            <CalendarPlus className="w-4 h-4" />
+            יומן
           </Button>
-          {isOwnRide ? (
-            display === "active" ? (
-              <Button
-                size="sm"
-                variant="outline"
-                className="rounded-none border-2 border-destructive text-destructive hover:bg-destructive hover:text-destructive-foreground gap-1 uppercase text-[11px] tracking-widest"
-                onClick={() => setConfirmCancel(true)}
-              >
-                <Ban className="w-3 h-3" /> בטל
-              </Button>
-            ) : (
-              <span className="text-[10px] eyebrow px-2">שלך</span>
-            )
-          ) : (
+        )}
+        {isOwnRide ? (
+          display === "active" && (
             <Button
               size="sm"
-              onClick={handleJoin}
-              disabled={isFull || isInactive}
-              className="rounded-none px-5 uppercase text-[11px] tracking-widest font-semibold"
+              variant="ghost"
+              className="flex-1 gap-1.5 rounded-xl text-xs font-semibold h-9 text-destructive hover:bg-destructive/10 hover:text-destructive"
+              onClick={() => setConfirmCancel(true)}
             >
-              {isInactive ? "סגור" : isFull ? "מלאה" : "הצטרף"}
+              <Ban className="w-4 h-4" />
+              ביטול
             </Button>
-          )}
-        </div>
+          )
+        ) : (
+          <Button
+            size="sm"
+            onClick={handleJoin}
+            disabled={isFull || isInactive}
+            className="flex-[2] rounded-xl text-xs font-bold h-9 shadow-pop"
+          >
+            {isInactive ? "סגור" : isFull ? "מלאה" : "בקשת הצטרפות"}
+          </Button>
+        )}
       </div>
 
       <AnimatePresence>
@@ -189,30 +221,32 @@ const RideCard = ({ ride, index }: RideCardProps) => {
             animate={{ height: "auto", opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
             transition={{ duration: 0.3 }}
-            className="overflow-hidden mt-4"
+            className="overflow-hidden"
           >
-            <RouteMap origin={ride.origin} destination={ride.destination} height="180px" />
+            <div className="px-4 pb-4">
+              <RouteMap origin={ride.origin} destination={ride.destination} height="180px" />
+            </div>
           </motion.div>
         )}
       </AnimatePresence>
 
       <AlertDialog open={confirmCancel} onOpenChange={setConfirmCancel}>
-        <AlertDialogContent dir="rtl" className="rounded-none border-2 rule">
+        <AlertDialogContent dir="rtl" className="rounded-3xl">
           <AlertDialogHeader>
-            <AlertDialogTitle className="font-display font-light text-2xl">לבטל את הנסיעה?</AlertDialogTitle>
-            <AlertDialogDescription className="font-serif italic">
+            <AlertDialogTitle>לבטל את הנסיעה?</AlertDialogTitle>
+            <AlertDialogDescription>
               הנסיעה תסומן כמבוטלת ולא תופיע יותר כפעילה.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel className="rounded-none">חזרה</AlertDialogCancel>
-            <AlertDialogAction onClick={handleCancel} className="rounded-none bg-destructive hover:bg-destructive/90">
+            <AlertDialogCancel className="rounded-xl">חזרה</AlertDialogCancel>
+            <AlertDialogAction onClick={handleCancel} className="rounded-xl bg-destructive hover:bg-destructive/90">
               בטל נסיעה
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </motion.article>
+    </motion.div>
   );
 };
 

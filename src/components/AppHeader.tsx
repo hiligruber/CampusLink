@@ -35,7 +35,6 @@ const AppHeader = ({ title = "Campus", subtitle }: AppHeaderProps) => {
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
 
-  // Realtime
   useEffect(() => {
     if (!user) return;
     const channel = supabase
@@ -109,31 +108,33 @@ const AppHeader = ({ title = "Campus", subtitle }: AppHeaderProps) => {
   };
 
   return (
-    <header className="sticky top-0 z-40 bg-background/85 backdrop-blur-md border-b rule">
-      <div className="max-w-2xl mx-auto px-5 pt-4 pb-3 flex items-end justify-between">
-        <div>
-          <p className="eyebrow mb-1">vol. 01 · the campus journal</p>
-          <h1 className="font-display text-3xl font-light text-foreground leading-none">
-            {title}<span className="text-accent">.</span>
-          </h1>
-          {subtitle && <p className="text-xs text-muted-foreground mt-1.5 italic">{subtitle}</p>}
+    <header className="sticky top-0 z-40 bg-background/85 backdrop-blur-xl border-b border-border">
+      <div className="max-w-2xl mx-auto px-4 h-16 flex items-center justify-between">
+        <div className="flex items-center gap-2.5">
+          <div className="w-9 h-9 rounded-2xl bg-gradient-to-br from-primary to-accent flex items-center justify-center shadow-pop">
+            <span className="text-primary-foreground font-extrabold text-base">C</span>
+          </div>
+          <div className="leading-tight">
+            <h1 className="text-lg font-extrabold tracking-tight">{title}</h1>
+            {subtitle && <p className="text-[11px] text-muted-foreground font-medium">{subtitle}</p>}
+          </div>
         </div>
 
         {user && (
           <DropdownMenu open={open} onOpenChange={setOpen}>
             <DropdownMenuTrigger asChild>
               <button
-                className="relative p-2 -m-2 text-foreground hover:text-accent transition-colors"
+                className="relative w-10 h-10 rounded-full bg-secondary hover:bg-muted flex items-center justify-center tap-scale transition-colors"
                 aria-label="התראות"
               >
-                <Bell className="w-5 h-5" strokeWidth={1.5} />
+                <Bell className="w-5 h-5 text-foreground" strokeWidth={2} />
                 <AnimatePresence>
                   {count > 0 && (
                     <motion.span
                       initial={{ scale: 0 }}
                       animate={{ scale: 1 }}
                       exit={{ scale: 0 }}
-                      className="absolute top-1 right-1 min-w-[18px] h-[18px] px-1 inline-flex items-center justify-center text-[10px] font-bold rounded-full bg-accent text-accent-foreground"
+                      className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] px-1 inline-flex items-center justify-center text-[10px] font-bold rounded-full bg-accent text-accent-foreground ring-2 ring-background"
                     >
                       {count > 9 ? "9+" : count}
                     </motion.span>
@@ -143,48 +144,45 @@ const AppHeader = ({ title = "Campus", subtitle }: AppHeaderProps) => {
             </DropdownMenuTrigger>
             <DropdownMenuContent
               align="end"
-              sideOffset={8}
-              className="w-[340px] p-0 rounded-none border-2 rule shadow-paper bg-card"
+              sideOffset={10}
+              className="w-[340px] p-0 rounded-2xl border-border shadow-card overflow-hidden"
             >
-              <div className="px-4 py-3 border-b rule flex items-center justify-between">
-                <div>
-                  <p className="eyebrow">notifications</p>
-                  <h3 className="font-display text-lg leading-none mt-1">בקשות חדשות</h3>
-                </div>
+              <div className="px-4 py-3 border-b border-border flex items-center justify-between bg-secondary/40">
+                <h3 className="font-bold text-base">התראות</h3>
                 {count > 0 && (
-                  <span className="text-xs font-serif italic text-muted-foreground">{count} ממתינות</span>
+                  <span className="text-xs text-muted-foreground">{count} ממתינות</span>
                 )}
               </div>
 
               <div className="max-h-[400px] overflow-y-auto">
                 {count === 0 ? (
                   <div className="px-4 py-10 text-center">
-                    <InboxIcon className="w-8 h-8 mx-auto text-muted-foreground/40 mb-2" strokeWidth={1} />
-                    <p className="font-serif italic text-sm text-muted-foreground">השקט שלפני הסערה</p>
+                    <InboxIcon className="w-8 h-8 mx-auto text-muted-foreground/40 mb-2" strokeWidth={1.5} />
+                    <p className="text-sm font-semibold">הכל שקט כאן</p>
                     <p className="text-xs text-muted-foreground mt-1">אין בקשות חדשות כרגע</p>
                   </div>
                 ) : (
                   notifications.map((n, i) => (
                     <div
                       key={n.id}
-                      className={`px-4 py-3 ${i !== notifications.length - 1 ? "border-b border-border" : ""}`}
+                      className={`px-4 py-3 hover:bg-secondary/40 transition-colors ${i !== notifications.length - 1 ? "border-b border-border" : ""}`}
                     >
                       <div className="flex items-baseline justify-between gap-2 mb-1">
                         <p className="text-sm">
-                          <span className="font-semibold">{n.passenger_name}</span>
+                          <span className="font-bold">{n.passenger_name}</span>
                           <span className="text-muted-foreground"> ביקש/ה להצטרף</span>
                         </p>
                         <span className="text-[10px] text-muted-foreground whitespace-nowrap">{timeAgo(n.created_at)}</span>
                       </div>
                       {n.origin && (
-                        <p className="text-xs font-serif italic text-muted-foreground mb-2 truncate">
+                        <p className="text-xs text-muted-foreground mb-2 truncate">
                           {n.origin} ← {n.destination}
                         </p>
                       )}
                       <div className="flex gap-2">
                         <Button
                           size="sm"
-                          className="flex-1 h-8 rounded-none gap-1 text-xs"
+                          className="flex-1 h-8 gap-1 text-xs rounded-lg"
                           onClick={() => respond(n.id, "accepted")}
                         >
                           <Check className="w-3.5 h-3.5" /> אישור
@@ -192,7 +190,7 @@ const AppHeader = ({ title = "Campus", subtitle }: AppHeaderProps) => {
                         <Button
                           size="sm"
                           variant="outline"
-                          className="flex-1 h-8 rounded-none gap-1 text-xs"
+                          className="flex-1 h-8 gap-1 text-xs rounded-lg"
                           onClick={() => respond(n.id, "rejected")}
                         >
                           <X className="w-3.5 h-3.5" /> דחייה
@@ -208,9 +206,9 @@ const AppHeader = ({ title = "Campus", subtitle }: AppHeaderProps) => {
                   setOpen(false);
                   navigate("/bookings");
                 }}
-                className="w-full px-4 py-3 border-t-2 rule text-xs font-semibold uppercase tracking-widest hover:bg-secondary transition-colors"
+                className="w-full px-4 py-3 border-t border-border text-sm font-semibold text-primary hover:bg-secondary transition-colors"
               >
-                צפייה בכל הבקשות →
+                צפייה בכל הבקשות
               </button>
             </DropdownMenuContent>
           </DropdownMenu>
