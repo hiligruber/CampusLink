@@ -1,4 +1,4 @@
-import { Bell, Check, X, Inbox as InboxIcon } from "lucide-react";
+import { Bell, Check, X, Inbox as InboxIcon, User as UserIcon } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -12,6 +12,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
+import logo from "@/assets/campuslink-logo.png";
 
 interface NotificationBooking {
   id: string;
@@ -29,11 +30,20 @@ interface AppHeaderProps {
   subtitle?: string;
 }
 
-const AppHeader = ({ title = "Campus", subtitle }: AppHeaderProps) => {
+const AppHeader = ({ title, subtitle }: AppHeaderProps) => {
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
+  const [lang, setLang] = useState<"EN" | "HE">(() =>
+    (localStorage.getItem("cl_lang") as "EN" | "HE") || "HE"
+  );
+
+  const toggleLang = () => {
+    const next = lang === "EN" ? "HE" : "EN";
+    setLang(next);
+    localStorage.setItem("cl_lang", next);
+  };
 
   useEffect(() => {
     if (!user) return;
@@ -47,6 +57,20 @@ const AppHeader = ({ title = "Campus", subtitle }: AppHeaderProps) => {
       supabase.removeChannel(channel);
     };
   }, [user, queryClient]);
+
+  const { data: profile } = useQuery({
+    queryKey: ["header-profile", user?.id],
+    queryFn: async () => {
+      if (!user) return null;
+      const { data } = await supabase
+        .from("profiles")
+        .select("full_name, avatar_url")
+        .eq("user_id", user.id)
+        .maybeSingle();
+      return data;
+    },
+    enabled: !!user,
+  });
 
   const { data: notifications = [] } = useQuery({
     queryKey: ["header-notifications", user?.id],
@@ -109,111 +133,135 @@ const AppHeader = ({ title = "Campus", subtitle }: AppHeaderProps) => {
 
   return (
     <header className="sticky top-0 z-40 bg-background/85 backdrop-blur-xl border-b border-border">
-      <div className="max-w-2xl mx-auto px-4 h-16 flex items-center justify-between">
-        <div className="flex items-center gap-2.5">
-          <div className="w-9 h-9 rounded-2xl bg-gradient-to-br from-primary to-accent flex items-center justify-center shadow-pop">
-            <span className="text-primary-foreground font-extrabold text-base">C</span>
-          </div>
-          <div className="leading-tight">
-            <h1 className="text-lg font-extrabold tracking-tight">{title}</h1>
-            {subtitle && <p className="text-[11px] text-muted-foreground font-medium">{subtitle}</p>}
-          </div>
-        </div>
+      <div className="max-w-2xl mx-auto px-4 h-16 flex items-center justify-between gap-3">
+        {/* Logo + Brand */}
+        <button
+          onClick={() => navigate("/")}
+          className="flex items-center gap-2 tap-scale"
+          aria-label="CampusLink"
+        >
+          <img src={logo} alt="" className="w-8 h-8 object-contain" />
+          <span className="text-lg font-extrabold tracking-tight text-primary">
+            CampusLink
+          </span>
+        </button>
 
-        {user && (
-          <DropdownMenu open={open} onOpenChange={setOpen}>
-            <DropdownMenuTrigger asChild>
-              <button
-                className="relative w-10 h-10 rounded-full bg-secondary hover:bg-muted flex items-center justify-center tap-scale transition-colors"
-                aria-label="התראות"
+        {/* Right cluster */}
+        <div className="flex items-center gap-2">
+          {/* Language toggle */}
+          <button
+            onClick={toggleLang}
+            className="h-9 px-2.5 rounded-full border border-border bg-card hover:bg-secondary transition-colors text-[11px] font-bold tracking-wide flex items-center gap-1"
+            aria-label="Toggle language"
+          >
+            <span className={lang === "EN" ? "text-primary" : "text-muted-foreground"}>EN</span>
+            <span className="text-border">/</span>
+            <span className={lang === "HE" ? "text-primary" : "text-muted-foreground"}>עב</span>
+          </button>
+
+          {/* Notifications */}
+          {user && (
+            <DropdownMenu open={open} onOpenChange={setOpen}>
+              <DropdownMenuTrigger asChild>
+                <button
+                  className="relative w-9 h-9 rounded-full bg-secondary hover:bg-muted flex items-center justify-center tap-scale transition-colors"
+                  aria-label="התראות"
+                >
+                  <Bell className="w-[18px] h-[18px] text-foreground" strokeWidth={2} />
+                  <AnimatePresence>
+                    {count > 0 && (
+                      <motion.span
+                        initial={{ scale: 0 }}
+                        animate={{ scale: 1 }}
+                        exit={{ scale: 0 }}
+                        className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] px-1 inline-flex items-center justify-center text-[10px] font-bold rounded-full bg-accent text-accent-foreground ring-2 ring-background"
+                      >
+                        {count > 9 ? "9+" : count}
+                      </motion.span>
+                    )}
+                  </AnimatePresence>
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent
+                align="end"
+                sideOffset={10}
+                className="w-[340px] p-0 rounded-2xl border-border shadow-card overflow-hidden"
               >
-                <Bell className="w-5 h-5 text-foreground" strokeWidth={2} />
-                <AnimatePresence>
-                  {count > 0 && (
-                    <motion.span
-                      initial={{ scale: 0 }}
-                      animate={{ scale: 1 }}
-                      exit={{ scale: 0 }}
-                      className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] px-1 inline-flex items-center justify-center text-[10px] font-bold rounded-full bg-accent text-accent-foreground ring-2 ring-background"
-                    >
-                      {count > 9 ? "9+" : count}
-                    </motion.span>
-                  )}
-                </AnimatePresence>
-              </button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent
-              align="end"
-              sideOffset={10}
-              className="w-[340px] p-0 rounded-2xl border-border shadow-card overflow-hidden"
-            >
-              <div className="px-4 py-3 border-b border-border flex items-center justify-between bg-secondary/40">
-                <h3 className="font-bold text-base">התראות</h3>
-                {count > 0 && (
-                  <span className="text-xs text-muted-foreground">{count} ממתינות</span>
-                )}
-              </div>
-
-              <div className="max-h-[400px] overflow-y-auto">
-                {count === 0 ? (
-                  <div className="px-4 py-10 text-center">
-                    <InboxIcon className="w-8 h-8 mx-auto text-muted-foreground/40 mb-2" strokeWidth={1.5} />
-                    <p className="text-sm font-semibold">הכל שקט כאן</p>
-                    <p className="text-xs text-muted-foreground mt-1">אין בקשות חדשות כרגע</p>
-                  </div>
-                ) : (
-                  notifications.map((n, i) => (
-                    <div
-                      key={n.id}
-                      className={`px-4 py-3 hover:bg-secondary/40 transition-colors ${i !== notifications.length - 1 ? "border-b border-border" : ""}`}
-                    >
-                      <div className="flex items-baseline justify-between gap-2 mb-1">
-                        <p className="text-sm">
-                          <span className="font-bold">{n.passenger_name}</span>
-                          <span className="text-muted-foreground"> ביקש/ה להצטרף</span>
-                        </p>
-                        <span className="text-[10px] text-muted-foreground whitespace-nowrap">{timeAgo(n.created_at)}</span>
-                      </div>
-                      {n.origin && (
-                        <p className="text-xs text-muted-foreground mb-2 truncate">
-                          {n.origin} ← {n.destination}
-                        </p>
-                      )}
-                      <div className="flex gap-2">
-                        <Button
-                          size="sm"
-                          className="flex-1 h-8 gap-1 text-xs rounded-lg"
-                          onClick={() => respond(n.id, "accepted")}
-                        >
-                          <Check className="w-3.5 h-3.5" /> אישור
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          className="flex-1 h-8 gap-1 text-xs rounded-lg"
-                          onClick={() => respond(n.id, "rejected")}
-                        >
-                          <X className="w-3.5 h-3.5" /> דחייה
-                        </Button>
-                      </div>
+                <div className="px-4 py-3 border-b border-border flex items-center justify-between bg-secondary/40">
+                  <h3 className="font-bold text-base">התראות</h3>
+                  {count > 0 && <span className="text-xs text-muted-foreground">{count} ממתינות</span>}
+                </div>
+                <div className="max-h-[400px] overflow-y-auto">
+                  {count === 0 ? (
+                    <div className="px-4 py-10 text-center">
+                      <InboxIcon className="w-8 h-8 mx-auto text-muted-foreground/40 mb-2" strokeWidth={1.5} />
+                      <p className="text-sm font-semibold">הכל שקט כאן</p>
+                      <p className="text-xs text-muted-foreground mt-1">אין בקשות חדשות כרגע</p>
                     </div>
-                  ))
-                )}
-              </div>
+                  ) : (
+                    notifications.map((n, i) => (
+                      <div
+                        key={n.id}
+                        className={`px-4 py-3 hover:bg-secondary/40 transition-colors ${i !== notifications.length - 1 ? "border-b border-border" : ""}`}
+                      >
+                        <div className="flex items-baseline justify-between gap-2 mb-1">
+                          <p className="text-sm">
+                            <span className="font-bold">{n.passenger_name}</span>
+                            <span className="text-muted-foreground"> ביקש/ה להצטרף</span>
+                          </p>
+                          <span className="text-[10px] text-muted-foreground whitespace-nowrap">{timeAgo(n.created_at)}</span>
+                        </div>
+                        {n.origin && (
+                          <p className="text-xs text-muted-foreground mb-2 truncate">
+                            {n.origin} ← {n.destination}
+                          </p>
+                        )}
+                        <div className="flex gap-2">
+                          <Button size="sm" className="flex-1 h-8 gap-1 text-xs rounded-lg" onClick={() => respond(n.id, "accepted")}>
+                            <Check className="w-3.5 h-3.5" /> אישור
+                          </Button>
+                          <Button size="sm" variant="outline" className="flex-1 h-8 gap-1 text-xs rounded-lg" onClick={() => respond(n.id, "rejected")}>
+                            <X className="w-3.5 h-3.5" /> דחייה
+                          </Button>
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+                <button
+                  onClick={() => {
+                    setOpen(false);
+                    navigate("/bookings");
+                  }}
+                  className="w-full px-4 py-3 border-t border-border text-sm font-semibold text-primary hover:bg-secondary transition-colors"
+                >
+                  צפייה בכל הבקשות
+                </button>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
 
-              <button
-                onClick={() => {
-                  setOpen(false);
-                  navigate("/bookings");
-                }}
-                className="w-full px-4 py-3 border-t border-border text-sm font-semibold text-primary hover:bg-secondary transition-colors"
-              >
-                צפייה בכל הבקשות
-              </button>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        )}
+          {/* Profile picture */}
+          {user && (
+            <button
+              onClick={() => navigate("/profile")}
+              className="w-9 h-9 rounded-full bg-secondary overflow-hidden ring-2 ring-background border border-border tap-scale flex items-center justify-center"
+              aria-label="פרופיל"
+            >
+              {profile?.avatar_url ? (
+                <img src={profile.avatar_url} alt="" className="w-full h-full object-cover" />
+              ) : (
+                <UserIcon className="w-4 h-4 text-muted-foreground" />
+              )}
+            </button>
+          )}
+        </div>
       </div>
+      {subtitle && (
+        <div className="max-w-2xl mx-auto px-4 pb-2 -mt-1">
+          <p className="text-[12px] text-muted-foreground font-medium">{subtitle}</p>
+        </div>
+      )}
     </header>
   );
 };
