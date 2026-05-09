@@ -10,6 +10,7 @@ import Index from "./pages/Index";
 import PostRide from "./pages/PostRide";
 import SearchRides from "./pages/SearchRides";
 import Profile from "./pages/Profile";
+import EditProfile from "./pages/EditProfile";
 import Auth from "./pages/Auth";
 import StudentVerification from "./pages/StudentVerification";
 import Admin from "./pages/Admin";
@@ -57,6 +58,7 @@ const App = () => (
               <Route path="/post" element={<ProtectedRoute><PostRide /></ProtectedRoute>} />
               <Route path="/search" element={<ProtectedRoute><SearchRides /></ProtectedRoute>} />
               <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+              <Route path="/profile/edit" element={<ProtectedRoute><EditProfile /></ProtectedRoute>} />
               <Route path="/admin" element={<ProtectedRoute><Admin /></ProtectedRoute>} />
               <Route path="*" element={<NotFound />} />
             </Routes>

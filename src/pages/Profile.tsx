@@ -5,7 +5,7 @@ import { useVerificationStatus } from "@/hooks/use-verification";
 import AppHeader from "@/components/AppHeader";
 import BottomNav from "@/components/BottomNav";
 import { Button } from "@/components/ui/button";
-import { Star, Mail, Building2, LogOut, Calendar, Loader2, ShieldCheck } from "lucide-react";
+import { Star, Mail, Building2, LogOut, Calendar, Loader2, ShieldCheck, UserCog, Music, Heart } from "lucide-react";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
@@ -56,11 +56,19 @@ const Profile = () => {
         className="max-w-lg mx-auto px-4 py-6 space-y-4"
       >
         <div className="bg-card rounded-2xl border border-border p-5 shadow-sm text-center">
-          <div className="w-20 h-20 rounded-full bg-primary/10 mx-auto flex items-center justify-center mb-3">
-            <span className="text-2xl font-bold text-primary">
-              {(profile?.full_name || "?").split(" ").map((n: string) => n[0]).join("")}
-            </span>
-          </div>
+          {profile?.avatar_url ? (
+            <img
+              src={profile.avatar_url}
+              alt="profile"
+              className="w-20 h-20 rounded-full mx-auto mb-3 object-cover border-2 border-primary/20"
+            />
+          ) : (
+            <div className="w-20 h-20 rounded-full bg-primary/10 mx-auto flex items-center justify-center mb-3">
+              <span className="text-2xl font-bold text-primary">
+                {(profile?.full_name || "?").split(" ").map((n: string) => n[0]).join("")}
+              </span>
+            </div>
+          )}
           <h2 className="text-lg font-bold text-foreground">{profile?.full_name || "Student"}</h2>
           <p className="text-sm text-muted-foreground flex items-center justify-center gap-1 mt-1">
             <Mail className="w-3.5 h-3.5" /> {profile?.email || user?.email}
@@ -77,7 +85,34 @@ const Profile = () => {
           </div>
         </div>
 
+        {(profile?.hobbies || profile?.music_preference) && (
+          <div className="bg-card rounded-2xl border border-border p-5 shadow-sm space-y-3">
+            {profile?.hobbies && (
+              <div className="flex items-start gap-2">
+                <Heart className="w-4 h-4 text-primary mt-0.5 shrink-0" />
+                <div>
+                  <p className="text-xs font-semibold text-muted-foreground">תחביבים</p>
+                  <p className="text-sm text-foreground">{profile.hobbies}</p>
+                </div>
+              </div>
+            )}
+            {profile?.music_preference && (
+              <div className="flex items-start gap-2">
+                <Music className="w-4 h-4 text-primary mt-0.5 shrink-0" />
+                <div>
+                  <p className="text-xs font-semibold text-muted-foreground">מוזיקה / שיחה בנסיעה</p>
+                  <p className="text-sm text-foreground">{profile.music_preference}</p>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
         <div className="space-y-2">
+          <Button variant="outline" className="w-full justify-start gap-2 h-12 rounded-xl" onClick={() => navigate("/profile/edit")}>
+            <UserCog className="w-4 h-4 text-primary" />
+            עריכת פרופיל
+          </Button>
           {isAdmin && (
             <Button variant="outline" className="w-full justify-start gap-2 h-12 rounded-xl" onClick={() => navigate("/admin")}>
               <ShieldCheck className="w-4 h-4 text-primary" />
