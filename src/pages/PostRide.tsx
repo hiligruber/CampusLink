@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -9,7 +9,8 @@ import { MapPin, Calendar, Clock, Users } from "lucide-react";
 import { motion } from "framer-motion";
 import { useAuth } from "@/contexts/AuthContext";
 import { useQueryClient } from "@tanstack/react-query";
-import { postRide } from "@/lib/mta-api";
+import { postRide } from "@/lib/rides-api";
+import { supabase } from "@/integrations/supabase/client";
 import PlacesAutocomplete from "@/components/PlacesAutocomplete";
 import RouteMap from "@/components/RouteMap";
 
@@ -23,6 +24,19 @@ const PostRide = () => {
   const [seats, setSeats] = useState("3");
   const [notes, setNotes] = useState("");
   const [loading, setLoading] = useState(false);
+  const [driverName, setDriverName] = useState("Student");
+
+  useEffect(() => {
+    if (!user) return;
+    supabase
+      .from("profiles")
+      .select("full_name")
+      .eq("user_id", user.id)
+      .maybeSingle()
+      .then(({ data }) => {
+        if (data?.full_name) setDriverName(data.full_name);
+      });
+  }, [user]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -34,13 +48,13 @@ const PostRide = () => {
 
     try {
       await postRide({
-        user_id: user.id,
-        from_city: origin,
-        to_campus: destination,
-        ride_date: date,
-        ride_time: time,
-        seats: parseInt(seats),
-        notes,
+        driver_id: user.id,
+        driver_name: driverName,
+        origin,
+        destination,
+        departure_time: new Date(`${date}T${time}`).toISOString(),
+        total_seats: parseInt(seats),
+        notes: notes || undefined,
       });
       toast.success("Ride posted successfully!", { description: `${origin} → ${destination}` });
       queryClient.invalidateQueries({ queryKey: ["rides"] });
@@ -49,8 +63,8 @@ const PostRide = () => {
       setTime("");
       setSeats("3");
       setNotes("");
-    } catch {
-      toast.error("Failed to post ride");
+    } catch (e: any) {
+      toast.error(e?.message || "Failed to post ride");
     } finally {
       setLoading(false);
     }
@@ -114,7 +128,6 @@ const PostRide = () => {
           </form>
         </div>
 
-        {/* Route Map Preview */}
         <div className="mt-4">
           <RouteMap origin={origin} destination={destination} height="220px" />
         </div>

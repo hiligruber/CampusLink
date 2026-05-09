@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { fetchRides, mtaRideToAppRide } from "@/lib/mta-api";
+import { fetchRides, getDisplayStatus } from "@/lib/rides-api";
 import RideCard from "@/components/RideCard";
 import AppHeader from "@/components/AppHeader";
 import BottomNav from "@/components/BottomNav";
@@ -11,7 +11,17 @@ const Index = () => {
     queryFn: fetchRides,
   });
 
-  const appRides = rides?.map(mtaRideToAppRide) ?? [];
+  // Sort: active upcoming first (by date asc), then completed/cancelled (recent first)
+  const sorted = [...(rides ?? [])].sort((a, b) => {
+    const sa = getDisplayStatus(a);
+    const sb = getDisplayStatus(b);
+    const aActive = sa === "active" ? 0 : 1;
+    const bActive = sb === "active" ? 0 : 1;
+    if (aActive !== bActive) return aActive - bActive;
+    if (aActive === 0) return new Date(a.departure_time).getTime() - new Date(b.departure_time).getTime();
+    return new Date(b.departure_time).getTime() - new Date(a.departure_time).getTime();
+  });
+  const activeCount = sorted.filter((r) => getDisplayStatus(r) === "active").length;
 
   return (
     <div className="min-h-screen bg-background pb-20">
@@ -21,12 +31,12 @@ const Index = () => {
           <div className="flex justify-center py-12">
             <Loader2 className="w-6 h-6 animate-spin text-primary" />
           </div>
-        ) : appRides.length > 0 ? (
+        ) : sorted.length > 0 ? (
           <>
             <p className="text-sm text-muted-foreground">
-              {appRides.length} ride{appRides.length !== 1 ? "s" : ""} heading to campus
+              {activeCount} active ride{activeCount !== 1 ? "s" : ""} heading to campus
             </p>
-            {appRides.map((ride, i) => (
+            {sorted.map((ride, i) => (
               <RideCard key={ride.id} ride={ride} index={i} />
             ))}
           </>

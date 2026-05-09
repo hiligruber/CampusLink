@@ -1,16 +1,25 @@
 import { useState } from "react";
-import { Clock, Users, Star, Map, CalendarPlus } from "lucide-react";
+import { Clock, Users, Map, CalendarPlus, Ban } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Ride } from "@/lib/mock-data";
+import { RideRow, getDisplayStatus, joinRide, cancelRide } from "@/lib/rides-api";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "@/contexts/AuthContext";
 import { useQueryClient } from "@tanstack/react-query";
-import { joinRide } from "@/lib/mta-api";
 import RouteMap from "@/components/RouteMap";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 interface RideCardProps {
-  ride: Ride;
+  ride: RideRow;
   index: number;
 }
 
@@ -18,15 +27,20 @@ const RideCard = ({ ride, index }: RideCardProps) => {
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const [showMap, setShowMap] = useState(false);
+  const [confirmCancel, setConfirmCancel] = useState(false);
   const departureDate = new Date(ride.departure_time);
   const timeStr = departureDate.toLocaleTimeString("en-IL", { hour: "2-digit", minute: "2-digit" });
   const dateStr = departureDate.toLocaleDateString("en-IL", { weekday: "short", month: "short", day: "numeric" });
 
   const isOwnRide = user?.id === ride.driver_id;
+  const display = getDisplayStatus(ride);
+  const isInactive = display !== "active";
+  const isFull = ride.available_seats === 0;
+  const driverInitial = (ride.driver_name || "?").charAt(0).toUpperCase();
 
   const handleAddToCalendar = () => {
     const start = departureDate;
-    const end = new Date(start.getTime() + 60 * 60 * 1000); // +1 hour
+    const end = new Date(start.getTime() + 60 * 60 * 1000);
     const fmt = (d: Date) => d.toISOString().replace(/[-:]/g, "").replace(/\.\d{3}/, "");
     const url = new URL("https://calendar.google.com/calendar/render");
     url.searchParams.set("action", "TEMPLATE");
@@ -45,17 +59,40 @@ const RideCard = ({ ride, index }: RideCardProps) => {
       toast.success(`Request sent to ${ride.driver_name}!`, {
         description: `${ride.origin} → ${ride.destination}`,
       });
-    } catch {
-      toast.error("Failed to join ride");
+    } catch (e: any) {
+      toast.error(e?.message || "Failed to join ride");
     }
   };
+
+  const handleCancel = async () => {
+    try {
+      await cancelRide(ride.id);
+      queryClient.invalidateQueries({ queryKey: ["rides"] });
+      toast.success("הנסיעה בוטלה");
+    } catch (e: any) {
+      toast.error(e?.message || "ביטול הנסיעה נכשל");
+    } finally {
+      setConfirmCancel(false);
+    }
+  };
+
+  const statusBadge =
+    display === "cancelled" ? (
+      <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-destructive/10 text-destructive">בוטלה</span>
+    ) : display === "completed" ? (
+      <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-muted text-muted-foreground">עברה</span>
+    ) : isFull ? (
+      <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-warning/10 text-warning">מלאה</span>
+    ) : null;
 
   return (
     <motion.div
       initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: index * 0.08, duration: 0.35 }}
-      className="bg-card rounded-2xl border border-border p-4 shadow-sm hover:shadow-md transition-shadow"
+      transition={{ delay: index * 0.06, duration: 0.3 }}
+      className={`bg-card rounded-2xl border border-border p-4 shadow-sm hover:shadow-md transition-shadow ${
+        isInactive ? "opacity-60 grayscale" : ""
+      }`}
     >
       <div className="flex items-start gap-3 mb-3">
         <div className="flex flex-col items-center mt-1">
@@ -64,7 +101,10 @@ const RideCard = ({ ride, index }: RideCardProps) => {
           <div className="w-2.5 h-2.5 rounded-full border-2 border-primary bg-card" />
         </div>
         <div className="flex-1 min-w-0">
-          <p className="text-sm font-semibold text-foreground truncate">{ride.origin}</p>
+          <div className="flex items-center justify-between gap-2">
+            <p className="text-sm font-semibold text-foreground truncate">{ride.origin}</p>
+            {statusBadge}
+          </div>
           <div className="h-4" />
           <p className="text-sm font-semibold text-foreground truncate">{ride.destination}</p>
         </div>
@@ -81,45 +121,48 @@ const RideCard = ({ ride, index }: RideCardProps) => {
         </span>
       </div>
 
+      {ride.notes && <p className="text-xs text-muted-foreground mb-3 italic">{ride.notes}</p>}
+
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <div className="w-8 h-8 rounded-full bg-accent flex items-center justify-center text-xs font-bold text-accent-foreground">
-            {ride.driver_name.charAt(0)}
+            {driverInitial}
           </div>
-          <div>
-            <p className="text-sm font-medium text-foreground">{ride.driver_name}</p>
-            <span className="flex items-center gap-0.5 text-xs text-muted-foreground">
-              <Star className="w-3 h-3 fill-warning text-warning" />
-              {ride.driver_rating}
-            </span>
-          </div>
+          <p className="text-sm font-medium text-foreground">{ride.driver_name || "Student"}</p>
         </div>
         <div className="flex items-center gap-2">
-          <Button
-            size="icon"
-            variant="ghost"
-            className="rounded-full w-8 h-8"
-            onClick={handleAddToCalendar}
-            title="Add to Google Calendar"
-          >
-            <CalendarPlus className="w-4 h-4" />
-          </Button>
-          <Button
-            size="icon"
-            variant="ghost"
-            className="rounded-full w-8 h-8"
-            onClick={() => setShowMap(!showMap)}
-          >
+          {!isInactive && (
+            <Button size="icon" variant="ghost" className="rounded-full w-8 h-8" onClick={handleAddToCalendar} title="Add to Google Calendar">
+              <CalendarPlus className="w-4 h-4" />
+            </Button>
+          )}
+          <Button size="icon" variant="ghost" className="rounded-full w-8 h-8" onClick={() => setShowMap(!showMap)}>
             <Map className="w-4 h-4" />
           </Button>
-          <Button
-            size="sm"
-            onClick={handleJoin}
-            disabled={ride.available_seats === 0 || isOwnRide}
-            className="rounded-full px-5"
-          >
-            {isOwnRide ? "Your Ride" : ride.available_seats === 0 ? "Full" : "Join Ride"}
-          </Button>
+          {isOwnRide ? (
+            display === "active" ? (
+              <Button
+                size="sm"
+                variant="destructive"
+                className="rounded-full px-4 gap-1"
+                onClick={() => setConfirmCancel(true)}
+              >
+                <Ban className="w-3.5 h-3.5" />
+                בטל
+              </Button>
+            ) : (
+              <span className="text-xs text-muted-foreground px-2">הנסיעה שלך</span>
+            )
+          ) : (
+            <Button
+              size="sm"
+              onClick={handleJoin}
+              disabled={isFull || isInactive}
+              className="rounded-full px-5"
+            >
+              {isInactive ? (display === "completed" ? "עברה" : "בוטלה") : isFull ? "Full" : "Join Ride"}
+            </Button>
+          )}
         </div>
       </div>
 
@@ -136,6 +179,23 @@ const RideCard = ({ ride, index }: RideCardProps) => {
           </motion.div>
         )}
       </AnimatePresence>
+
+      <AlertDialog open={confirmCancel} onOpenChange={setConfirmCancel}>
+        <AlertDialogContent dir="rtl">
+          <AlertDialogHeader>
+            <AlertDialogTitle>לבטל את הנסיעה?</AlertDialogTitle>
+            <AlertDialogDescription>
+              הנסיעה תסומן כמבוטלת ולא תופיע יותר כפעילה. כל ההזמנות הקיימות יישארו לתיעוד.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>חזרה</AlertDialogCancel>
+            <AlertDialogAction onClick={handleCancel} className="bg-destructive hover:bg-destructive/90">
+              בטל נסיעה
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </motion.div>
   );
 };

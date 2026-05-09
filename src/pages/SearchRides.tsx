@@ -1,7 +1,7 @@
 import { useState, useMemo } from "react";
 import { Input } from "@/components/ui/input";
 import { useQuery } from "@tanstack/react-query";
-import { fetchRides, mtaRideToAppRide } from "@/lib/mta-api";
+import { fetchRides, getDisplayStatus } from "@/lib/rides-api";
 import RideCard from "@/components/RideCard";
 import AppHeader from "@/components/AppHeader";
 import BottomNav from "@/components/BottomNav";
@@ -16,19 +16,21 @@ const SearchRides = () => {
     queryFn: fetchRides,
   });
 
-  const appRides = rides?.map(mtaRideToAppRide) ?? [];
-
   const filtered = useMemo(() => {
-    return appRides.filter((r) => {
+    return (rides ?? []).filter((r) => {
       const matchesQuery =
         !query ||
         r.origin.toLowerCase().includes(query.toLowerCase()) ||
         r.destination.toLowerCase().includes(query.toLowerCase());
-      const matchesDate =
-        !dateFilter || r.departure_time.startsWith(dateFilter);
+      const matchesDate = !dateFilter || r.departure_time.startsWith(dateFilter);
       return matchesQuery && matchesDate;
+    }).sort((a, b) => {
+      const aActive = getDisplayStatus(a) === "active" ? 0 : 1;
+      const bActive = getDisplayStatus(b) === "active" ? 0 : 1;
+      if (aActive !== bActive) return aActive - bActive;
+      return new Date(a.departure_time).getTime() - new Date(b.departure_time).getTime();
     });
-  }, [query, dateFilter, appRides]);
+  }, [query, dateFilter, rides]);
 
   return (
     <div className="min-h-screen bg-background pb-20">
