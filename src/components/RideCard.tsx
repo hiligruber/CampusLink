@@ -27,12 +27,12 @@ interface RideCardProps {
 
 // Deterministic gradient per driver name
 const gradients = [
-  "from-violet-500 to-fuchsia-500",
-  "from-blue-500 to-cyan-500",
-  "from-pink-500 to-rose-500",
-  "from-amber-500 to-orange-500",
-  "from-emerald-500 to-teal-500",
-  "from-indigo-500 to-purple-500",
+  "from-emerald-600 to-green-500",
+  "from-lime-600 to-emerald-500",
+  "from-green-700 to-teal-500",
+  "from-teal-600 to-emerald-400",
+  "from-emerald-500 to-green-400",
+  "from-green-600 to-lime-500",
 ];
 
 const RideCard = ({ ride, index, driverAvatarUrl }: RideCardProps) => {
@@ -119,7 +119,7 @@ const RideCard = ({ ride, index, driverAvatarUrl }: RideCardProps) => {
       }`}
     >
       {/* Author header — warm tint */}
-      <div className="flex items-center gap-3 px-4 pt-4 pb-3 bg-gradient-to-br from-primary/[0.04] via-transparent to-accent/[0.06]">
+      <div className="flex items-center gap-3 px-4 pt-4 pb-3 bg-gradient-to-br from-primary/[0.04] via-transparent to-primary/[0.06]">
         <div className="avatar-ring">
           <div className={`w-11 h-11 rounded-full bg-gradient-to-br ${grad} flex items-center justify-center text-white font-bold text-base overflow-hidden`}>
             {driverAvatarUrl ? (
@@ -155,8 +155,8 @@ const RideCard = ({ ride, index, driverAvatarUrl }: RideCardProps) => {
                 <MapPin className="w-4 h-4 text-primary" strokeWidth={2.5} />
               </div>
               <div className="my-1 h-7 border-r-2 border-dashed border-border" />
-              <div className="w-8 h-8 rounded-full bg-accent/10 flex items-center justify-center">
-                <Flag className="w-4 h-4 text-accent" strokeWidth={2.5} />
+              <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
+                <Flag className="w-4 h-4 text-primary" strokeWidth={2.5} />
               </div>
             </div>
             <div className="flex-1 min-w-0 flex flex-col justify-between py-0.5">

@@ -12,8 +12,8 @@ import {
 import { Button } from "@/components/ui/button";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
-import logo from "@/assets/campuslink-logo.png";
 import { useLang } from "@/contexts/LanguageContext";
+import logo from "@/assets/campuslink-logo.svg";
 
 interface NotificationBooking {
   id: string;
@@ -133,7 +133,7 @@ const AppHeader = ({ title, subtitle }: AppHeaderProps) => {
           className="flex items-center tap-scale"
           aria-label="CampusLink"
         >
-          <img src={logo} alt="CampusLink" className="h-20 w-auto object-contain -my-2" />
+          <img src={logo} alt="CampusLink" className="h-24 w-auto object-contain -my-3" />
         </button>
 
         {/* Right cluster */}
