@@ -27,12 +27,12 @@ interface RideCardProps {
 
 // Deterministic gradient per driver name
 const gradients = [
-  "from-violet-500 to-fuchsia-500",
-  "from-blue-500 to-cyan-500",
-  "from-pink-500 to-rose-500",
-  "from-amber-500 to-orange-500",
-  "from-emerald-500 to-teal-500",
-  "from-indigo-500 to-purple-500",
+  "from-emerald-600 to-green-500",
+  "from-lime-600 to-emerald-500",
+  "from-green-700 to-teal-500",
+  "from-teal-600 to-emerald-400",
+  "from-emerald-500 to-green-400",
+  "from-green-600 to-lime-500",
 ];
 
 const RideCard = ({ ride, index, driverAvatarUrl }: RideCardProps) => {
