@@ -24,8 +24,8 @@ const Index = () => {
   const activeCount = sorted.filter((r) => getDisplayStatus(r) === "active").length;
 
   return (
-    <div className="min-h-screen bg-background pb-20">
-      <AppHeader title="Available Rides" />
+    <div className="min-h-screen pb-28">
+      <AppHeader title="CampusLink" />
       <main className="max-w-lg mx-auto px-4 py-4 space-y-3">
         {isLoading ? (
           <div className="flex justify-center py-12">
@@ -33,17 +33,23 @@ const Index = () => {
           </div>
         ) : sorted.length > 0 ? (
           <>
-            <p className="text-sm text-muted-foreground">
-              {activeCount} active ride{activeCount !== 1 ? "s" : ""} heading to campus
-            </p>
+            <div className="flex items-center justify-between mb-1 animate-fade-in">
+              <h2 className="font-display text-2xl font-bold leading-tight">
+                <span className="text-gradient-primary">{activeCount}</span>{" "}
+                <span className="text-foreground">נסיעות פעילות</span>
+              </h2>
+              <span className="text-2xl animate-float">🚗</span>
+            </div>
+            <p className="text-xs text-muted-foreground mb-3">בדרך לקמפוס · עדכון בזמן אמת</p>
             {sorted.map((ride, i) => (
               <RideCard key={ride.id} ride={ride} index={i} />
             ))}
           </>
         ) : (
-          <div className="text-center py-16 text-muted-foreground">
-            <p className="text-sm">No upcoming rides yet.</p>
-            <p className="text-xs mt-1">Be the first to post one!</p>
+          <div className="text-center py-20 animate-fade-in">
+            <div className="text-6xl mb-4 animate-float">🛣️</div>
+            <p className="font-display text-xl font-bold text-foreground">אין נסיעות עדיין</p>
+            <p className="text-sm text-muted-foreground mt-2">היי הראשון/ה לפרסם נסיעה לקמפוס ✨</p>
           </div>
         )}
       </main>
