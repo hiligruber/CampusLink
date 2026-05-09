@@ -94,7 +94,7 @@ const PostRide = () => {
             </div>
             <div className="space-y-2">
               <Label htmlFor="destination" className="flex items-center gap-1.5 text-sm font-medium">
-                <MapPin className="w-3.5 h-3.5 text-accent" /> {t("destination")}
+                <MapPin className="w-3.5 h-3.5 text-primary" /> {t("destination")}
               </Label>
               <PlacesAutocomplete id="destination" placeholder="" value={destination} onChange={setDestination} />
             </div>
