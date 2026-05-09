@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Clock, Users, Map, CalendarPlus, Ban, MoreHorizontal } from "lucide-react";
+import { Clock, Users, Map, CalendarPlus, Ban, MoreHorizontal, MapPin, Flag } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { RideRow, getDisplayStatus, joinRide, cancelRide } from "@/lib/rides-api";
 import { toast } from "sonner";
@@ -110,11 +110,11 @@ const RideCard = ({ ride, index }: RideCardProps) => {
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: index * 0.05, duration: 0.3 }}
-      className={`bg-card rounded-3xl border border-border shadow-card overflow-hidden ${
+      className={`bg-card rounded-2xl border border-border shadow-card overflow-hidden hover:shadow-pop/40 transition-shadow ${
         isInactive ? "opacity-60" : ""
       }`}
     >
-      {/* Author header — social style */}
+      {/* Author header */}
       <div className="flex items-center gap-3 px-4 pt-4 pb-3">
         <div className="avatar-ring">
           <div className={`w-11 h-11 rounded-full bg-gradient-to-br ${grad} flex items-center justify-center text-white font-bold text-base`}>
@@ -138,16 +138,29 @@ const RideCard = ({ ride, index }: RideCardProps) => {
         </div>
       </div>
 
-      {/* Route — square bullet style */}
+      {/* Origin → Destination flow */}
       <div className="px-4 pb-3">
-        <div className="bg-secondary/50 rounded-2xl p-4 space-y-3">
-          <div className="flex items-center gap-3">
-            <div className="w-2.5 h-2.5 rounded-sm bg-primary shrink-0" />
-            <p className="text-sm font-bold text-foreground truncate">{ride.origin}</p>
-          </div>
-          <div className="flex items-center gap-3">
-            <div className="w-2.5 h-2.5 rounded-sm bg-accent shrink-0" />
-            <p className="text-sm font-bold text-foreground truncate">{ride.destination}</p>
+        <div className="bg-secondary/40 rounded-xl p-4">
+          <div className="flex items-start gap-3">
+            <div className="flex flex-col items-center pt-1">
+              <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
+                <MapPin className="w-4 h-4 text-primary" strokeWidth={2.5} />
+              </div>
+              <div className="my-1 h-7 border-r-2 border-dashed border-border" />
+              <div className="w-8 h-8 rounded-full bg-accent/10 flex items-center justify-center">
+                <Flag className="w-4 h-4 text-accent" strokeWidth={2.5} />
+              </div>
+            </div>
+            <div className="flex-1 min-w-0 flex flex-col justify-between py-0.5">
+              <div>
+                <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-bold">נקודת מוצא</p>
+                <p className="text-sm font-bold text-foreground truncate">{ride.origin}</p>
+              </div>
+              <div className="mt-3">
+                <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-bold">יעד</p>
+                <p className="text-sm font-bold text-foreground truncate">{ride.destination}</p>
+              </div>
+            </div>
           </div>
         </div>
 
