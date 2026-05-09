@@ -12,8 +12,8 @@ import {
 import { Button } from "@/components/ui/button";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
-import logo from "@/assets/campuslink-logo.png";
 import { useLang } from "@/contexts/LanguageContext";
+import logo from "@/assets/campuslink-logo.svg";
 
 interface NotificationBooking {
   id: string;
