@@ -51,12 +51,15 @@ export type Database = {
       }
       profiles: {
         Row: {
+          avatar_url: string | null
           created_at: string
           email: string
           full_name: string
+          hobbies: string | null
           id: string
           institution: string | null
           institution_id: string | null
+          music_preference: string | null
           rating: number
           rating_count: number
           rejection_reason: string | null
@@ -68,12 +71,15 @@ export type Database = {
           verified_at: string | null
         }
         Insert: {
+          avatar_url?: string | null
           created_at?: string
           email?: string
           full_name?: string
+          hobbies?: string | null
           id?: string
           institution?: string | null
           institution_id?: string | null
+          music_preference?: string | null
           rating?: number
           rating_count?: number
           rejection_reason?: string | null
@@ -85,12 +91,15 @@ export type Database = {
           verified_at?: string | null
         }
         Update: {
+          avatar_url?: string | null
           created_at?: string
           email?: string
           full_name?: string
+          hobbies?: string | null
           id?: string
           institution?: string | null
           institution_id?: string | null
+          music_preference?: string | null
           rating?: number
           rating_count?: number
           rejection_reason?: string | null
