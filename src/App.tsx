@@ -19,10 +19,10 @@ const queryClient = new QueryClient();
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { user, loading } = useAuth();
-  const { isVerified, loading: vLoading } = useVerificationStatus();
+  const { isVerified, isAdmin, loading: vLoading } = useVerificationStatus();
   if (loading || vLoading) return <div className="min-h-screen bg-background" />;
   if (!user) return <Navigate to="/auth" replace />;
-  if (!isVerified) return <Navigate to="/verify" replace />;
+  if (!isVerified && !isAdmin) return <Navigate to="/verify" replace />;
   return <>{children}</>;
 };
 
