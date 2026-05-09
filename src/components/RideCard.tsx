@@ -7,6 +7,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "@/contexts/AuthContext";
 import { useQueryClient } from "@tanstack/react-query";
 import RouteMap from "@/components/RouteMap";
+import { useLang } from "@/contexts/LanguageContext";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -36,11 +37,13 @@ const gradients = [
 const RideCard = ({ ride, index }: RideCardProps) => {
   const { user } = useAuth();
   const queryClient = useQueryClient();
+  const { t, lang } = useLang();
   const [showMap, setShowMap] = useState(false);
   const [confirmCancel, setConfirmCancel] = useState(false);
   const departureDate = new Date(ride.departure_time);
-  const timeStr = departureDate.toLocaleTimeString("en-IL", { hour: "2-digit", minute: "2-digit" });
-  const dateStr = departureDate.toLocaleDateString("he-IL", { weekday: "short", day: "numeric", month: "short" });
+  const locale = lang === "EN" ? "en-US" : "he-IL";
+  const timeStr = departureDate.toLocaleTimeString(locale, { hour: "2-digit", minute: "2-digit" });
+  const dateStr = departureDate.toLocaleDateString(locale, { weekday: "short", day: "numeric", month: "short" });
 
   const isOwnRide = user?.id === ride.driver_id;
   const display = getDisplayStatus(ride);
@@ -53,11 +56,11 @@ const RideCard = ({ ride, index }: RideCardProps) => {
   const postedAgo = (() => {
     const created = new Date((ride as any).created_at || ride.departure_time).getTime();
     const m = Math.floor((Date.now() - created) / 60000);
-    if (m < 1) return "עכשיו";
-    if (m < 60) return `${m} ד׳`;
+    if (m < 1) return t("now");
+    if (m < 60) return `${m} ${t("min")}`;
     const h = Math.floor(m / 60);
-    if (h < 24) return `${h} ש׳`;
-    return `${Math.floor(h / 24)} י׳`;
+    if (h < 24) return `${h} ${t("hr")}`;
+    return `${Math.floor(h / 24)} ${t("day")}`;
   })();
 
   const handleAddToCalendar = () => {
@@ -98,11 +101,11 @@ const RideCard = ({ ride, index }: RideCardProps) => {
 
   const statusBadge =
     display === "cancelled" ? (
-      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-destructive/10 text-destructive">בוטלה</span>
+      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-destructive/10 text-destructive">{t("cancelled")}</span>
     ) : display === "completed" ? (
-      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-muted text-muted-foreground">עברה</span>
+      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-muted text-muted-foreground">{t("passed")}</span>
     ) : isFull ? (
-      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-warning/15 text-warning">מלאה</span>
+      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-warning/15 text-warning">{t("full")}</span>
     ) : null;
 
   return (
@@ -125,10 +128,10 @@ const RideCard = ({ ride, index }: RideCardProps) => {
           <div className="flex items-center gap-1.5">
             <p className="font-bold text-sm truncate">{driverName}</p>
             {isOwnRide && (
-              <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-primary/10 text-primary uppercase tracking-wide">את/ה</span>
+              <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-primary/10 text-primary uppercase tracking-wide">{t("you")}</span>
             )}
           </div>
-          <p className="text-[11px] text-muted-foreground">פרסם/ה נסיעה · {postedAgo}</p>
+          <p className="text-[11px] text-muted-foreground">{t("posted_a_ride")} · {postedAgo}</p>
         </div>
         <div className="flex items-center gap-1.5">
           {statusBadge}
@@ -153,11 +156,11 @@ const RideCard = ({ ride, index }: RideCardProps) => {
             </div>
             <div className="flex-1 min-w-0 flex flex-col justify-between py-0.5">
               <div>
-                <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-bold">נקודת מוצא</p>
+                <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-bold">{t("origin")}</p>
                 <p className="text-sm font-bold text-foreground truncate">{ride.origin}</p>
               </div>
               <div className="mt-3">
-                <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-bold">יעד</p>
+                <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-bold">{t("destination")}</p>
                 <p className="text-sm font-bold text-foreground truncate">{ride.destination}</p>
               </div>
             </div>
@@ -172,7 +175,7 @@ const RideCard = ({ ride, index }: RideCardProps) => {
           </span>
           <span className="inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-full bg-secondary text-secondary-foreground">
             <Users className="w-3 h-3" />
-            {ride.available_seats}/{ride.total_seats} מקומות
+            {ride.available_seats}/{ride.total_seats} {t("seats")}
           </span>
         </div>
 
@@ -190,7 +193,7 @@ const RideCard = ({ ride, index }: RideCardProps) => {
           onClick={() => setShowMap(!showMap)}
         >
           <Map className="w-4 h-4" />
-          מפה
+          {t("map")}
         </Button>
         {!isInactive && (
           <Button
@@ -200,7 +203,7 @@ const RideCard = ({ ride, index }: RideCardProps) => {
             onClick={handleAddToCalendar}
           >
             <CalendarPlus className="w-4 h-4" />
-            יומן
+            {t("calendar")}
           </Button>
         )}
         {isOwnRide ? (
@@ -212,7 +215,7 @@ const RideCard = ({ ride, index }: RideCardProps) => {
               onClick={() => setConfirmCancel(true)}
             >
               <Ban className="w-4 h-4" />
-              ביטול
+              {t("cancel")}
             </Button>
           )
         ) : (
@@ -222,7 +225,7 @@ const RideCard = ({ ride, index }: RideCardProps) => {
             disabled={isFull || isInactive}
             className="flex-[2] rounded-xl text-xs font-bold h-9 shadow-pop"
           >
-            {isInactive ? "סגור" : isFull ? "מלאה" : "בקשת הצטרפות"}
+            {isInactive ? t("closed") : isFull ? t("full") : t("request_join")}
           </Button>
         )}
       </div>
@@ -244,17 +247,17 @@ const RideCard = ({ ride, index }: RideCardProps) => {
       </AnimatePresence>
 
       <AlertDialog open={confirmCancel} onOpenChange={setConfirmCancel}>
-        <AlertDialogContent dir="rtl" className="rounded-3xl">
+        <AlertDialogContent className="rounded-3xl">
           <AlertDialogHeader>
-            <AlertDialogTitle>לבטל את הנסיעה?</AlertDialogTitle>
+            <AlertDialogTitle>{t("cancel_ride_q")}</AlertDialogTitle>
             <AlertDialogDescription>
-              הנסיעה תסומן כמבוטלת ולא תופיע יותר כפעילה.
+              {t("cancel_ride_desc")}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel className="rounded-xl">חזרה</AlertDialogCancel>
+            <AlertDialogCancel className="rounded-xl">{t("back")}</AlertDialogCancel>
             <AlertDialogAction onClick={handleCancel} className="rounded-xl bg-destructive hover:bg-destructive/90">
-              בטל נסיעה
+              {t("cancel_ride")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

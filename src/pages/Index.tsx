@@ -4,8 +4,10 @@ import RideCard from "@/components/RideCard";
 import AppHeader from "@/components/AppHeader";
 import BottomNav from "@/components/BottomNav";
 import { Loader2 } from "lucide-react";
+import { useLang } from "@/contexts/LanguageContext";
 
 const Index = () => {
+  const { t } = useLang();
   const { data: rides, isLoading } = useQuery({
     queryKey: ["rides"],
     queryFn: fetchRides,
@@ -24,7 +26,7 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-background pb-24">
-      <AppHeader title="Campus" subtitle={`${activeCount} נסיעות פעילות`} />
+      <AppHeader subtitle={`${activeCount} ${t("active_rides")}`} />
 
       <main className="max-w-2xl mx-auto px-4 py-4 space-y-4">
         {isLoading ? (
@@ -35,8 +37,8 @@ const Index = () => {
           sorted.map((ride, i) => <RideCard key={ride.id} ride={ride} index={i} />)
         ) : (
           <div className="text-center py-24">
-            <p className="text-lg font-bold mb-1">עוד אין נסיעות</p>
-            <p className="text-sm text-muted-foreground">היי הראשון/ה לפרסם נסיעה לקמפוס</p>
+            <p className="text-lg font-bold mb-1">{t("no_rides_title")}</p>
+            <p className="text-sm text-muted-foreground">{t("no_rides_desc")}</p>
           </div>
         )}
       </main>

@@ -13,6 +13,7 @@ import { Button } from "@/components/ui/button";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
 import logo from "@/assets/campuslink-logo.png";
+import { useLang } from "@/contexts/LanguageContext";
 
 interface NotificationBooking {
   id: string;
@@ -35,15 +36,7 @@ const AppHeader = ({ title, subtitle }: AppHeaderProps) => {
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
-  const [lang, setLang] = useState<"EN" | "HE">(() =>
-    (localStorage.getItem("cl_lang") as "EN" | "HE") || "HE"
-  );
-
-  const toggleLang = () => {
-    const next = lang === "EN" ? "HE" : "EN";
-    setLang(next);
-    localStorage.setItem("cl_lang", next);
-  };
+  const { lang, toggle, t } = useLang();
 
   useEffect(() => {
     if (!user) return;
@@ -124,33 +117,30 @@ const AppHeader = ({ title, subtitle }: AppHeaderProps) => {
   const count = notifications.length;
   const timeAgo = (iso: string) => {
     const m = Math.floor((Date.now() - new Date(iso).getTime()) / 60000);
-    if (m < 1) return "עכשיו";
-    if (m < 60) return `${m} ד׳`;
+    if (m < 1) return t("now");
+    if (m < 60) return `${m} ${t("min")}`;
     const h = Math.floor(m / 60);
-    if (h < 24) return `${h} ש׳`;
-    return `${Math.floor(h / 24)} י׳`;
+    if (h < 24) return `${h} ${t("hr")}`;
+    return `${Math.floor(h / 24)} ${t("day")}`;
   };
 
   return (
     <header className="sticky top-0 z-40 bg-background/85 backdrop-blur-xl border-b border-border">
       <div className="max-w-2xl mx-auto px-4 h-16 flex items-center justify-between gap-3">
-        {/* Logo + Brand */}
+        {/* Logo only */}
         <button
           onClick={() => navigate("/")}
-          className="flex items-center gap-2 tap-scale"
+          className="flex items-center tap-scale"
           aria-label="CampusLink"
         >
-          <img src={logo} alt="" className="w-8 h-8 object-contain" />
-          <span className="text-lg font-extrabold tracking-tight text-primary">
-            CampusLink
-          </span>
+          <img src={logo} alt="CampusLink" className="w-9 h-9 object-contain" />
         </button>
 
         {/* Right cluster */}
         <div className="flex items-center gap-2">
           {/* Language toggle */}
           <button
-            onClick={toggleLang}
+            onClick={toggle}
             className="h-9 px-2.5 rounded-full border border-border bg-card hover:bg-secondary transition-colors text-[11px] font-bold tracking-wide flex items-center gap-1"
             aria-label="Toggle language"
           >
@@ -188,15 +178,15 @@ const AppHeader = ({ title, subtitle }: AppHeaderProps) => {
                 className="w-[340px] p-0 rounded-2xl border-border shadow-card overflow-hidden"
               >
                 <div className="px-4 py-3 border-b border-border flex items-center justify-between bg-secondary/40">
-                  <h3 className="font-bold text-base">התראות</h3>
-                  {count > 0 && <span className="text-xs text-muted-foreground">{count} ממתינות</span>}
+                  <h3 className="font-bold text-base">{t("notifications")}</h3>
+                  {count > 0 && <span className="text-xs text-muted-foreground">{count} {t("notif_pending")}</span>}
                 </div>
                 <div className="max-h-[400px] overflow-y-auto">
                   {count === 0 ? (
                     <div className="px-4 py-10 text-center">
                       <InboxIcon className="w-8 h-8 mx-auto text-muted-foreground/40 mb-2" strokeWidth={1.5} />
-                      <p className="text-sm font-semibold">הכל שקט כאן</p>
-                      <p className="text-xs text-muted-foreground mt-1">אין בקשות חדשות כרגע</p>
+                      <p className="text-sm font-semibold">{t("notif_empty_title")}</p>
+                      <p className="text-xs text-muted-foreground mt-1">{t("notif_empty_desc")}</p>
                     </div>
                   ) : (
                     notifications.map((n, i) => (
@@ -207,7 +197,7 @@ const AppHeader = ({ title, subtitle }: AppHeaderProps) => {
                         <div className="flex items-baseline justify-between gap-2 mb-1">
                           <p className="text-sm">
                             <span className="font-bold">{n.passenger_name}</span>
-                            <span className="text-muted-foreground"> ביקש/ה להצטרף</span>
+                            <span className="text-muted-foreground">{t("notif_requested")}</span>
                           </p>
                           <span className="text-[10px] text-muted-foreground whitespace-nowrap">{timeAgo(n.created_at)}</span>
                         </div>
@@ -218,10 +208,10 @@ const AppHeader = ({ title, subtitle }: AppHeaderProps) => {
                         )}
                         <div className="flex gap-2">
                           <Button size="sm" className="flex-1 h-8 gap-1 text-xs rounded-lg" onClick={() => respond(n.id, "accepted")}>
-                            <Check className="w-3.5 h-3.5" /> אישור
+                            <Check className="w-3.5 h-3.5" /> {t("accept")}
                           </Button>
                           <Button size="sm" variant="outline" className="flex-1 h-8 gap-1 text-xs rounded-lg" onClick={() => respond(n.id, "rejected")}>
-                            <X className="w-3.5 h-3.5" /> דחייה
+                            <X className="w-3.5 h-3.5" /> {t("reject")}
                           </Button>
                         </div>
                       </div>
@@ -235,7 +225,7 @@ const AppHeader = ({ title, subtitle }: AppHeaderProps) => {
                   }}
                   className="w-full px-4 py-3 border-t border-border text-sm font-semibold text-primary hover:bg-secondary transition-colors"
                 >
-                  צפייה בכל הבקשות
+                  {t("view_all_requests")}
                 </button>
               </DropdownMenuContent>
             </DropdownMenu>
