@@ -127,23 +127,20 @@ const AppHeader = ({ title, subtitle }: AppHeaderProps) => {
   return (
     <header className="sticky top-0 z-40 bg-background/85 backdrop-blur-xl border-b border-border">
       <div className="max-w-2xl mx-auto px-4 h-16 flex items-center justify-between gap-3">
-        {/* Logo + Brand */}
+        {/* Logo only */}
         <button
           onClick={() => navigate("/")}
-          className="flex items-center gap-2 tap-scale"
+          className="flex items-center tap-scale"
           aria-label="CampusLink"
         >
-          <img src={logo} alt="" className="w-8 h-8 object-contain" />
-          <span className="text-lg font-extrabold tracking-tight text-primary">
-            CampusLink
-          </span>
+          <img src={logo} alt="CampusLink" className="w-9 h-9 object-contain" />
         </button>
 
         {/* Right cluster */}
         <div className="flex items-center gap-2">
           {/* Language toggle */}
           <button
-            onClick={toggleLang}
+            onClick={toggle}
             className="h-9 px-2.5 rounded-full border border-border bg-card hover:bg-secondary transition-colors text-[11px] font-bold tracking-wide flex items-center gap-1"
             aria-label="Toggle language"
           >
