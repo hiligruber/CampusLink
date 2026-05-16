@@ -49,6 +49,9 @@ const Bookings = () => {
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const [acting, setActing] = useState<string | null>(null);
+  const [searchParams] = useSearchParams();
+  const trackRideId = searchParams.get("track");
+  const [expandedTracker, setExpandedTracker] = useState<string | null>(trackRideId);
 
   // Realtime: refresh on any booking change
   useEffect(() => {
