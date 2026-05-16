@@ -1,4 +1,4 @@
-import { Bell, Check, X, Inbox as InboxIcon, User as UserIcon } from "lucide-react";
+import { Bell, Check, X, Inbox as InboxIcon, User as UserIcon, MapPin, CheckCheck } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -15,15 +15,16 @@ import { toast } from "sonner";
 import { useLang } from "@/contexts/LanguageContext";
 import logo from "@/assets/campuslink-logo.svg";
 
-interface NotificationBooking {
+interface NotificationRow {
   id: string;
-  status: string;
+  user_id: string;
+  type: string;
+  title: string;
+  body: string | null;
+  ride_id: string | null;
+  booking_id: string | null;
+  read: boolean;
   created_at: string;
-  passenger_id: string;
-  ride_id: string;
-  passenger_name?: string;
-  origin?: string;
-  destination?: string;
 }
 
 interface AppHeaderProps {
@@ -31,20 +32,32 @@ interface AppHeaderProps {
   subtitle?: string;
 }
 
-const AppHeader = ({ title, subtitle }: AppHeaderProps) => {
+const typeIcon = (type: string) => {
+  if (type === "booking_received") return "🙋";
+  if (type === "booking_accepted") return "🎉";
+  if (type === "booking_rejected") return "❌";
+  if (type === "booking_requested") return "📨";
+  if (type === "ride_reminder") return "⏰";
+  return "🔔";
+};
+
+const AppHeader = ({ subtitle }: AppHeaderProps) => {
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
   const { lang, toggle, t } = useLang();
 
+  // Realtime: refresh when notifications change for this user
   useEffect(() => {
     if (!user) return;
     const channel = supabase
-      .channel("header-notifications")
-      .on("postgres_changes", { event: "*", schema: "public", table: "bookings" }, () => {
-        queryClient.invalidateQueries({ queryKey: ["header-notifications"] });
-      })
+      .channel(`notifications-${user.id}`)
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "notifications", filter: `user_id=eq.${user.id}` },
+        () => queryClient.invalidateQueries({ queryKey: ["notifications", user.id] })
+      )
       .subscribe();
     return () => {
       supabase.removeChannel(channel);
@@ -66,47 +79,39 @@ const AppHeader = ({ title, subtitle }: AppHeaderProps) => {
   });
 
   const { data: notifications = [] } = useQuery({
-    queryKey: ["header-notifications", user?.id],
-    queryFn: async (): Promise<NotificationBooking[]> => {
+    queryKey: ["notifications", user?.id],
+    queryFn: async (): Promise<NotificationRow[]> => {
       if (!user) return [];
-      const { data: rides } = await supabase
-        .from("rides")
-        .select("id, origin, destination")
-        .eq("driver_id", user.id);
-      const rideIds = (rides ?? []).map((r) => r.id);
-      if (rideIds.length === 0) return [];
-      const { data: bookings } = await supabase
-        .from("bookings")
-        .select("id, status, created_at, passenger_id, ride_id")
-        .in("ride_id", rideIds)
-        .eq("status", "pending")
+      const { data, error } = await supabase
+        .from("notifications")
+        .select("*")
+        .eq("user_id", user.id)
         .order("created_at", { ascending: false })
-        .limit(10);
-      if (!bookings || bookings.length === 0) return [];
-      const passengerIds = [...new Set(bookings.map((b) => b.passenger_id))];
-      const { data: profiles } = await supabase
-        .from("profiles")
-        .select("user_id, full_name")
-        .in("user_id", passengerIds);
-      return bookings.map((b) => {
-        const ride = rides?.find((r) => r.id === b.ride_id);
-        const profile = profiles?.find((p) => p.user_id === b.passenger_id);
-        return {
-          ...b,
-          passenger_name: profile?.full_name || "סטודנט",
-          origin: ride?.origin,
-          destination: ride?.destination,
-        };
-      });
+        .limit(20);
+      if (error) throw error;
+      return (data ?? []) as NotificationRow[];
     },
     enabled: !!user,
   });
 
-  const respond = async (bookingId: string, action: "accepted" | "rejected") => {
+  const unreadCount = notifications.filter((n) => !n.read).length;
+
+  const markAllRead = async () => {
+    if (!user || unreadCount === 0) return;
+    await supabase.from("notifications").update({ read: true }).eq("user_id", user.id).eq("read", false);
+    queryClient.invalidateQueries({ queryKey: ["notifications", user.id] });
+  };
+
+  const markRead = async (id: string) => {
+    await supabase.from("notifications").update({ read: true }).eq("id", id);
+    queryClient.invalidateQueries({ queryKey: ["notifications", user?.id] });
+  };
+
+  const respond = async (bookingId: string, action: "accepted" | "rejected", notifId: string) => {
     try {
       const { error } = await supabase.from("bookings").update({ status: action }).eq("id", bookingId);
       if (error) throw error;
-      queryClient.invalidateQueries({ queryKey: ["header-notifications"] });
+      await markRead(notifId);
       queryClient.invalidateQueries({ queryKey: ["bookings"] });
       toast.success(action === "accepted" ? "הבקשה אושרה" : "הבקשה נדחתה");
     } catch (e: any) {
@@ -114,7 +119,6 @@ const AppHeader = ({ title, subtitle }: AppHeaderProps) => {
     }
   };
 
-  const count = notifications.length;
   const timeAgo = (iso: string) => {
     const m = Math.floor((Date.now() - new Date(iso).getTime()) / 60000);
     if (m < 1) return t("now");
@@ -124,10 +128,19 @@ const AppHeader = ({ title, subtitle }: AppHeaderProps) => {
     return `${Math.floor(h / 24)} ${t("day")}`;
   };
 
+  const handleNotifClick = (n: NotificationRow) => {
+    if (!n.read) markRead(n.id);
+    setOpen(false);
+    if (n.type === "booking_accepted" && n.ride_id) {
+      navigate(`/bookings?track=${n.ride_id}`);
+    } else if (n.ride_id) {
+      navigate("/bookings");
+    }
+  };
+
   return (
     <header className="sticky top-0 z-40 bg-background/85 backdrop-blur-xl border-b border-border">
       <div className="max-w-2xl mx-auto px-4 h-24 flex items-center justify-between gap-3">
-        {/* Logo only — large */}
         <button
           onClick={() => navigate("/")}
           className="flex items-center tap-scale"
@@ -136,9 +149,7 @@ const AppHeader = ({ title, subtitle }: AppHeaderProps) => {
           <img src={logo} alt="CampusLink" className="h-24 w-auto object-contain -my-3" />
         </button>
 
-        {/* Right cluster */}
         <div className="flex items-center gap-2">
-          {/* Language toggle */}
           <button
             onClick={toggle}
             className="h-9 px-2.5 rounded-full border border-border bg-card hover:bg-secondary transition-colors text-[11px] font-bold tracking-wide flex items-center gap-1"
@@ -149,7 +160,6 @@ const AppHeader = ({ title, subtitle }: AppHeaderProps) => {
             <span className={lang === "HE" ? "text-primary" : "text-muted-foreground"}>עב</span>
           </button>
 
-          {/* Notifications */}
           {user && (
             <DropdownMenu open={open} onOpenChange={setOpen}>
               <DropdownMenuTrigger asChild>
@@ -159,14 +169,14 @@ const AppHeader = ({ title, subtitle }: AppHeaderProps) => {
                 >
                   <Bell className="w-[18px] h-[18px] text-foreground" strokeWidth={2} />
                   <AnimatePresence>
-                    {count > 0 && (
+                    {unreadCount > 0 && (
                       <motion.span
                         initial={{ scale: 0 }}
                         animate={{ scale: 1 }}
                         exit={{ scale: 0 }}
                         className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] px-1 inline-flex items-center justify-center text-[10px] font-bold rounded-full bg-accent text-accent-foreground ring-2 ring-background"
                       >
-                        {count > 9 ? "9+" : count}
+                        {unreadCount > 9 ? "9+" : unreadCount}
                       </motion.span>
                     )}
                   </AnimatePresence>
@@ -175,14 +185,22 @@ const AppHeader = ({ title, subtitle }: AppHeaderProps) => {
               <DropdownMenuContent
                 align="end"
                 sideOffset={10}
-                className="w-[340px] p-0 rounded-2xl border-border shadow-card overflow-hidden"
+                className="w-[360px] p-0 rounded-2xl border-border shadow-card overflow-hidden"
               >
                 <div className="px-4 py-3 border-b border-border flex items-center justify-between bg-secondary/40">
                   <h3 className="font-bold text-base">{t("notifications")}</h3>
-                  {count > 0 && <span className="text-xs text-muted-foreground">{count} {t("notif_pending")}</span>}
+                  {unreadCount > 0 && (
+                    <button
+                      onClick={markAllRead}
+                      className="text-[11px] font-semibold text-primary hover:underline flex items-center gap-1"
+                    >
+                      <CheckCheck className="w-3.5 h-3.5" />
+                      סמן הכל כנקרא
+                    </button>
+                  )}
                 </div>
-                <div className="max-h-[400px] overflow-y-auto">
-                  {count === 0 ? (
+                <div className="max-h-[420px] overflow-y-auto">
+                  {notifications.length === 0 ? (
                     <div className="px-4 py-10 text-center">
                       <InboxIcon className="w-8 h-8 mx-auto text-muted-foreground/40 mb-2" strokeWidth={1.5} />
                       <p className="text-sm font-semibold">{t("notif_empty_title")}</p>
@@ -192,28 +210,58 @@ const AppHeader = ({ title, subtitle }: AppHeaderProps) => {
                     notifications.map((n, i) => (
                       <div
                         key={n.id}
-                        className={`px-4 py-3 hover:bg-secondary/40 transition-colors ${i !== notifications.length - 1 ? "border-b border-border" : ""}`}
+                        className={`px-4 py-3 transition-colors ${!n.read ? "bg-primary/[0.04]" : ""} ${i !== notifications.length - 1 ? "border-b border-border" : ""}`}
                       >
-                        <div className="flex items-baseline justify-between gap-2 mb-1">
-                          <p className="text-sm">
-                            <span className="font-bold">{n.passenger_name}</span>
-                            <span className="text-muted-foreground">{t("notif_requested")}</span>
-                          </p>
-                          <span className="text-[10px] text-muted-foreground whitespace-nowrap">{timeAgo(n.created_at)}</span>
+                        <div
+                          className="flex items-start gap-3 cursor-pointer"
+                          onClick={() => handleNotifClick(n)}
+                        >
+                          <div className="text-xl leading-none mt-0.5">{typeIcon(n.type)}</div>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-baseline justify-between gap-2 mb-0.5">
+                              <p className="text-sm font-bold truncate">{n.title}</p>
+                              <span className="text-[10px] text-muted-foreground whitespace-nowrap">
+                                {timeAgo(n.created_at)}
+                              </span>
+                            </div>
+                            {n.body && (
+                              <p className="text-xs text-muted-foreground leading-snug">{n.body}</p>
+                            )}
+                            {n.type === "booking_accepted" && n.ride_id && (
+                              <div className="mt-2 inline-flex items-center gap-1 text-[11px] font-semibold text-primary">
+                                <MapPin className="w-3 h-3" /> עקוב אחר הנהג
+                              </div>
+                            )}
+                          </div>
+                          {!n.read && (
+                            <span className="w-2 h-2 rounded-full bg-accent mt-2 shrink-0" />
+                          )}
                         </div>
-                        {n.origin && (
-                          <p className="text-xs text-muted-foreground mb-2 truncate">
-                            {n.origin} ← {n.destination}
-                          </p>
+                        {n.type === "booking_received" && n.booking_id && (
+                          <div className="flex gap-2 pt-2 mt-2 border-t border-border/60">
+                            <Button
+                              size="sm"
+                              className="flex-1 h-8 gap-1 text-xs rounded-lg"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                respond(n.booking_id!, "accepted", n.id);
+                              }}
+                            >
+                              <Check className="w-3.5 h-3.5" /> {t("accept")}
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="flex-1 h-8 gap-1 text-xs rounded-lg"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                respond(n.booking_id!, "rejected", n.id);
+                              }}
+                            >
+                              <X className="w-3.5 h-3.5" /> {t("reject")}
+                            </Button>
+                          </div>
                         )}
-                        <div className="flex gap-2">
-                          <Button size="sm" className="flex-1 h-8 gap-1 text-xs rounded-lg" onClick={() => respond(n.id, "accepted")}>
-                            <Check className="w-3.5 h-3.5" /> {t("accept")}
-                          </Button>
-                          <Button size="sm" variant="outline" className="flex-1 h-8 gap-1 text-xs rounded-lg" onClick={() => respond(n.id, "rejected")}>
-                            <X className="w-3.5 h-3.5" /> {t("reject")}
-                          </Button>
-                        </div>
                       </div>
                     ))
                   )}
@@ -231,7 +279,6 @@ const AppHeader = ({ title, subtitle }: AppHeaderProps) => {
             </DropdownMenu>
           )}
 
-          {/* Profile picture */}
           {user && (
             <button
               onClick={() => navigate("/profile")}

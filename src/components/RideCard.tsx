@@ -7,6 +7,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "@/contexts/AuthContext";
 import { useQueryClient } from "@tanstack/react-query";
 import RouteMap from "@/components/RouteMap";
+import DriverLocationSharer from "@/components/DriverLocationSharer";
 import { useLang } from "@/contexts/LanguageContext";
 import {
   AlertDialog,
@@ -213,15 +214,18 @@ const RideCard = ({ ride, index, driverAvatarUrl }: RideCardProps) => {
         )}
         {isOwnRide ? (
           display === "active" && (
-            <Button
-              size="sm"
-              variant="ghost"
-              className="flex-1 gap-1.5 rounded-xl text-xs font-semibold h-9 text-destructive hover:bg-destructive/10 hover:text-destructive"
-              onClick={() => setConfirmCancel(true)}
-            >
-              <Ban className="w-4 h-4" />
-              {t("cancel")}
-            </Button>
+            <>
+              <DriverLocationSharer rideId={ride.id} driverId={ride.driver_id} />
+              <Button
+                size="sm"
+                variant="ghost"
+                className="gap-1.5 rounded-xl text-xs font-semibold h-9 text-destructive hover:bg-destructive/10 hover:text-destructive"
+                onClick={() => setConfirmCancel(true)}
+              >
+                <Ban className="w-4 h-4" />
+                {t("cancel")}
+              </Button>
+            </>
           )
         ) : (
           <Button

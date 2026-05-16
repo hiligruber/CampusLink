@@ -4,11 +4,13 @@ import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import AppHeader from "@/components/AppHeader";
 import BottomNav from "@/components/BottomNav";
+import DriverLiveTracker from "@/components/DriverLiveTracker";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Loader2, Check, X, Clock, MapPin, Users, Mail } from "lucide-react";
+import { Loader2, Check, X, Clock, MapPin, Users, Mail, Navigation } from "lucide-react";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
+import { useSearchParams } from "react-router-dom";
 
 interface BookingWithDetails {
   id: string;
@@ -47,6 +49,9 @@ const Bookings = () => {
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const [acting, setActing] = useState<string | null>(null);
+  const [searchParams] = useSearchParams();
+  const trackRideId = searchParams.get("track");
+  const [expandedTracker, setExpandedTracker] = useState<string | null>(trackRideId);
 
   // Realtime: refresh on any booking change
   useEffect(() => {
@@ -169,7 +174,7 @@ const Bookings = () => {
         transition={{ duration: 0.3 }}
         className="max-w-lg mx-auto px-4 py-4"
       >
-        <Tabs defaultValue="incoming" className="w-full">
+        <Tabs defaultValue={trackRideId ? "outgoing" : "incoming"} className="w-full">
           <TabsList className="grid grid-cols-2 w-full mb-4">
             <TabsTrigger value="incoming">
               בקשות שקיבלתי
@@ -256,17 +261,37 @@ const Bookings = () => {
                 עוד לא ביקשת להצטרף לנסיעות.
               </p>
             ) : (
-              outgoing.map((b) => (
-                <div key={b.id} className="bg-card border border-border rounded-2xl p-4 shadow-sm space-y-2">
-                  <div className="flex items-center justify-between">
-                    <p className="text-sm font-semibold">{b.ride?.driver_name || "נהג"}</p>
-                    <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${statusClass(b.status)}`}>
-                      {statusLabel(b.status)}
-                    </span>
+              outgoing.map((b) => {
+                const isAccepted = b.status === "accepted";
+                const isExpanded = expandedTracker === b.ride_id;
+                return (
+                  <div key={b.id} className="bg-card border border-border rounded-2xl p-4 shadow-sm space-y-3">
+                    <div className="flex items-center justify-between">
+                      <p className="text-sm font-semibold">{b.ride?.driver_name || "נהג"}</p>
+                      <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${statusClass(b.status)}`}>
+                        {statusLabel(b.status)}
+                      </span>
+                    </div>
+                    {renderRideInfo(b.ride)}
+                    {isAccepted && b.ride && (
+                      <>
+                        <Button
+                          size="sm"
+                          variant={isExpanded ? "secondary" : "default"}
+                          className="w-full gap-1.5 rounded-xl text-xs font-bold h-9"
+                          onClick={() => setExpandedTracker(isExpanded ? null : b.ride_id)}
+                        >
+                          <Navigation className="w-3.5 h-3.5" />
+                          {isExpanded ? "הסתר מעקב" : "עקוב אחר הנהג בזמן אמת"}
+                        </Button>
+                        {isExpanded && (
+                          <DriverLiveTracker rideId={b.ride_id} destination={b.ride.destination} />
+                        )}
+                      </>
+                    )}
                   </div>
-                  {renderRideInfo(b.ride)}
-                </div>
-              ))
+                );
+              })
             )}
           </TabsContent>
         </Tabs>
