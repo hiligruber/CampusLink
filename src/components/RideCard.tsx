@@ -7,6 +7,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "@/contexts/AuthContext";
 import { useQueryClient } from "@tanstack/react-query";
 import RouteMap from "@/components/RouteMap";
+import DriverLocationSharer from "@/components/DriverLocationSharer";
 import { useLang } from "@/contexts/LanguageContext";
 import {
   AlertDialog,
