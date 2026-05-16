@@ -261,17 +261,37 @@ const Bookings = () => {
                 עוד לא ביקשת להצטרף לנסיעות.
               </p>
             ) : (
-              outgoing.map((b) => (
-                <div key={b.id} className="bg-card border border-border rounded-2xl p-4 shadow-sm space-y-2">
-                  <div className="flex items-center justify-between">
-                    <p className="text-sm font-semibold">{b.ride?.driver_name || "נהג"}</p>
-                    <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${statusClass(b.status)}`}>
-                      {statusLabel(b.status)}
-                    </span>
+              outgoing.map((b) => {
+                const isAccepted = b.status === "accepted";
+                const isExpanded = expandedTracker === b.ride_id;
+                return (
+                  <div key={b.id} className="bg-card border border-border rounded-2xl p-4 shadow-sm space-y-3">
+                    <div className="flex items-center justify-between">
+                      <p className="text-sm font-semibold">{b.ride?.driver_name || "נהג"}</p>
+                      <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${statusClass(b.status)}`}>
+                        {statusLabel(b.status)}
+                      </span>
+                    </div>
+                    {renderRideInfo(b.ride)}
+                    {isAccepted && b.ride && (
+                      <>
+                        <Button
+                          size="sm"
+                          variant={isExpanded ? "secondary" : "default"}
+                          className="w-full gap-1.5 rounded-xl text-xs font-bold h-9"
+                          onClick={() => setExpandedTracker(isExpanded ? null : b.ride_id)}
+                        >
+                          <Navigation className="w-3.5 h-3.5" />
+                          {isExpanded ? "הסתר מעקב" : "עקוב אחר הנהג בזמן אמת"}
+                        </Button>
+                        {isExpanded && (
+                          <DriverLiveTracker rideId={b.ride_id} destination={b.ride.destination} />
+                        )}
+                      </>
+                    )}
                   </div>
-                  {renderRideInfo(b.ride)}
-                </div>
-              ))
+                );
+              })
             )}
           </TabsContent>
         </Tabs>
