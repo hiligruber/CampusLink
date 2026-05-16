@@ -4,11 +4,13 @@ import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import AppHeader from "@/components/AppHeader";
 import BottomNav from "@/components/BottomNav";
+import DriverLiveTracker from "@/components/DriverLiveTracker";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Loader2, Check, X, Clock, MapPin, Users, Mail } from "lucide-react";
+import { Loader2, Check, X, Clock, MapPin, Users, Mail, Navigation } from "lucide-react";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
+import { useSearchParams } from "react-router-dom";
 
 interface BookingWithDetails {
   id: string;
