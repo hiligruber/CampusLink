@@ -174,7 +174,7 @@ const Bookings = () => {
         transition={{ duration: 0.3 }}
         className="max-w-lg mx-auto px-4 py-4"
       >
-        <Tabs defaultValue="incoming" className="w-full">
+        <Tabs defaultValue={trackRideId ? "outgoing" : "incoming"} className="w-full">
           <TabsList className="grid grid-cols-2 w-full mb-4">
             <TabsTrigger value="incoming">
               בקשות שקיבלתי
