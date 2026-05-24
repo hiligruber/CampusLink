@@ -95,7 +95,7 @@ const Bookings = () => {
         passengerIds.length > 0
           ? supabase
               .from("profiles")
-              .select("user_id, full_name, email, avatar_url")
+              .select("user_id, full_name, avatar_url")
               .in("user_id", passengerIds)
           : Promise.resolve({ data: [] as any[] }),
       ]);
