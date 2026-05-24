@@ -345,6 +345,7 @@ const ActiveRides = () => {
                         destination={it.destination}
                         phase={it.phase}
                         pickupLocation={it.pickupLocation}
+                        driverName={it.driverName}
                       />
                     </div>
                   )}
@@ -356,8 +357,10 @@ const ActiveRides = () => {
                         destination={it.destination}
                         phase={it.phase}
                         pickupLocation={it.pickupLocation}
+                        driverName={it.driverName}
                       />
                     </div>
+
                   )}
                 </div>
               </div>
