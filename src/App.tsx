@@ -13,6 +13,7 @@ import SearchRides from "./pages/SearchRides";
 import Profile from "./pages/Profile";
 import EditProfile from "./pages/EditProfile";
 import Bookings from "./pages/Bookings";
+import ActiveRides from "./pages/ActiveRides";
 import Auth from "./pages/Auth";
 import StudentVerification from "./pages/StudentVerification";
 import Admin from "./pages/Admin";
@@ -63,6 +64,7 @@ const App = () => (
                 <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
                 <Route path="/profile/edit" element={<ProtectedRoute><EditProfile /></ProtectedRoute>} />
                 <Route path="/bookings" element={<ProtectedRoute><Bookings /></ProtectedRoute>} />
+                <Route path="/active" element={<ProtectedRoute><ActiveRides /></ProtectedRoute>} />
                 <Route path="/admin" element={<ProtectedRoute><Admin /></ProtectedRoute>} />
                 <Route path="*" element={<NotFound />} />
               </Routes>
