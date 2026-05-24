@@ -236,12 +236,6 @@ const Bookings = () => {
                       )}
                       <div>
                         <p className="text-sm font-semibold">{b.passenger?.full_name || "סטודנט"}</p>
-                        {b.passenger?.email && (
-                          <p className="text-[11px] text-muted-foreground flex items-center gap-1">
-                            <Mail className="w-3 h-3" />
-                            {b.passenger.email}
-                          </p>
-                        )}
                       </div>
                     </div>
                     <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${statusClass(b.status)}`}>
