@@ -7,6 +7,7 @@ interface Props {
   rideId: string;
   destination: string;
   height?: string;
+  phase?: "scheduled" | "en_route" | "in_progress" | "completed";
 }
 
 interface LocationRow {
@@ -20,7 +21,7 @@ interface LocationRow {
 const mapContainerStyle = { width: "100%", borderRadius: "1rem" };
 const defaultCenter = { lat: 32.0853, lng: 34.7818 };
 
-export default function DriverLiveTracker({ rideId, destination, height = "260px" }: Props) {
+export default function DriverLiveTracker({ rideId, destination, height = "260px", phase = "scheduled" }: Props) {
   const [location, setLocation] = useState<LocationRow | null>(null);
   const [eta, setEta] = useState<{ duration: string; distance: string } | null>(null);
   const [directions, setDirections] = useState<google.maps.DirectionsResult | null>(null);
@@ -105,21 +106,44 @@ export default function DriverLiveTracker({ rideId, destination, height = "260px
   }
 
   if (!location) {
+    const headline =
+      phase === "completed" ? "הנסיעה הסתיימה"
+      : phase === "in_progress" ? "הנסיעה בעיצומה"
+      : "הנהג עדיין לא יצא לדרך";
+    const subline =
+      phase === "completed" ? "תודה שנסעת איתנו"
+      : "ברגע שהנהג ילחץ \"בדרך אליך\" המיקום יעודכן כאן בזמן אמת";
     return (
       <div className="bg-secondary/40 rounded-xl p-4 text-center">
         <Navigation className="w-6 h-6 mx-auto text-muted-foreground/50 mb-2" />
-        <p className="text-sm font-semibold">הנהג עדיין לא יצא לדרך</p>
-        <p className="text-xs text-muted-foreground mt-1">
-          ברגע שהנהג ילחץ "התחל נסיעה" המיקום יעודכן כאן בזמן אמת
-        </p>
+        <p className="text-sm font-semibold">{headline}</p>
+        <p className="text-xs text-muted-foreground mt-1">{subline}</p>
       </div>
     );
   }
+
+  const phaseLabel =
+    phase === "en_route" ? "הנהג בדרך אליך"
+    : phase === "in_progress" ? "בנסיעה ליעד"
+    : phase === "completed" ? "הסתיימה"
+    : "ממתין ליציאה";
 
   const updatedSecAgo = Math.floor((Date.now() - new Date(location.updated_at).getTime()) / 1000);
 
   return (
     <div className="space-y-2">
+      <div className="flex items-center gap-2 text-xs font-bold">
+        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-primary/10 text-primary">
+          <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
+          {phaseLabel}
+        </span>
+        {eta && (
+          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-secondary text-secondary-foreground">
+            <Clock className="w-3 h-3" />
+            {eta.duration}
+          </span>
+        )}
+      </div>
       <GoogleMap
         mapContainerStyle={{ ...mapContainerStyle, height }}
         center={{ lat: location.lat, lng: location.lng }}

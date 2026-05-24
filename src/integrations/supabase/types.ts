@@ -178,6 +178,7 @@ export type Database = {
       rides: {
         Row: {
           available_seats: number
+          completed_at: string | null
           created_at: string
           departure_time: string
           destination: string
@@ -186,12 +187,15 @@ export type Database = {
           id: string
           notes: string | null
           origin: string
+          ride_phase: string
+          started_at: string | null
           status: string
           total_seats: number
           updated_at: string
         }
         Insert: {
           available_seats?: number
+          completed_at?: string | null
           created_at?: string
           departure_time: string
           destination?: string
@@ -200,12 +204,15 @@ export type Database = {
           id?: string
           notes?: string | null
           origin: string
+          ride_phase?: string
+          started_at?: string | null
           status?: string
           total_seats?: number
           updated_at?: string
         }
         Update: {
           available_seats?: number
+          completed_at?: string | null
           created_at?: string
           departure_time?: string
           destination?: string
@@ -214,6 +221,8 @@ export type Database = {
           id?: string
           notes?: string | null
           origin?: string
+          ride_phase?: string
+          started_at?: string | null
           status?: string
           total_seats?: number
           updated_at?: string

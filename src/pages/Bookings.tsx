@@ -27,6 +27,7 @@ interface BookingWithDetails {
     driver_name: string;
     available_seats: number;
     total_seats: number;
+    ride_phase?: string;
   } | null;
   passenger: {
     full_name: string;
@@ -285,7 +286,11 @@ const Bookings = () => {
                           {isExpanded ? "הסתר מעקב" : "עקוב אחר הנהג בזמן אמת"}
                         </Button>
                         {isExpanded && (
-                          <DriverLiveTracker rideId={b.ride_id} destination={b.ride.destination} />
+                          <DriverLiveTracker
+                            rideId={b.ride_id}
+                            destination={b.ride.destination}
+                            phase={(b.ride.ride_phase ?? "scheduled") as any}
+                          />
                         )}
                       </>
                     )}

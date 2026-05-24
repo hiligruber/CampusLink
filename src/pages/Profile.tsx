@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useVerificationStatus } from "@/hooks/use-verification";
 import AppHeader from "@/components/AppHeader";
 import BottomNav from "@/components/BottomNav";
+import RideHistory from "@/components/RideHistory";
 import { Button } from "@/components/ui/button";
 import { Star, Mail, Building2, LogOut, Calendar, Loader2, ShieldCheck, UserCog, Music, Heart } from "lucide-react";
 import { motion } from "framer-motion";
@@ -107,6 +108,8 @@ const Profile = () => {
             )}
           </div>
         )}
+
+        <RideHistory />
 
         <div className="space-y-2">
           <Button variant="outline" className="w-full justify-start gap-2 h-12 rounded-xl" onClick={() => navigate("/profile/edit")}>
