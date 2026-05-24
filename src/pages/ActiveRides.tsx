@@ -227,7 +227,7 @@ const ActiveRides = () => {
         ) : (
           items.map((it) => {
             const d = new Date(it.departureTime);
-            const d = new Date(it.departureTime);
+
             const meta = phaseMeta[it.phase];
             const otherUserId = it.role === "passenger" ? it.driverId : it.passengerId;
             const otherUserName = it.role === "passenger" ? it.driverName : it.passengerName ?? "נוסע";
