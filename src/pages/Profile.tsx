@@ -109,6 +109,8 @@ const Profile = () => {
           </div>
         )}
 
+        <RideHistory />
+
         <div className="space-y-2">
           <Button variant="outline" className="w-full justify-start gap-2 h-12 rounded-xl" onClick={() => navigate("/profile/edit")}>
             <UserCog className="w-4 h-4 text-primary" />
