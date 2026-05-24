@@ -124,6 +124,7 @@ export default function DriverLiveTracker({ rideId, destination, height = "260px
 
   const phaseLabel =
     phase === "en_route" ? "הנהג בדרך אליך"
+    : phase === "picked_up" ? "הנהג אסף את הנוסעים"
     : phase === "in_progress" ? "בנסיעה ליעד"
     : phase === "completed" ? "הסתיימה"
     : "ממתין ליציאה";
