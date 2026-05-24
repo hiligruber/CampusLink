@@ -82,25 +82,13 @@ export function LocationSharingProvider({ children }: { children: ReactNode }) {
     await supabase.from("driver_locations").upsert(rows, { onConflict: "ride_id" });
   }, [user]);
 
-  // Manage watcher
-  useEffect(() => {
-    const shouldWatch = activeRides.length > 0;
-    if (!shouldWatch) {
-      if (watchIdRef.current !== null) {
-        navigator.geolocation.clearWatch(watchIdRef.current);
-        watchIdRef.current = null;
-      }
-      setStatus("idle");
-      setError(null);
-      return;
-    }
+  const startWatcher = useCallback(() => {
+    if (watchIdRef.current !== null) return;
     if (!("geolocation" in navigator)) {
       setStatus("unavailable");
       setError("הדפדפן לא תומך במיקום");
       return;
     }
-    if (watchIdRef.current !== null) return;
-
     setStatus("requesting");
     setError(null);
     watchIdRef.current = navigator.geolocation.watchPosition(
@@ -121,17 +109,78 @@ export function LocationSharingProvider({ children }: { children: ReactNode }) {
           setStatus("error");
           setError(err.message);
         }
+        if (watchIdRef.current !== null) {
+          navigator.geolocation.clearWatch(watchIdRef.current);
+          watchIdRef.current = null;
+        }
       },
       { enableHighAccuracy: true, maximumAge: 2000, timeout: 15000 }
     );
+  }, [upsertAll]);
+
+  // Manage watcher — only auto-start if permission is ALREADY granted.
+  // This prevents the browser permission prompt from firing on every refresh.
+  useEffect(() => {
+    const shouldWatch = activeRides.length > 0;
+    if (!shouldWatch) {
+      if (watchIdRef.current !== null) {
+        navigator.geolocation.clearWatch(watchIdRef.current);
+        watchIdRef.current = null;
+      }
+      setStatus("idle");
+      setError(null);
+      return;
+    }
+    if (!("geolocation" in navigator)) {
+      setStatus("unavailable");
+      setError("הדפדפן לא תומך במיקום");
+      return;
+    }
+
+    let cancelled = false;
+    const maybeStart = async () => {
+      try {
+        if ("permissions" in navigator && (navigator as any).permissions?.query) {
+          const result = await (navigator as any).permissions.query({ name: "geolocation" });
+          if (cancelled) return;
+          if (result.state === "granted") {
+            startWatcher();
+          } else if (result.state === "denied") {
+            setStatus("denied");
+            setError("גישה למיקום נדחתה");
+          } else {
+            // "prompt" — wait for explicit user action (captureOnceAndUpsert / retry)
+            setStatus("idle");
+          }
+          // React to live changes (user grants/denies in browser settings)
+          result.onchange = () => {
+            if (result.state === "granted") startWatcher();
+            else if (result.state === "denied") {
+              if (watchIdRef.current !== null) {
+                navigator.geolocation.clearWatch(watchIdRef.current);
+                watchIdRef.current = null;
+              }
+              setStatus("denied");
+            }
+          };
+        } else {
+          // No Permissions API — fall back to starting watcher (legacy browsers)
+          startWatcher();
+        }
+      } catch {
+        startWatcher();
+      }
+    };
+    maybeStart();
 
     return () => {
+      cancelled = true;
       if (watchIdRef.current !== null) {
         navigator.geolocation.clearWatch(watchIdRef.current);
         watchIdRef.current = null;
       }
     };
-  }, [activeRides, upsertAll, retryNonce]);
+  }, [activeRides, startWatcher, retryNonce]);
 
   const retry = useCallback(() => {
     if (watchIdRef.current !== null) {
