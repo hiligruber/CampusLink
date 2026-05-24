@@ -186,7 +186,7 @@ export default function DriverLiveTracker({ rideId, destination, height = "260px
           <>
             <span className="inline-flex items-center gap-1 text-xs font-bold px-2.5 py-1 rounded-full bg-primary/10 text-primary">
               <Clock className="w-3 h-3" />
-              ETA {eta.duration}
+              {etaPrefix} {eta.duration}
             </span>
             <span className="inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-full bg-secondary text-secondary-foreground">
               <Navigation className="w-3 h-3" />
