@@ -281,6 +281,16 @@ const Bookings = () => {
                       </Button>
                     </div>
                   )}
+                  {b.status === "accepted" && b.passenger && (
+                    <div className="flex gap-2 pt-1">
+                      <ChatButton
+                        rideId={b.ride_id}
+                        otherId={b.passenger_id}
+                        name={b.passenger.full_name || "נוסע"}
+                        label="שלח הודעה לנוסע"
+                      />
+                    </div>
+                  )}
                 </div>
               ))
             )}
@@ -310,20 +320,29 @@ const Bookings = () => {
                     {renderRideInfo(b.ride)}
                     {isAccepted && b.ride && (
                       <>
-                        <Button
-                          size="sm"
-                          variant={isExpanded ? "secondary" : "default"}
-                          className="w-full gap-1.5 rounded-xl text-xs font-bold h-9"
-                          onClick={() => setExpandedTracker(isExpanded ? null : b.ride_id)}
-                        >
-                          <Navigation className="w-3.5 h-3.5" />
-                          {isExpanded ? "הסתר מעקב" : "עקוב אחר הנהג בזמן אמת"}
-                        </Button>
+                        <div className="flex gap-2">
+                          <Button
+                            size="sm"
+                            variant={isExpanded ? "secondary" : "default"}
+                            className="flex-1 gap-1.5 rounded-xl text-xs font-bold h-9"
+                            onClick={() => setExpandedTracker(isExpanded ? null : b.ride_id)}
+                          >
+                            <Navigation className="w-3.5 h-3.5" />
+                            {isExpanded ? "הסתר מעקב" : "עקוב אחר הנהג"}
+                          </Button>
+                          <ChatButton
+                            rideId={b.ride_id}
+                            otherId={b.ride.driver_id}
+                            name={b.ride.driver_name || "נהג"}
+                            label="הודעה לנהג"
+                          />
+                        </div>
                         {isExpanded && (
                           <DriverLiveTracker
                             rideId={b.ride_id}
                             destination={b.ride.destination}
                             phase={(b.ride.ride_phase ?? "scheduled") as any}
+                            pickupLocation={b.pickup_location}
                           />
                         )}
                       </>
