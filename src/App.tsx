@@ -4,6 +4,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
+import { LocationSharingProvider } from "@/contexts/LocationSharingContext";
 import { LanguageProvider } from "@/contexts/LanguageContext";
 import GoogleMapsProvider from "@/components/GoogleMapsProvider";
 import { useVerificationStatus } from "@/hooks/use-verification";
