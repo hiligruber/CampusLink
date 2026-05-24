@@ -354,6 +354,15 @@ const Bookings = () => {
           </TabsContent>
         </Tabs>
       </motion.main>
+      {chatTarget && (
+        <RideChat
+          open={!!chatTarget}
+          onOpenChange={(o) => !o && setChatTarget(null)}
+          rideId={chatTarget.rideId}
+          otherUserId={chatTarget.userId}
+          otherUserName={chatTarget.name}
+        />
+      )}
       <BottomNav />
     </div>
   );
