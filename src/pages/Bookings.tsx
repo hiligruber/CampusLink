@@ -82,7 +82,7 @@ const Bookings = () => {
       if (rideIds.length === 0) return [];
       const { data: bookings, error } = await supabase
         .from("bookings")
-        .select("id, status, created_at, passenger_id, ride_id")
+        .select("id, status, created_at, passenger_id, ride_id, pickup_location")
         .in("ride_id", rideIds)
         .order("created_at", { ascending: false });
       if (error) throw error;
@@ -111,7 +111,7 @@ const Bookings = () => {
     queryFn: async (): Promise<BookingWithDetails[]> => {
       const { data: bookings, error } = await supabase
         .from("bookings")
-        .select("id, status, created_at, passenger_id, ride_id")
+        .select("id, status, created_at, passenger_id, ride_id, pickup_location")
         .eq("passenger_id", user!.id)
         .order("created_at", { ascending: false });
       if (error) throw error;
