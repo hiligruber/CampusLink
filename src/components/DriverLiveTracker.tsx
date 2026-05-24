@@ -8,6 +8,7 @@ interface Props {
   destination: string;
   height?: string;
   phase?: "scheduled" | "en_route" | "picked_up" | "in_progress" | "completed";
+  pickupLocation?: string | null;
 }
 
 interface LocationRow {
@@ -21,7 +22,7 @@ interface LocationRow {
 const mapContainerStyle = { width: "100%", borderRadius: "1rem" };
 const defaultCenter = { lat: 32.0853, lng: 34.7818 };
 
-export default function DriverLiveTracker({ rideId, destination, height = "260px", phase = "scheduled" }: Props) {
+export default function DriverLiveTracker({ rideId, destination, height = "260px", phase = "scheduled", pickupLocation }: Props) {
   const [location, setLocation] = useState<LocationRow | null>(null);
   const [eta, setEta] = useState<{ duration: string; distance: string } | null>(null);
   const [directions, setDirections] = useState<google.maps.DirectionsResult | null>(null);
@@ -67,9 +68,16 @@ export default function DriverLiveTracker({ rideId, destination, height = "260px
     };
   }, [rideId]);
 
+  // Reset throttle when phase changes (so we recompute toward new target)
+  useEffect(() => {
+    lastEtaCalcRef.current = 0;
+  }, [phase]);
+
   // Recalculate ETA when location updates (throttled to once per 15s)
   useEffect(() => {
-    if (!location || !destination || typeof google === "undefined") return;
+    if (!location || typeof google === "undefined") return;
+    const target = phase === "en_route" && pickupLocation ? pickupLocation : destination;
+    if (!target) return;
     const now = Date.now();
     if (now - lastEtaCalcRef.current < 15000) return;
     lastEtaCalcRef.current = now;
@@ -78,7 +86,7 @@ export default function DriverLiveTracker({ rideId, destination, height = "260px
     service.route(
       {
         origin: { lat: location.lat, lng: location.lng },
-        destination,
+        destination: target,
         travelMode: google.maps.TravelMode.DRIVING,
       },
       (result, status) => {
@@ -94,7 +102,7 @@ export default function DriverLiveTracker({ rideId, destination, height = "260px
         }
       }
     );
-  }, [location, destination]);
+  }, [location, destination, pickupLocation, phase]);
 
   if (loading) {
     return (
@@ -123,11 +131,13 @@ export default function DriverLiveTracker({ rideId, destination, height = "260px
   }
 
   const phaseLabel =
-    phase === "en_route" ? "הנהג בדרך אליך"
+    phase === "en_route" ? (pickupLocation ? `הנהג בדרך אליך · ${pickupLocation}` : "הנהג בדרך אליך")
     : phase === "picked_up" ? "הנהג אסף את הנוסעים"
     : phase === "in_progress" ? "בנסיעה ליעד"
     : phase === "completed" ? "הסתיימה"
     : "ממתין ליציאה";
+
+  const etaPrefix = phase === "en_route" ? "מגיע אליך בעוד" : "ETA";
 
   const updatedSecAgo = Math.floor((Date.now() - new Date(location.updated_at).getTime()) / 1000);
 
@@ -176,7 +186,7 @@ export default function DriverLiveTracker({ rideId, destination, height = "260px
           <>
             <span className="inline-flex items-center gap-1 text-xs font-bold px-2.5 py-1 rounded-full bg-primary/10 text-primary">
               <Clock className="w-3 h-3" />
-              ETA {eta.duration}
+              {etaPrefix} {eta.duration}
             </span>
             <span className="inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-full bg-secondary text-secondary-foreground">
               <Navigation className="w-3 h-3" />

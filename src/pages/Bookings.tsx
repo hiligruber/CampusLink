@@ -7,7 +7,9 @@ import BottomNav from "@/components/BottomNav";
 import DriverLiveTracker from "@/components/DriverLiveTracker";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Loader2, Check, X, Clock, MapPin, Users, Mail, Navigation } from "lucide-react";
+import { Loader2, Check, X, Clock, MapPin, Users, Mail, Navigation, MessageCircle } from "lucide-react";
+import RideChat from "@/components/RideChat";
+import { useUnreadMessages } from "@/hooks/use-unread-messages";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
 import { useSearchParams } from "react-router-dom";
@@ -54,6 +56,7 @@ const Bookings = () => {
   const [searchParams] = useSearchParams();
   const trackRideId = searchParams.get("track");
   const [expandedTracker, setExpandedTracker] = useState<string | null>(trackRideId);
+  const [chatTarget, setChatTarget] = useState<{ rideId: string; userId: string; name: string } | null>(null);
 
   // Realtime: refresh on any booking change
   useEffect(() => {
@@ -167,6 +170,27 @@ const Bookings = () => {
     );
   };
 
+  const ChatButton = ({ rideId, otherId, name, label }: { rideId: string; otherId: string; name: string; label: string }) => {
+    const unread = useUnreadMessages(rideId, otherId);
+    return (
+      <Button
+        size="sm"
+        variant="outline"
+        className="flex-1 gap-1.5 rounded-xl text-xs font-bold h-9 relative"
+        onClick={() => setChatTarget({ rideId, userId: otherId, name })}
+      >
+        <MessageCircle className="w-3.5 h-3.5" />
+        {label}
+        {unread > 0 && (
+          <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 inline-flex items-center justify-center text-[10px] font-bold rounded-full bg-destructive text-destructive-foreground">
+            {unread}
+          </span>
+        )}
+      </Button>
+    );
+  };
+
+
   return (
     <div className="min-h-screen bg-background pb-24" dir="rtl">
       <AppHeader title="הבקשות שלי" />
@@ -257,6 +281,16 @@ const Bookings = () => {
                       </Button>
                     </div>
                   )}
+                  {b.status === "accepted" && b.passenger && (
+                    <div className="flex gap-2 pt-1">
+                      <ChatButton
+                        rideId={b.ride_id}
+                        otherId={b.passenger_id}
+                        name={b.passenger.full_name || "נוסע"}
+                        label="שלח הודעה לנוסע"
+                      />
+                    </div>
+                  )}
                 </div>
               ))
             )}
@@ -286,20 +320,29 @@ const Bookings = () => {
                     {renderRideInfo(b.ride)}
                     {isAccepted && b.ride && (
                       <>
-                        <Button
-                          size="sm"
-                          variant={isExpanded ? "secondary" : "default"}
-                          className="w-full gap-1.5 rounded-xl text-xs font-bold h-9"
-                          onClick={() => setExpandedTracker(isExpanded ? null : b.ride_id)}
-                        >
-                          <Navigation className="w-3.5 h-3.5" />
-                          {isExpanded ? "הסתר מעקב" : "עקוב אחר הנהג בזמן אמת"}
-                        </Button>
+                        <div className="flex gap-2">
+                          <Button
+                            size="sm"
+                            variant={isExpanded ? "secondary" : "default"}
+                            className="flex-1 gap-1.5 rounded-xl text-xs font-bold h-9"
+                            onClick={() => setExpandedTracker(isExpanded ? null : b.ride_id)}
+                          >
+                            <Navigation className="w-3.5 h-3.5" />
+                            {isExpanded ? "הסתר מעקב" : "עקוב אחר הנהג"}
+                          </Button>
+                          <ChatButton
+                            rideId={b.ride_id}
+                            otherId={b.ride.driver_id}
+                            name={b.ride.driver_name || "נהג"}
+                            label="הודעה לנהג"
+                          />
+                        </div>
                         {isExpanded && (
                           <DriverLiveTracker
                             rideId={b.ride_id}
                             destination={b.ride.destination}
                             phase={(b.ride.ride_phase ?? "scheduled") as any}
+                            pickupLocation={b.pickup_location}
                           />
                         )}
                       </>
@@ -311,6 +354,15 @@ const Bookings = () => {
           </TabsContent>
         </Tabs>
       </motion.main>
+      {chatTarget && (
+        <RideChat
+          open={!!chatTarget}
+          onOpenChange={(o) => !o && setChatTarget(null)}
+          rideId={chatTarget.rideId}
+          otherUserId={chatTarget.userId}
+          otherUserName={chatTarget.name}
+        />
+      )}
       <BottomNav />
     </div>
   );
