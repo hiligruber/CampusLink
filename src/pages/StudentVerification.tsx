@@ -24,11 +24,9 @@ const StudentVerification = () => {
   useEffect(() => {
     if (!user) return;
     supabase
-      .from("profiles")
-      .select("verification_status, rejection_reason, institution")
-      .eq("user_id", user.id)
+      .rpc("get_my_profile")
       .maybeSingle()
-      .then(({ data }) => {
+      .then(({ data }: any) => {
         if (data) {
           setStatus(data.verification_status);
           setRejectionReason(data.rejection_reason);
