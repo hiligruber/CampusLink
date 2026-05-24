@@ -52,25 +52,27 @@ const App = () => (
     <LanguageProvider>
       <AuthProvider>
         <GoogleMapsProvider>
-          <TooltipProvider>
-            <Toaster />
-            <Sonner />
-            <BrowserRouter>
-              <Routes>
-                <Route path="/auth" element={<AuthRoute><Auth /></AuthRoute>} />
-                <Route path="/verify" element={<VerifyRoute><StudentVerification /></VerifyRoute>} />
-                <Route path="/" element={<ProtectedRoute><Index /></ProtectedRoute>} />
-                <Route path="/post" element={<ProtectedRoute><PostRide /></ProtectedRoute>} />
-                <Route path="/search" element={<ProtectedRoute><SearchRides /></ProtectedRoute>} />
-                <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
-                <Route path="/profile/edit" element={<ProtectedRoute><EditProfile /></ProtectedRoute>} />
-                <Route path="/bookings" element={<ProtectedRoute><Bookings /></ProtectedRoute>} />
-                <Route path="/active" element={<ProtectedRoute><ActiveRides /></ProtectedRoute>} />
-                <Route path="/admin" element={<ProtectedRoute><Admin /></ProtectedRoute>} />
-                <Route path="*" element={<NotFound />} />
-              </Routes>
-            </BrowserRouter>
-          </TooltipProvider>
+          <LocationSharingProvider>
+            <TooltipProvider>
+              <Toaster />
+              <Sonner />
+              <BrowserRouter>
+                <Routes>
+                  <Route path="/auth" element={<AuthRoute><Auth /></AuthRoute>} />
+                  <Route path="/verify" element={<VerifyRoute><StudentVerification /></VerifyRoute>} />
+                  <Route path="/" element={<ProtectedRoute><Index /></ProtectedRoute>} />
+                  <Route path="/post" element={<ProtectedRoute><PostRide /></ProtectedRoute>} />
+                  <Route path="/search" element={<ProtectedRoute><SearchRides /></ProtectedRoute>} />
+                  <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+                  <Route path="/profile/edit" element={<ProtectedRoute><EditProfile /></ProtectedRoute>} />
+                  <Route path="/bookings" element={<ProtectedRoute><Bookings /></ProtectedRoute>} />
+                  <Route path="/active" element={<ProtectedRoute><ActiveRides /></ProtectedRoute>} />
+                  <Route path="/admin" element={<ProtectedRoute><Admin /></ProtectedRoute>} />
+                  <Route path="*" element={<NotFound />} />
+                </Routes>
+              </BrowserRouter>
+            </TooltipProvider>
+          </LocationSharingProvider>
         </GoogleMapsProvider>
       </AuthProvider>
     </LanguageProvider>
