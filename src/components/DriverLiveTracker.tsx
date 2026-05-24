@@ -7,6 +7,7 @@ interface Props {
   rideId: string;
   destination: string;
   height?: string;
+  phase?: "scheduled" | "en_route" | "in_progress" | "completed";
 }
 
 interface LocationRow {
