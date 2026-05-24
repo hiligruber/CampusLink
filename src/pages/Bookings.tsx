@@ -55,7 +55,7 @@ const Bookings = () => {
   const [acting, setActing] = useState<string | null>(null);
   const [searchParams] = useSearchParams();
   const trackRideId = searchParams.get("track");
-  const [expandedTracker, setExpandedTracker] = useState<string | null>(trackRideId);
+  
   const [chatTarget, setChatTarget] = useState<{ rideId: string; userId: string; name: string } | null>(null);
 
   // Realtime: refresh on any booking change
