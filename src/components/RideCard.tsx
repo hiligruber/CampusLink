@@ -8,6 +8,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useQueryClient } from "@tanstack/react-query";
 import RouteMap from "@/components/RouteMap";
 import DriverLocationSharer from "@/components/DriverLocationSharer";
+import JoinRideDialog from "@/components/JoinRideDialog";
 import { useLang } from "@/contexts/LanguageContext";
 import {
   AlertDialog,
