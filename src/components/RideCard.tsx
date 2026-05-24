@@ -8,6 +8,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useQueryClient } from "@tanstack/react-query";
 import RouteMap from "@/components/RouteMap";
 import DriverLocationSharer from "@/components/DriverLocationSharer";
+import JoinRideDialog from "@/components/JoinRideDialog";
 import { useLang } from "@/contexts/LanguageContext";
 import {
   AlertDialog,
@@ -42,6 +43,8 @@ const RideCard = ({ ride, index, driverAvatarUrl }: RideCardProps) => {
   const { t, lang } = useLang();
   const [showMap, setShowMap] = useState(false);
   const [confirmCancel, setConfirmCancel] = useState(false);
+  const [joinOpen, setJoinOpen] = useState(false);
+  const [joining, setJoining] = useState(false);
   const departureDate = new Date(ride.departure_time);
   const locale = lang === "EN" ? "en-US" : "he-IL";
   const timeStr = departureDate.toLocaleTimeString(locale, { hour: "2-digit", minute: "2-digit" });
@@ -78,14 +81,21 @@ const RideCard = ({ ride, index, driverAvatarUrl }: RideCardProps) => {
     window.open(url.toString(), "_blank");
   };
 
-  const handleJoin = async () => {
+  const handleJoinSubmit = async (pickupLocation: string) => {
     if (!user) return;
+    setJoining(true);
     try {
-      await joinRide(ride.id, user.id);
+      await joinRide(ride.id, user.id, pickupLocation);
       queryClient.invalidateQueries({ queryKey: ["rides"] });
-      toast.success(`הבקשה נשלחה ל${driverName}`, { description: `${ride.origin} → ${ride.destination}` });
+      queryClient.invalidateQueries({ queryKey: ["bookings"] });
+      toast.success(`הבקשה נשלחה ל${driverName}`, {
+        description: `איסוף: ${pickupLocation}`,
+      });
+      setJoinOpen(false);
     } catch (e: any) {
       toast.error(e?.message || "Failed to join ride");
+    } finally {
+      setJoining(false);
     }
   };
 
@@ -236,7 +246,7 @@ const RideCard = ({ ride, index, driverAvatarUrl }: RideCardProps) => {
         ) : (
           <Button
             size="sm"
-            onClick={handleJoin}
+            onClick={() => setJoinOpen(true)}
             disabled={isFull || isInactive}
             className="flex-[2] rounded-xl text-xs font-bold h-9 shadow-pop bg-gradient-to-r from-primary to-accent hover:opacity-95 border-0"
           >
@@ -244,6 +254,16 @@ const RideCard = ({ ride, index, driverAvatarUrl }: RideCardProps) => {
           </Button>
         )}
       </div>
+
+      <JoinRideDialog
+        open={joinOpen}
+        onOpenChange={setJoinOpen}
+        rideOrigin={ride.origin}
+        rideDestination={ride.destination}
+        driverName={driverName}
+        submitting={joining}
+        onConfirm={handleJoinSubmit}
+      />
 
       <AnimatePresence>
         {showMap && (

@@ -3,7 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { Car, Navigation as NavIcon, CheckCircle2, Radio } from "lucide-react";
+import { Car, Navigation as NavIcon, CheckCircle2, Users } from "lucide-react";
 import { setRidePhase, type RidePhase } from "@/lib/rides-api";
 import { useQueryClient } from "@tanstack/react-query";
 
@@ -28,7 +28,7 @@ export default function DriverLocationSharer({ rideId, driverId, phase }: Props)
   const [busy, setBusy] = useState(false);
 
   const isDriver = user?.id === driverId;
-  const sharingActive = phase === "en_route" || phase === "in_progress";
+  const sharingActive = phase === "en_route" || phase === "picked_up" || phase === "in_progress";
 
   // Start/stop geolocation watcher based on phase
   useEffect(() => {
@@ -124,6 +124,18 @@ export default function DriverLocationSharer({ rideId, driverId, phase }: Props)
       )}
 
       {phase === "en_route" && (
+        <Button
+          onClick={() => advance("picked_up", "מצויין — הנוסעים אצלך")}
+          disabled={busy}
+          size="sm"
+          className="gap-1.5 rounded-xl text-xs font-bold h-9 bg-gradient-to-r from-primary to-accent border-0"
+        >
+          <Users className="w-3.5 h-3.5" />
+          אספתי את הנוסעים
+        </Button>
+      )}
+
+      {phase === "picked_up" && (
         <Button
           onClick={() => advance("in_progress", "הנסיעה התחילה")}
           disabled={busy}

@@ -4,12 +4,13 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Loader2, MapPin, Clock, Car, User } from "lucide-react";
 
-type Phase = "scheduled" | "en_route" | "in_progress" | "completed";
+type Phase = "scheduled" | "en_route" | "picked_up" | "in_progress" | "completed";
 
 const phaseLabel = (p: Phase | undefined, status: string) => {
   if (status === "cancelled") return { text: "בוטלה", cls: "bg-destructive/10 text-destructive" };
   switch (p) {
     case "en_route":    return { text: "בדרך",   cls: "bg-warning/15 text-warning" };
+    case "picked_up":   return { text: "נאספו",  cls: "bg-warning/15 text-warning" };
     case "in_progress": return { text: "בנסיעה", cls: "bg-primary/10 text-primary" };
     case "completed":   return { text: "הסתיימה", cls: "bg-muted text-muted-foreground" };
     default:            return { text: "מתוכננת", cls: "bg-secondary text-secondary-foreground" };

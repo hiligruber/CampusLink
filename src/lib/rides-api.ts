@@ -1,6 +1,6 @@
 import { supabase } from "@/integrations/supabase/client";
 
-export type RidePhase = "scheduled" | "en_route" | "in_progress" | "completed";
+export type RidePhase = "scheduled" | "en_route" | "picked_up" | "in_progress" | "completed";
 
 export interface RideRow {
   id: string;
@@ -67,12 +67,13 @@ export async function cancelRide(rideId: string) {
   if (error) throw error;
 }
 
-export async function joinRide(rideId: string, passengerId: string) {
+export async function joinRide(rideId: string, passengerId: string, pickupLocation?: string) {
   const { error } = await supabase.from("bookings").insert({
     ride_id: rideId,
     passenger_id: passengerId,
     status: "pending",
-  });
+    pickup_location: pickupLocation ?? null,
+  } as any);
   if (error) throw error;
 }
 
