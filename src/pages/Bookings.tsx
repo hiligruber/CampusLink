@@ -27,6 +27,7 @@ interface BookingWithDetails {
     driver_name: string;
     available_seats: number;
     total_seats: number;
+    ride_phase?: "scheduled" | "en_route" | "in_progress" | "completed";
   } | null;
   passenger: {
     full_name: string;
