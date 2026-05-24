@@ -3,7 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { Car, Navigation as NavIcon, CheckCircle2, Radio } from "lucide-react";
+import { Car, Navigation as NavIcon, CheckCircle2, Users } from "lucide-react";
 import { setRidePhase, type RidePhase } from "@/lib/rides-api";
 import { useQueryClient } from "@tanstack/react-query";
 
