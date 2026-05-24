@@ -132,6 +132,18 @@ export default function DriverLiveTracker({ rideId, destination, height = "260px
 
   return (
     <div className="space-y-2">
+      <div className="flex items-center gap-2 text-xs font-bold">
+        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-primary/10 text-primary">
+          <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
+          {phaseLabel}
+        </span>
+        {eta && (
+          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-secondary text-secondary-foreground">
+            <Clock className="w-3 h-3" />
+            {eta.duration}
+          </span>
+        )}
+      </div>
       <GoogleMap
         mapContainerStyle={{ ...mapContainerStyle, height }}
         center={{ lat: location.lat, lng: location.lng }}
