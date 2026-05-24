@@ -170,12 +170,14 @@ export default function DriverLiveTracker({ rideId, destination, height = "260px
         <Marker
           position={{ lat: location.lat, lng: location.lng }}
           icon={{
-            path: google.maps.SymbolPath.CIRCLE,
-            scale: 10,
-            fillColor: "#10b981",
-            fillOpacity: 1,
-            strokeColor: "#ffffff",
-            strokeWeight: 3,
+            url: "data:image/svg+xml;charset=UTF-8," + encodeURIComponent(`
+              <svg xmlns='http://www.w3.org/2000/svg' width='52' height='52' viewBox='0 0 52 52'>
+                <circle cx='26' cy='26' r='22' fill='#10b981' stroke='#ffffff' stroke-width='3'/>
+                <text x='26' y='34' font-size='26' text-anchor='middle'>🚗</text>
+              </svg>
+            `),
+            scaledSize: new google.maps.Size(52, 52),
+            anchor: new google.maps.Point(26, 26),
           }}
           title="הנהג"
         />
