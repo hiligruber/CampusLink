@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useVerificationStatus } from "@/hooks/use-verification";
 import AppHeader from "@/components/AppHeader";
 import BottomNav from "@/components/BottomNav";
+import RideHistory from "@/components/RideHistory";
 import { Button } from "@/components/ui/button";
 import { Star, Mail, Building2, LogOut, Calendar, Loader2, ShieldCheck, UserCog, Music, Heart } from "lucide-react";
 import { motion } from "framer-motion";
