@@ -106,16 +106,27 @@ export default function DriverLiveTracker({ rideId, destination, height = "260px
   }
 
   if (!location) {
+    const headline =
+      phase === "completed" ? "הנסיעה הסתיימה"
+      : phase === "in_progress" ? "הנסיעה בעיצומה"
+      : "הנהג עדיין לא יצא לדרך";
+    const subline =
+      phase === "completed" ? "תודה שנסעת איתנו"
+      : "ברגע שהנהג ילחץ \"בדרך אליך\" המיקום יעודכן כאן בזמן אמת";
     return (
       <div className="bg-secondary/40 rounded-xl p-4 text-center">
         <Navigation className="w-6 h-6 mx-auto text-muted-foreground/50 mb-2" />
-        <p className="text-sm font-semibold">הנהג עדיין לא יצא לדרך</p>
-        <p className="text-xs text-muted-foreground mt-1">
-          ברגע שהנהג ילחץ "התחל נסיעה" המיקום יעודכן כאן בזמן אמת
-        </p>
+        <p className="text-sm font-semibold">{headline}</p>
+        <p className="text-xs text-muted-foreground mt-1">{subline}</p>
       </div>
     );
   }
+
+  const phaseLabel =
+    phase === "en_route" ? "הנהג בדרך אליך"
+    : phase === "in_progress" ? "בנסיעה ליעד"
+    : phase === "completed" ? "הסתיימה"
+    : "ממתין ליציאה";
 
   const updatedSecAgo = Math.floor((Date.now() - new Date(location.updated_at).getTime()) / 1000);
 
