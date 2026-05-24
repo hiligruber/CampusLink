@@ -302,7 +302,7 @@ const Bookings = () => {
             ) : (
               outgoing.map((b) => {
                 const isAccepted = b.status === "accepted";
-                const isExpanded = expandedTracker === b.ride_id;
+                
                 return (
                   <div key={b.id} className="bg-card border border-border rounded-2xl p-4 shadow-sm space-y-3">
                     <div className="flex items-center justify-between">
