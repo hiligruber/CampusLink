@@ -43,6 +43,8 @@ const RideCard = ({ ride, index, driverAvatarUrl }: RideCardProps) => {
   const { t, lang } = useLang();
   const [showMap, setShowMap] = useState(false);
   const [confirmCancel, setConfirmCancel] = useState(false);
+  const [joinOpen, setJoinOpen] = useState(false);
+  const [joining, setJoining] = useState(false);
   const departureDate = new Date(ride.departure_time);
   const locale = lang === "EN" ? "en-US" : "he-IL";
   const timeStr = departureDate.toLocaleTimeString(locale, { hour: "2-digit", minute: "2-digit" });
