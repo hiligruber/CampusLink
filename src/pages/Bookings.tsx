@@ -18,6 +18,7 @@ interface BookingWithDetails {
   created_at: string;
   passenger_id: string;
   ride_id: string;
+  pickup_location?: string | null;
   ride: {
     id: string;
     origin: string;
