@@ -60,7 +60,7 @@ const ActiveRides = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const [expanded, setExpanded] = useState<string | null>(null);
+  
   const [chat, setChat] = useState<{ rideId: string; userId: string; name: string } | null>(null);
 
   // Realtime invalidation
