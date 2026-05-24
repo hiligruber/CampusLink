@@ -55,7 +55,7 @@ const Bookings = () => {
   const [acting, setActing] = useState<string | null>(null);
   const [searchParams] = useSearchParams();
   const trackRideId = searchParams.get("track");
-  const [expandedTracker, setExpandedTracker] = useState<string | null>(trackRideId);
+  
   const [chatTarget, setChatTarget] = useState<{ rideId: string; userId: string; name: string } | null>(null);
 
   // Realtime: refresh on any booking change
@@ -302,7 +302,7 @@ const Bookings = () => {
             ) : (
               outgoing.map((b) => {
                 const isAccepted = b.status === "accepted";
-                const isExpanded = expandedTracker === b.ride_id;
+                
                 return (
                   <div key={b.id} className="bg-card border border-border rounded-2xl p-4 shadow-sm space-y-3">
                     <div className="flex items-center justify-between">
@@ -314,35 +314,22 @@ const Bookings = () => {
                     {renderRideInfo(b.ride)}
                     {isAccepted && b.ride && (
                       <>
-                        <div className="flex gap-2">
-                          <Button
-                            size="sm"
-                            variant={isExpanded ? "secondary" : "default"}
-                            className="flex-1 gap-1.5 rounded-xl text-xs font-bold h-9"
-                            onClick={() => setExpandedTracker(isExpanded ? null : b.ride_id)}
-                          >
-                            <Navigation className="w-3.5 h-3.5" />
-                            {isExpanded ? "הסתר מעקב" : "עקוב אחר הנהג"}
-                          </Button>
-                          <ChatButton
-                            rideId={b.ride_id}
-                            otherId={b.ride.driver_id}
-                            name={b.ride.driver_name || "נהג"}
-                            label="הודעה לנהג"
-                          />
-                        </div>
-                        {isExpanded && (
-                          <DriverLiveTracker
-                            rideId={b.ride_id}
-                            destination={b.ride.destination}
-                            phase={(b.ride.ride_phase ?? "scheduled") as any}
-                            pickupLocation={b.pickup_location}
-                            driverName={b.ride.driver_name}
-                          />
-
-                        )}
+                        <DriverLiveTracker
+                          rideId={b.ride_id}
+                          destination={b.ride.destination}
+                          phase={(b.ride.ride_phase ?? "scheduled") as any}
+                          pickupLocation={b.pickup_location}
+                          driverName={b.ride.driver_name}
+                        />
+                        <ChatButton
+                          rideId={b.ride_id}
+                          otherId={b.ride.driver_id}
+                          name={b.ride.driver_name || "נהג"}
+                          label="הודעה לנהג"
+                        />
                       </>
                     )}
+
                   </div>
                 );
               })

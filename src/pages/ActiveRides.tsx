@@ -60,7 +60,7 @@ const ActiveRides = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const [expanded, setExpanded] = useState<string | null>(null);
+  
   const [chat, setChat] = useState<{ rideId: string; userId: string; name: string } | null>(null);
 
   // Realtime invalidation
@@ -226,8 +226,8 @@ const ActiveRides = () => {
           </div>
         ) : (
           items.map((it) => {
-            const isExpanded = expanded === it.rideId + it.role;
             const d = new Date(it.departureTime);
+
             const meta = phaseMeta[it.phase];
             const otherUserId = it.role === "passenger" ? it.driverId : it.passengerId;
             const otherUserName = it.role === "passenger" ? it.driverName : it.passengerName ?? "נוסע";
@@ -295,45 +295,8 @@ const ActiveRides = () => {
                     </span>
                   </div>
 
-                  {/* Primary CTA */}
-                  <div className="flex gap-2 pt-1">
-                    {it.role === "driver" ? (
-                      <Button
-                        size="sm"
-                        className="flex-1 gap-1.5 rounded-xl text-xs font-bold h-10"
-                        variant={isExpanded ? "secondary" : "default"}
-                        onClick={() => setExpanded(isExpanded ? null : it.rideId + it.role)}
-                      >
-                        <Car className="w-3.5 h-3.5" />
-                        {isExpanded ? "הסתר ניהול" : "נהל נסיעה"}
-                      </Button>
-                    ) : (
-                      <Button
-                        size="sm"
-                        className="flex-1 gap-1.5 rounded-xl text-xs font-bold h-10"
-                        variant={isExpanded ? "secondary" : "default"}
-                        onClick={() => setExpanded(isExpanded ? null : it.rideId + it.role)}
-                      >
-                        <Navigation className="w-3.5 h-3.5" />
-                        {isExpanded ? "הסתר מעקב" : "עקוב אחר הנהג"}
-                      </Button>
-                    )}
-                    {otherUserId && (
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        className="gap-1.5 rounded-xl text-xs font-bold h-10"
-                        onClick={() =>
-                          setChat({ rideId: it.rideId, userId: otherUserId, name: otherUserName })
-                        }
-                      >
-                        <MessageCircle className="w-3.5 h-3.5" />
-                        הודעה
-                      </Button>
-                    )}
-                  </div>
-
-                  {isExpanded && it.role === "driver" && (
+                  {/* Map is always visible for active rides */}
+                  {it.role === "driver" ? (
                     <div className="pt-2 border-t border-border space-y-3">
                       <DriverLocationSharer
                         rideId={it.rideId}
@@ -348,9 +311,7 @@ const ActiveRides = () => {
                         driverName={it.driverName}
                       />
                     </div>
-                  )}
-
-                  {isExpanded && it.role === "passenger" && (
+                  ) : (
                     <div className="pt-2 border-t border-border">
                       <DriverLiveTracker
                         rideId={it.rideId}
@@ -360,8 +321,25 @@ const ActiveRides = () => {
                         driverName={it.driverName}
                       />
                     </div>
-
                   )}
+
+                  {/* Secondary action: message the other party */}
+                  {otherUserId && (
+                    <div className="pt-1">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="w-full gap-1.5 rounded-xl text-xs font-bold h-10"
+                        onClick={() =>
+                          setChat({ rideId: it.rideId, userId: otherUserId, name: otherUserName })
+                        }
+                      >
+                        <MessageCircle className="w-3.5 h-3.5" />
+                        שלח/י הודעה ל{otherUserName}
+                      </Button>
+                    </div>
+                  )}
+
                 </div>
               </div>
             );
