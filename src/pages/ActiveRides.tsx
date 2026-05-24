@@ -226,7 +226,7 @@ const ActiveRides = () => {
           </div>
         ) : (
           items.map((it) => {
-            const isExpanded = expanded === it.rideId + it.role;
+            const d = new Date(it.departureTime);
             const d = new Date(it.departureTime);
             const meta = phaseMeta[it.phase];
             const otherUserId = it.role === "passenger" ? it.driverId : it.passengerId;
