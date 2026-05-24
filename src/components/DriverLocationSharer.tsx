@@ -1,9 +1,20 @@
-import { useEffect, useRef, useState } from "react";
+import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import { useLocationSharing } from "@/contexts/LocationSharingContext";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { Car, Navigation as NavIcon, CheckCircle2, Users } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { Car, Navigation as NavIcon, CheckCircle2, Users, Loader2, MapPinOff, MapPin } from "lucide-react";
 import { setRidePhase, type RidePhase } from "@/lib/rides-api";
 import { useQueryClient } from "@tanstack/react-query";
 
@@ -13,80 +24,20 @@ interface Props {
   phase: RidePhase;
 }
 
-/**
- * Driver-only three-phase controller:
- *  scheduled  → "בדרך אליך" (start sharing location)
- *  en_route   → "התחל נסיעה"
- *  in_progress→ "סיים נסיעה" (stop sharing)
- *  completed  → nothing
- */
 export default function DriverLocationSharer({ rideId, driverId, phase }: Props) {
   const { user } = useAuth();
   const queryClient = useQueryClient();
-  const watchIdRef = useRef<number | null>(null);
-  const lastSentRef = useRef<number>(0);
+  const { status, lastFix, retry, captureOnceAndUpsert } = useLocationSharing();
   const [busy, setBusy] = useState(false);
+  const [pendingDialog, setPendingDialog] = useState(false);
 
   const isDriver = user?.id === driverId;
-  const sharingActive = phase === "en_route" || phase === "picked_up" || phase === "in_progress";
-
-  // Start/stop geolocation watcher based on phase
-  useEffect(() => {
-    if (!isDriver) return;
-    if (sharingActive && watchIdRef.current === null) {
-      if (!("geolocation" in navigator)) {
-        toast.error("הדפדפן לא תומך במיקום");
-        return;
-      }
-      watchIdRef.current = navigator.geolocation.watchPosition(
-        async (pos) => {
-          const now = Date.now();
-          if (now - lastSentRef.current < 4000) return;
-          lastSentRef.current = now;
-          const { latitude, longitude, heading } = pos.coords;
-          await supabase.from("driver_locations").upsert(
-            {
-              ride_id: rideId,
-              driver_id: driverId,
-              lat: latitude,
-              lng: longitude,
-              heading: heading ?? null,
-              updated_at: new Date().toISOString(),
-            },
-            { onConflict: "ride_id" }
-          );
-        },
-        (err) => {
-          toast.error("לא ניתן לקרוא מיקום: " + err.message);
-        },
-        { enableHighAccuracy: true, maximumAge: 2000, timeout: 10000 }
-      );
-    }
-    if (!sharingActive && watchIdRef.current !== null) {
-      navigator.geolocation.clearWatch(watchIdRef.current);
-      watchIdRef.current = null;
-    }
-    return () => {
-      if (watchIdRef.current !== null && !sharingActive) {
-        navigator.geolocation.clearWatch(watchIdRef.current);
-        watchIdRef.current = null;
-      }
-    };
-  }, [isDriver, sharingActive, rideId, driverId]);
-
-  // Cleanup on unmount
-  useEffect(() => {
-    return () => {
-      if (watchIdRef.current !== null) {
-        navigator.geolocation.clearWatch(watchIdRef.current);
-      }
-    };
-  }, []);
-
   if (!isDriver) return null;
   if (phase === "completed") return null;
 
-  const advance = async (next: RidePhase, successMsg: string) => {
+  const sharingActive = phase === "en_route" || phase === "picked_up" || phase === "in_progress";
+
+  const doAdvance = async (next: RidePhase, successMsg: string) => {
     setBusy(true);
     try {
       await setRidePhase(rideId, next);
@@ -102,63 +53,128 @@ export default function DriverLocationSharer({ rideId, driverId, phase }: Props)
     }
   };
 
-  return (
-    <div className="flex items-center gap-1.5 flex-wrap">
-      {sharingActive && (
-        <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-1 rounded-full bg-destructive/10 text-destructive">
-          <span className="w-1.5 h-1.5 rounded-full bg-destructive animate-pulse" />
-          המיקום שלך משותף
+  const startRide = async () => {
+    setBusy(true);
+    const ok = await captureOnceAndUpsert(rideId);
+    setBusy(false);
+    if (!ok) {
+      setPendingDialog(true);
+      return;
+    }
+    await doAdvance("en_route", "הנוסעים יודעים שאתה בדרך");
+  };
+
+  const continueWithoutLocation = async () => {
+    setPendingDialog(false);
+    await doAdvance("en_route", "התחלת — אך המיקום לא משותף");
+  };
+
+  const renderStatusChip = () => {
+    if (!sharingActive) return null;
+    if (status === "active" && lastFix) {
+      const secAgo = Math.floor((Date.now() - lastFix) / 1000);
+      return (
+        <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-1 rounded-full bg-emerald-500/15 text-emerald-700 dark:text-emerald-400">
+          <MapPin className="w-3 h-3" />
+          GPS פעיל · {secAgo < 60 ? `${secAgo}ש'` : "<1ד'"}
         </span>
-      )}
-
-      {phase === "scheduled" && (
-        <Button
-          onClick={() => advance("en_route", "הנוסעים יודעים שאתה בדרך")}
-          disabled={busy}
-          size="sm"
-          className="gap-1.5 rounded-xl text-xs font-bold h-9 bg-gradient-to-r from-primary to-accent border-0"
+      );
+    }
+    if (status === "requesting" || status === "idle") {
+      return (
+        <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-1 rounded-full bg-amber-500/15 text-amber-700 dark:text-amber-400">
+          <Loader2 className="w-3 h-3 animate-spin" />
+          מאתר GPS…
+        </span>
+      );
+    }
+    if (status === "denied" || status === "error" || status === "unavailable") {
+      return (
+        <button
+          type="button"
+          onClick={retry}
+          className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-1 rounded-full bg-destructive/10 text-destructive hover:bg-destructive/20 transition"
         >
-          <Car className="w-3.5 h-3.5" />
-          בדרך אליך
-        </Button>
-      )}
+          <MapPinOff className="w-3 h-3" />
+          {status === "unavailable" ? "GPS לא נתמך" : "אין מיקום · נסה שוב"}
+        </button>
+      );
+    }
+    return null;
+  };
 
-      {phase === "en_route" && (
-        <Button
-          onClick={() => advance("picked_up", "מצויין — הנוסעים אצלך")}
-          disabled={busy}
-          size="sm"
-          className="gap-1.5 rounded-xl text-xs font-bold h-9 bg-gradient-to-r from-primary to-accent border-0"
-        >
-          <Users className="w-3.5 h-3.5" />
-          אספתי את הנוסעים
-        </Button>
-      )}
+  return (
+    <>
+      <div className="flex items-center gap-1.5 flex-wrap">
+        {renderStatusChip()}
 
-      {phase === "picked_up" && (
-        <Button
-          onClick={() => advance("in_progress", "הנסיעה התחילה")}
-          disabled={busy}
-          size="sm"
-          className="gap-1.5 rounded-xl text-xs font-bold h-9 bg-gradient-to-r from-primary to-accent border-0"
-        >
-          <NavIcon className="w-3.5 h-3.5" />
-          התחל נסיעה
-        </Button>
-      )}
+        {phase === "scheduled" && (
+          <Button
+            onClick={startRide}
+            disabled={busy}
+            size="sm"
+            className="gap-1.5 rounded-xl text-xs font-bold h-9 bg-gradient-to-r from-primary to-accent border-0"
+          >
+            {busy ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Car className="w-3.5 h-3.5" />}
+            בדרך אליך
+          </Button>
+        )}
 
-      {phase === "in_progress" && (
-        <Button
-          onClick={() => advance("completed", "הנסיעה הסתיימה")}
-          disabled={busy}
-          size="sm"
-          variant="outline"
-          className="gap-1.5 rounded-xl text-xs font-bold h-9 border-primary/40 text-primary hover:bg-primary/10"
-        >
-          <CheckCircle2 className="w-3.5 h-3.5" />
-          סיים נסיעה
-        </Button>
-      )}
-    </div>
+        {phase === "en_route" && (
+          <Button
+            onClick={() => doAdvance("picked_up", "מצויין — הנוסעים אצלך")}
+            disabled={busy}
+            size="sm"
+            className="gap-1.5 rounded-xl text-xs font-bold h-9 bg-gradient-to-r from-primary to-accent border-0"
+          >
+            <Users className="w-3.5 h-3.5" />
+            אספתי את הנוסעים
+          </Button>
+        )}
+
+        {phase === "picked_up" && (
+          <Button
+            onClick={() => doAdvance("in_progress", "הנסיעה התחילה")}
+            disabled={busy}
+            size="sm"
+            className="gap-1.5 rounded-xl text-xs font-bold h-9 bg-gradient-to-r from-primary to-accent border-0"
+          >
+            <NavIcon className="w-3.5 h-3.5" />
+            התחל נסיעה
+          </Button>
+        )}
+
+        {phase === "in_progress" && (
+          <Button
+            onClick={() => doAdvance("completed", "הנסיעה הסתיימה")}
+            disabled={busy}
+            size="sm"
+            variant="outline"
+            className="gap-1.5 rounded-xl text-xs font-bold h-9 border-primary/40 text-primary hover:bg-primary/10"
+          >
+            <CheckCircle2 className="w-3.5 h-3.5" />
+            סיים נסיעה
+          </Button>
+        )}
+      </div>
+
+      <AlertDialog open={pendingDialog} onOpenChange={setPendingDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>לא הצלחנו לקרוא את המיקום שלך</AlertDialogTitle>
+            <AlertDialogDescription>
+              ייתכן שדחית את ההרשאה למיקום או שאין GPS זמין. אם תמשיך בלי מיקום, הנוסעים לא יראו אותך על המפה.
+              מומלץ לאשר גישה למיקום בדפדפן ולנסות שוב.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={continueWithoutLocation}>המשך בלי מיקום</AlertDialogCancel>
+            <AlertDialogAction onClick={() => { setPendingDialog(false); startRide(); }}>
+              נסה שוב
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
   );
 }
