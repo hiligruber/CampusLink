@@ -81,14 +81,21 @@ const RideCard = ({ ride, index, driverAvatarUrl }: RideCardProps) => {
     window.open(url.toString(), "_blank");
   };
 
-  const handleJoin = async () => {
+  const handleJoinSubmit = async (pickupLocation: string) => {
     if (!user) return;
+    setJoining(true);
     try {
-      await joinRide(ride.id, user.id);
+      await joinRide(ride.id, user.id, pickupLocation);
       queryClient.invalidateQueries({ queryKey: ["rides"] });
-      toast.success(`הבקשה נשלחה ל${driverName}`, { description: `${ride.origin} → ${ride.destination}` });
+      queryClient.invalidateQueries({ queryKey: ["bookings"] });
+      toast.success(`הבקשה נשלחה ל${driverName}`, {
+        description: `איסוף: ${pickupLocation}`,
+      });
+      setJoinOpen(false);
     } catch (e: any) {
       toast.error(e?.message || "Failed to join ride");
+    } finally {
+      setJoining(false);
     }
   };
 
