@@ -1,6 +1,6 @@
 import { supabase } from "@/integrations/supabase/client";
 
-export type RidePhase = "scheduled" | "en_route" | "in_progress" | "completed";
+export type RidePhase = "scheduled" | "en_route" | "picked_up" | "in_progress" | "completed";
 
 export interface RideRow {
   id: string;
