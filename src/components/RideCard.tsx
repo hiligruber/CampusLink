@@ -246,7 +246,7 @@ const RideCard = ({ ride, index, driverAvatarUrl }: RideCardProps) => {
         ) : (
           <Button
             size="sm"
-            onClick={handleJoin}
+            onClick={() => setJoinOpen(true)}
             disabled={isFull || isInactive}
             className="flex-[2] rounded-xl text-xs font-bold h-9 shadow-pop bg-gradient-to-r from-primary to-accent hover:opacity-95 border-0"
           >
@@ -254,6 +254,16 @@ const RideCard = ({ ride, index, driverAvatarUrl }: RideCardProps) => {
           </Button>
         )}
       </div>
+
+      <JoinRideDialog
+        open={joinOpen}
+        onOpenChange={setJoinOpen}
+        rideOrigin={ride.origin}
+        rideDestination={ride.destination}
+        driverName={driverName}
+        submitting={joining}
+        onConfirm={handleJoinSubmit}
+      />
 
       <AnimatePresence>
         {showMap && (
