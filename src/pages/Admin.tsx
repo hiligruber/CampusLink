@@ -20,11 +20,7 @@ const Admin = () => {
   const { data: pending, isLoading } = useQuery({
     queryKey: ["pending-verifications"],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("profiles")
-        .select("*")
-        .eq("verification_status", "pending_review")
-        .order("updated_at", { ascending: false });
+      const { data, error } = await supabase.rpc("get_pending_verifications");
       if (error) throw error;
       return data;
     },

@@ -294,6 +294,64 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      get_my_profile: {
+        Args: never
+        Returns: {
+          avatar_url: string | null
+          created_at: string
+          email: string
+          full_name: string
+          hobbies: string | null
+          id: string
+          institution: string | null
+          institution_id: string | null
+          music_preference: string | null
+          rating: number
+          rating_count: number
+          rejection_reason: string | null
+          student_id_url: string | null
+          total_ratings: number
+          updated_at: string
+          user_id: string
+          verification_status: Database["public"]["Enums"]["verification_status"]
+          verified_at: string | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "profiles"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      get_pending_verifications: {
+        Args: never
+        Returns: {
+          avatar_url: string | null
+          created_at: string
+          email: string
+          full_name: string
+          hobbies: string | null
+          id: string
+          institution: string | null
+          institution_id: string | null
+          music_preference: string | null
+          rating: number
+          rating_count: number
+          rejection_reason: string | null
+          student_id_url: string | null
+          total_ratings: number
+          updated_at: string
+          user_id: string
+          verification_status: Database["public"]["Enums"]["verification_status"]
+          verified_at: string | null
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "profiles"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
