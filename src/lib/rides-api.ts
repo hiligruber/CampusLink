@@ -1,5 +1,7 @@
 import { supabase } from "@/integrations/supabase/client";
 
+export type RidePhase = "scheduled" | "en_route" | "in_progress" | "completed";
+
 export interface RideRow {
   id: string;
   driver_id: string;
@@ -12,13 +14,17 @@ export interface RideRow {
   notes: string | null;
   status: "active" | "cancelled";
   created_at: string;
+  ride_phase?: RidePhase;
+  started_at?: string | null;
+  completed_at?: string | null;
 }
 
 export type RideDisplayStatus = "active" | "cancelled" | "completed";
 
 export const getDisplayStatus = (r: RideRow): RideDisplayStatus => {
   if (r.status === "cancelled") return "cancelled";
-  if (new Date(r.departure_time).getTime() < Date.now()) return "completed";
+  if (r.ride_phase === "completed") return "completed";
+  if (new Date(r.departure_time).getTime() < Date.now() - 6 * 60 * 60 * 1000) return "completed";
   return "active";
 };
 
@@ -67,5 +73,16 @@ export async function joinRide(rideId: string, passengerId: string) {
     passenger_id: passengerId,
     status: "pending",
   });
+  if (error) throw error;
+}
+
+export async function setRidePhase(rideId: string, phase: RidePhase) {
+  const updates: Record<string, any> = { ride_phase: phase };
+  if (phase === "in_progress") updates.started_at = new Date().toISOString();
+  if (phase === "completed") updates.completed_at = new Date().toISOString();
+  const { error } = await supabase
+    .from("rides")
+    .update(updates as any)
+    .eq("id", rideId);
   if (error) throw error;
 }
