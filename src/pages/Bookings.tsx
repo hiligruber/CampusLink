@@ -225,6 +225,15 @@ const Bookings = () => {
                     </span>
                   </div>
                   {renderRideInfo(b.ride)}
+                  {b.pickup_location && (
+                    <div className="flex items-start gap-2 text-xs bg-primary/5 border border-primary/15 rounded-xl px-3 py-2">
+                      <MapPin className="w-3.5 h-3.5 text-primary mt-0.5 shrink-0" />
+                      <div>
+                        <p className="text-[10px] font-bold text-primary uppercase tracking-wide">איסוף</p>
+                        <p className="text-foreground font-semibold">{b.pickup_location}</p>
+                      </div>
+                    </div>
+                  )}
                   {b.status === "pending" && (
                     <div className="flex gap-2 pt-1">
                       <Button
