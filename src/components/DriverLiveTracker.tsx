@@ -8,6 +8,7 @@ interface Props {
   destination: string;
   height?: string;
   phase?: "scheduled" | "en_route" | "picked_up" | "in_progress" | "completed";
+  pickupLocation?: string | null;
 }
 
 interface LocationRow {
