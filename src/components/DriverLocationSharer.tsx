@@ -28,7 +28,7 @@ export default function DriverLocationSharer({ rideId, driverId, phase }: Props)
   const [busy, setBusy] = useState(false);
 
   const isDriver = user?.id === driverId;
-  const sharingActive = phase === "en_route" || phase === "in_progress";
+  const sharingActive = phase === "en_route" || phase === "picked_up" || phase === "in_progress";
 
   // Start/stop geolocation watcher based on phase
   useEffect(() => {
