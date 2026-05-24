@@ -114,16 +114,20 @@ export default function DriverLiveTracker({ rideId, destination, height = "260px
   }
 
   if (!location) {
+    const isActivePhase = phase === "en_route" || phase === "picked_up" || phase === "in_progress";
     const headline =
       phase === "completed" ? "הנסיעה הסתיימה"
-      : phase === "in_progress" ? "הנסיעה בעיצומה"
+      : isActivePhase ? "מתחבר למיקום הנהג…"
       : "הנהג עדיין לא יצא לדרך";
     const subline =
       phase === "completed" ? "תודה שנסעת איתנו"
+      : isActivePhase ? "הנהג בדרך — מחכים לפיקס GPS ראשון"
       : "ברגע שהנהג ילחץ \"בדרך אליך\" המיקום יעודכן כאן בזמן אמת";
     return (
       <div className="bg-secondary/40 rounded-xl p-4 text-center">
-        <Navigation className="w-6 h-6 mx-auto text-muted-foreground/50 mb-2" />
+        {isActivePhase
+          ? <Loader2 className="w-6 h-6 mx-auto text-primary/60 mb-2 animate-spin" />
+          : <Navigation className="w-6 h-6 mx-auto text-muted-foreground/50 mb-2" />}
         <p className="text-sm font-semibold">{headline}</p>
         <p className="text-xs text-muted-foreground mt-1">{subline}</p>
       </div>
