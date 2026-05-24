@@ -1,38 +1,43 @@
+## תכנית: זרימת נסיעה תלת-שלבית עם אישור ידני
 
-## מה נבנה
+### שינויי DB
+- הוספה לטבלת `rides`:
+  - `ride_phase` text default `'scheduled'` עם constraint לערכים: `scheduled` | `en_route` | `in_progress` | `completed`
+  - `started_at` timestamptz nullable
+  - `completed_at` timestamptz nullable
+- טריגר `notify_on_ride_phase_change`: כשמשתנה `ride_phase`, יוצר התראה לכל הנוסעים המאושרים (`bookings.status='accepted'`) — הודעה לפי השלב.
+- מחיקה אוטומטית מ-`driver_locations` כשמגיעים ל-`completed`.
 
-### 1. לוגו חדש 🌍
-- ניצור SVG חדש: כדור הארץ סטיליסטי עם קו מסלול מעוקל מקיף אותו (אורביטה/נתיב טיסה) + סיכה קטנה.
-- צבעים תואמים לפלטה הקיימת (ירוק/לבן/שחור), גרדיאנט עדין.
-- מחליף את `src/assets/campuslink-logo.svg` — לא נדרשת שינוי בקוד שמשתמש בו.
+### `DriverLocationSharer` (החלפה מלאה)
+שלושה כפתורים לפי `ride_phase`:
+1. **scheduled** → כפתור "בדרך אליך 🚗" → מעדכן `ride_phase='en_route'`, מתחיל `watchPosition`.
+2. **en_route** → כפתור "התחל נסיעה" → `ride_phase='in_progress'`, `started_at=now()`, ממשיך לשתף.
+3. **in_progress** → כפתור "סיים נסיעה" → `ride_phase='completed'`, `completed_at=now()`, עוצר GPS ומוחק מ-`driver_locations`.
+- אינדיקטור אדום בולט "המיקום שלך משותף עכשיו 🔴" בכל שלב פעיל.
+- הפרופס מקבל גם `phase` ו-`onPhaseChange`.
 
-### 2. שרשרת פעילות מלאה לנסיעה
+### `DriverLiveTracker`
+- מציג כותרת לפי שלב: "הנהג בדרך אליך • ETA X" / "בנסיעה • הגעה ליעד X" / "טרם יצא לדרך".
+- ETA כבר מחושב — רק עדכון טקסט לפי `ride_phase`.
 
-#### א. התראות באפליקציה (In-App)
-- טבלה חדשה `notifications` (user_id, type, title, body, ride_id, booking_id, read, created_at) עם RLS.
-- טריגרים ב-DB ששולחים התראות אוטומטית:
-  - כשנוצר booking → התראה לנוסע ("ביקשת להצטרף ל…") ולנהג ("מישהו רוצה להצטרף").
-  - כש-booking עובר ל-`accepted` → התראה לנוסע ("הבקשה אושרה — יציאה בשעה …").
-  - כש-booking עובר ל-`rejected` → התראה לנוסע.
-  - 30/10 דקות לפני היציאה → תזכורת לנוסע ולנהג (דרך pg_cron + edge function).
-- פעמון בהדר (קיים) יראה ספירה ויפתח Dropdown עם רשימת התראות בזמן אמת (Supabase Realtime על `notifications`).
+### `RideCard`
+- העברת `ride_phase` ל-tracker וsharer.
+- תווית סטטוס בולטת לנוסעים מאושרים: "הנהג בדרך 🚗" / "בנסיעה" / "הסתיימה".
 
-#### ב. התראות באימייל
-- הגדרת תשתית אימייל של Lovable Cloud (דורש בחירת דומיין שולח דרך דיאלוג ההגדרה).
-- תבניות React Email:
-  - `booking-requested-passenger` — אישור שהבקשה נשלחה (כולל מוצא/יעד/שעה).
-  - `booking-requested-driver` — התראה לנהג שמישהו רוצה להצטרף.
-  - `booking-accepted` — אישור לנוסע עם פרטי הנסיעה והנהג.
-  - `booking-rejected` — הודעה לנוסע.
-  - `ride-reminder` — תזכורת 30 דק' לפני (לשני הצדדים).
-- שליחה אוטומטית דרך `send-transactional-email` בנקודות הטריגר המתאימות (אותם מקומות שבהם מבצעים את ה-insert/update על bookings).
+### `Profile` — היסטוריית נסיעות
+- שני tabs: **כנהג** (rides שבהן `driver_id=me`) ו**כנוסע** (bookings.accepted שלי + ride join).
+- מציג origin → destination, תאריך, סטטוס (`scheduled`/`en_route`/`in_progress`/`completed`/`cancelled`).
+- קומפוננטה חדשה `RideHistory.tsx`.
 
-#### ג. מעקב GPS חי אחר הנהג + ETA
-- טבלה חדשה `driver_locations` (ride_id, driver_id, lat, lng, heading, updated_at) — שורה אחת לנסיעה, מתעדכנת בזמן אמת. RLS: הנהג יכול לעדכן את שלו, הנוסעים המאושרים והנהג יכולים לקרוא.
-- הוספת publication ל-Realtime על הטבלה.
-- כפתור חדש בכרטיס הנסיעה / מסך booking לנהג: **"התחל נסיעה / שתף מיקום"** — מפעיל `navigator.geolocation.watchPosition` ומעדכן את הטבלה כל ~5 שניות.
-- מסך/דרואר חדש לנוסע מאושר: **"מעקב אחר הנהג"** — מציג:
-  - מפת Google Maps עם marker חי של הנהג + יעד הנסיעה.
-  - ETA דינמי באמצעות Google Maps Directions API (מחשב מחדש כשהמיקום מתעדכן).
-  - מרחק נוכחי בק"מ.
-- כשהנהג מגיע ליעד (או לוחץ "סיימתי") → המיקום נמחק והנסיעה מסומנת
+### פרטיות
+- `driver_locations` נכתב רק החל מ-`en_route`. לפני זה הכפתור היחיד הזמין הוא "בדרך אליך".
+- כשמגיעים ל-`completed`, השורה נמחקת מיד (גם ב-client וגם דרך trigger כגיבוי).
+
+### קבצים
+- migration חדש
+- `src/components/DriverLocationSharer.tsx` — שכתוב
+- `src/components/DriverLiveTracker.tsx` — עדכון טקסט לפי phase
+- `src/components/RideCard.tsx` — העברת phase + תווית
+- `src/components/RideHistory.tsx` — חדש
+- `src/pages/Profile.tsx` — הוספת tab היסטוריה
+- `src/lib/rides-api.ts` — הוספת `RidePhase` type ופונקציה `setRidePhase`
