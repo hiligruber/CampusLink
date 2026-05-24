@@ -1,43 +1,38 @@
-## תכנית: זרימת נסיעה תלת-שלבית עם אישור ידני
+## תכנית: נקודת איסוף לנוסע + שלב "אספתי נוסעים"
 
 ### שינויי DB
-- הוספה לטבלת `rides`:
-  - `ride_phase` text default `'scheduled'` עם constraint לערכים: `scheduled` | `en_route` | `in_progress` | `completed`
-  - `started_at` timestamptz nullable
-  - `completed_at` timestamptz nullable
-- טריגר `notify_on_ride_phase_change`: כשמשתנה `ride_phase`, יוצר התראה לכל הנוסעים המאושרים (`bookings.status='accepted'`) — הודעה לפי השלב.
-- מחיקה אוטומטית מ-`driver_locations` כשמגיעים ל-`completed`.
+- `bookings`: הוספת `pickup_location text` ו-`pickup_lat double precision`, `pickup_lng double precision` (nullable).
+- `rides.ride_phase` constraint: הוספת ערך `picked_up` בין `en_route` ל-`in_progress`.
+- עדכון `notify_on_ride_phase_change` כדי לטפל גם בשלב `picked_up`.
 
-### `DriverLocationSharer` (החלפה מלאה)
-שלושה כפתורים לפי `ride_phase`:
-1. **scheduled** → כפתור "בדרך אליך 🚗" → מעדכן `ride_phase='en_route'`, מתחיל `watchPosition`.
-2. **en_route** → כפתור "התחל נסיעה" → `ride_phase='in_progress'`, `started_at=now()`, ממשיך לשתף.
-3. **in_progress** → כפתור "סיים נסיעה" → `ride_phase='completed'`, `completed_at=now()`, עוצר GPS ומוחק מ-`driver_locations`.
-- אינדיקטור אדום בולט "המיקום שלך משותף עכשיו 🔴" בכל שלב פעיל.
-- הפרופס מקבל גם `phase` ו-`onPhaseChange`.
+### זרימת נוסע (RideCard)
+- כפתור "בקש להצטרף" פותח דיאלוג קטן עם:
+  - `PlacesAutocomplete` "נקודת איסוף" — placeholder מציע את `ride.origin` כברירת מחדל; הנוסע יכול לבחור כל כתובת.
+  - טקסט עזרה: "ודאו שהנקודה קרובה למסלול הנהג"
+  - כפתור "שלח בקשה" → `joinRide` עם pickup data
+- אם הנוסע לא בחר, ממלאים אוטומטית את `ride.origin`.
+
+### זרימת נהג (Bookings — incoming + DriverLocationSharer)
+- ב-`Bookings.tsx` (incoming), לכל בקשה pending/accepted מוצגת נקודת האיסוף של הנוסע (אייקון MapPin + טקסט).
+- `DriverLocationSharer` — שלבים מעודכנים:
+  1. `scheduled` → "בדרך אליך" (en_route)
+  2. `en_route` → "אספתי את הנוסעים" (picked_up)
+  3. `picked_up` → "התחל נסיעה" (in_progress)
+  4. `in_progress` → "סיים נסיעה" (completed)
+  - שיתוף מיקום פעיל מ-`en_route` ועד `completed`.
 
 ### `DriverLiveTracker`
-- מציג כותרת לפי שלב: "הנהג בדרך אליך • ETA X" / "בנסיעה • הגעה ליעד X" / "טרם יצא לדרך".
-- ETA כבר מחושב — רק עדכון טקסט לפי `ride_phase`.
+- הוספת label לשלב `picked_up`: "הנהג אסף את הנוסעים — בדרך ליעד".
 
-### `RideCard`
-- העברת `ride_phase` ל-tracker וsharer.
-- תווית סטטוס בולטת לנוסעים מאושרים: "הנהג בדרך 🚗" / "בנסיעה" / "הסתיימה".
-
-### `Profile` — היסטוריית נסיעות
-- שני tabs: **כנהג** (rides שבהן `driver_id=me`) ו**כנוסע** (bookings.accepted שלי + ride join).
-- מציג origin → destination, תאריך, סטטוס (`scheduled`/`en_route`/`in_progress`/`completed`/`cancelled`).
-- קומפוננטה חדשה `RideHistory.tsx`.
-
-### פרטיות
-- `driver_locations` נכתב רק החל מ-`en_route`. לפני זה הכפתור היחיד הזמין הוא "בדרך אליך".
-- כשמגיעים ל-`completed`, השורה נמחקת מיד (גם ב-client וגם דרך trigger כגיבוי).
+### `RideHistory`
+- הוספת label "נאספו" לשלב `picked_up`.
 
 ### קבצים
 - migration חדש
-- `src/components/DriverLocationSharer.tsx` — שכתוב
-- `src/components/DriverLiveTracker.tsx` — עדכון טקסט לפי phase
-- `src/components/RideCard.tsx` — העברת phase + תווית
-- `src/components/RideHistory.tsx` — חדש
-- `src/pages/Profile.tsx` — הוספת tab היסטוריה
-- `src/lib/rides-api.ts` — הוספת `RidePhase` type ופונקציה `setRidePhase`
+- `src/lib/rides-api.ts` — עדכון `RidePhase`, חתימת `joinRide`
+- `src/components/JoinRideDialog.tsx` — חדש (דיאלוג עם autocomplete)
+- `src/components/RideCard.tsx` — שימוש בדיאלוג במקום join ישיר
+- `src/components/DriverLocationSharer.tsx` — שלב חדש
+- `src/components/DriverLiveTracker.tsx` — label
+- `src/components/RideHistory.tsx` — label
+- `src/pages/Bookings.tsx` — הצגת pickup לנהג

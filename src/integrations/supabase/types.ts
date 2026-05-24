@@ -19,6 +19,9 @@ export type Database = {
           created_at: string
           id: string
           passenger_id: string
+          pickup_lat: number | null
+          pickup_lng: number | null
+          pickup_location: string | null
           ride_id: string
           status: string
           updated_at: string
@@ -27,6 +30,9 @@ export type Database = {
           created_at?: string
           id?: string
           passenger_id: string
+          pickup_lat?: number | null
+          pickup_lng?: number | null
+          pickup_location?: string | null
           ride_id: string
           status?: string
           updated_at?: string
@@ -35,6 +41,9 @@ export type Database = {
           created_at?: string
           id?: string
           passenger_id?: string
+          pickup_lat?: number | null
+          pickup_lng?: number | null
+          pickup_location?: string | null
           ride_id?: string
           status?: string
           updated_at?: string
