@@ -337,7 +337,9 @@ const Bookings = () => {
                             destination={b.ride.destination}
                             phase={(b.ride.ride_phase ?? "scheduled") as any}
                             pickupLocation={b.pickup_location}
+                            driverName={b.ride.driver_name}
                           />
+
                         )}
                       </>
                     )}

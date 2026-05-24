@@ -1,64 +1,62 @@
-# תיקון שיתוף מיקום הנהג
+# מפה ברורה + מעקב במסך מלא בסגנון Uber
 
-## מה הבעיה
-בנסיעה של ליאם הטבלה `driver_locations` נשארה ריקה לכל אורך הנסיעה — לכן הנוסעת לא ראתה כלום. שלושת שורשי הבעיה:
+הרעיון: המפה הקטנה בכרטיס הופכת ל"תצוגה מקדימה" קליקבילית. בלחיצה נפתח Sheet במסך מלא עם חוויית מעקב מקצועית — מפה ענקית, כרטיס מידע צף מלמטה, אנימציה חלקה של רכב הנהג, ופעולות מהירות (התקשרות לנהג, ניווט ב־Google Maps, שיתוף).
 
-1. **המעקב חי רק כשהדף מוצג** — `watchPosition` רץ בתוך `DriverLocationSharer`. ברגע שהנהג עובר ל"בית"/"בקשות"/סוגר לשונית, המעקב נעצר.
-2. **אין פיקס ראשון מיידי** — `watchPosition` יכול לקחת 10–30 שניות עד קואורדינטה ראשונה. ליאם עברה בין השלבים מהר מדי, ולכן שום שורה לא נכתבה.
-3. **הנהג לא מודע לכשל** — הצ׳יפ "המיקום שלך משותף" מופיע מיד אחרי לחיצה, גם אם ההרשאה נדחתה או שאין GPS. שגיאות נופלות ל-toast חד-פעמי שנעלם.
+## מה משתנה
 
----
+### 1) המפה בכרטיס (תצוגה מקדימה משופרת)
+- גובה מעט גדול יותר + פינות מעוגלות יותר (1.25rem).
+- שכבת overlay עדינה למעלה: "הקש להרחבה" עם אייקון Maximize2.
+- שכבת gradient עדינה למטה כדי לשפר ניגודיות הצ'יפים.
+- כל המפה לחיצה אחת → פותח את התצוגה המלאה.
+- בלי אינטראקציה בתוך התצוגה המקדימה (gesture handling = "none") כדי שלא יבלע גלילה.
 
-## הפתרון
+### 2) תצוגה מלאה — `LiveTrackingSheet` (חדש)
+Sheet מלמטה (`vaul`/shadcn Sheet קיים) שעולה למסך מלא:
 
-### 1. Provider גלובלי שמשתף מיקום ברקע
-ספק חדש `LocationSharingProvider` שיעטוף את כל האפליקציה ב-`App.tsx`. הוא:
-- מאזין לנסיעות שבהן המשתמש הנוכחי הוא נהג ובשלב `en_route` / `picked_up` / `in_progress` (subscription על `rides`).
-- מריץ `watchPosition` יחיד גלובלי כשיש לפחות נסיעה אחת פעילה. כותב upsert ל-`driver_locations` עבור **כל** הנסיעות הפעילות של הנהג.
-- מנקה את ה-watcher כשאין יותר נסיעות פעילות.
-- שורד מעבר בין דפים — בניגוד לרכיב הנוכחי שמת ברגע ש-`DriverLocationSharer` נשלף מה-DOM.
-- חושף `useLocationSharing()` עם: `status` (`idle` / `requesting` / `active` / `denied` / `unavailable`), `lastFix` (timestamp), `error`, ו-`retry()`.
+```text
+┌─────────────────────────────────┐
+│  ✕                              │  ← כפתור סגירה צף
+│                                 │
+│         M A P  (full)           │  ← מפה ממלאת את כל המסך
+│         🚗 ─ ─ ─ 📍              │
+│                                 │
+├─────────────────────────────────┤
+│  ● הנהג בדרך אליך               │  ← כרטיס צף תחתון
+│  ⏱ 7 דק'   📏 2.4 ק"מ            │
+│  ─────────────────────          │
+│  👤 ליאם · 4.9★                 │
+│  [📞 התקשר] [🧭 פתח בWaze]      │
+└─────────────────────────────────┘
+```
 
-### 2. פיקס מיידי בלחיצה על "בדרך אליך"
-ב-`DriverLocationSharer.advance()` כשעוברים מ-`scheduled` ל-`en_route`:
-1. לפני `setRidePhase`, להריץ `getCurrentPosition` (פעם אחת, timeout 8 שניות).
-2. לכתוב upsert ראשון ל-`driver_locations` עם הקואורדינטה שהתקבלה.
-3. רק אז להעביר את ה-phase ולהמשיך לסטרימינג רגיל דרך ה-Provider.
-4. אם `getCurrentPosition` נכשל (הרשאה נדחתה/timeout): הצגת `AlertDialog` עם הסבר "לא הצלחנו לקרוא את המיקום שלך — הנוסעים לא יראו אותך. ניתן להמשיך בכל זאת או לתת הרשאה ולנסות שוב". זה מבטיח שהפיקס הראשון נוצר *לפני* שמישהו מצפה לראות אותו.
+מאפיינים:
+- **מפה מלאת מסך** עם styling כהה/בהיר תואם theme, ללא UI מיותר.
+- **Marker רכב מסתובב** לפי `heading` (אנימציית `transition: transform`).
+- **קו מסלול חי** (DirectionsRenderer) בצבע primary, עבה ועם stroke לבן מתחת לקריאות.
+- **Auto-fit bounds** — תמיד מציג גם את הנהג וגם את היעד/האיסוף בפריים אחד; כפתור "מרכז על הנהג" צף כשהמשתמש גורר.
+- **כרטיס מידע תחתון צף** (`rounded-t-3xl`, blur background): שלב נסיעה, ETA גדול, מרחק, פרטי נהג, ושני CTAs:
+  - `tel:` — התקשר לנהג (אם יש טלפון בפרופיל).
+  - `https://www.google.com/maps/dir/?api=1&destination=...` — פתח ניווט.
+- **חיווי "live"** — נקודה ירוקה פועמת + "עודכן לפני Xש'".
+- **State ריק חכם** — אותו טיפול שכבר קיים (ממתין ל־GPS / הנסיעה הסתיימה).
 
-### 3. אינדיקטור סטטוס GPS אמיתי לנהג
-החלפת הצ׳יפ הסטטי "המיקום שלך משותף" בצ׳יפ דינמי הקורא מ-`useLocationSharing()`:
-- 🟢 `active` + "עודכן לפני Xש'" — מבוסס על `lastFix`.
-- 🟡 `requesting` + ספינר — מחפש GPS.
-- 🔴 `denied` + כפתור "אפשר גישה" שמריץ `retry()`.
-- ⚪ `unavailable` + "GPS לא זמין בדפדפן".
-זה נותן לנהג ביטחון שהמיקום *באמת* יוצא, ומבליט מיד תקלות.
+### 3) שינויים בקוד (מינימליים)
+- **חדש**: `src/components/LiveTrackingSheet.tsx` — ה־Sheet במסך מלא. מקבל אותם props כמו `DriverLiveTracker` + `open/onOpenChange`.
+- **חדש**: `src/components/MapPreviewCard.tsx` (אופציונלי, או בתוך `DriverLiveTracker`) — wrapper לחיץ סביב המפה הקטנה.
+- **עדכון**: `src/components/DriverLiveTracker.tsx` — להוסיף state `expanded`, להפוך את ה־`GoogleMap` ל־wrapper לחיץ, ולרנדר את `LiveTrackingSheet`. הלוגיקה של realtime/ETA/directions עוברת ל־hook משותף `useDriverLiveLocation(rideId, target)` כדי לא לשכפל בין preview ל־sheet.
+- **חדש**: `src/hooks/use-driver-live-location.ts` — מאגד את ה־subscription, ה־ETA throttling וה־directions.
 
-### 4. עדכון `DriverLiveTracker` (צד נוסע) למצבי שוליים
-התוספת ל-empty state הקיים:
-- אם `phase` ב-`en_route`/`picked_up`/`in_progress` אבל אין `driver_locations` כבר 60+ שניות → "הנהג חזר לחיבור" עם spinner קטן (במקום הריק הנוכחי).
-- אם `phase === 'completed'` ויש last-known location עם השלב הקודם — להשאיר את הסיכום במקום מסך ריק. (אופציונלי, אם מתאפשר.)
+### 4) נגישות + UX
+- כפתור הפתיחה: `aria-label="הרחב מפת מעקב"`, גובה min 44px.
+- ב־Sheet: `aria-label="מעקב חי אחרי הנהג"`, סגירה ב־Esc ובלחיצה מחוץ.
+- ניגודיות: שימוש בטוקנים `bg-background/95 backdrop-blur` לכרטיס התחתון.
+- RTL מלא נשמר.
+- אנימציית פתיחה/סגירה חלקה (Sheet קיים מספק את זה).
 
----
+## מה לא משתנה
+- ה־schema של `driver_locations`, ה־realtime, וה־`LocationSharingContext` — כולם נשארים בדיוק כמו שהם.
+- הגיון ה־ETA וה־directions זהה, רק נשלף ל־hook.
 
-## פרטים טכניים
-
-### קבצים חדשים
-- `src/contexts/LocationSharingContext.tsx` — Provider + hook. שימוש ב-`useAuth()` ושאילתת TanStack על `rides` עם `driver_id = user.id` ו-`ride_phase in (en_route, picked_up, in_progress)`. subscription realtime על שינויי שלב כדי להתחיל/לעצור watcher.
-
-### קבצים שמתעדכנים
-- `src/App.tsx` — עטיפה ב-`<LocationSharingProvider>` בתוך `<AuthProvider>`.
-- `src/components/DriverLocationSharer.tsx`:
-  - הסרת ה-`watchPosition` המקומי (הועבר ל-Provider).
-  - הוספת קריאת `getCurrentPosition` יחידה כ"פיקס ראשון" ב-`advance("en_route", …)`.
-  - שימוש ב-`useLocationSharing()` לרינדור הצ׳יפ הדינמי.
-  - `AlertDialog` למקרה של דחיית הרשאה.
-- `src/components/DriverLiveTracker.tsx` — תוספת מסך "מתחבר מחדש" כש-phase פעיל אך אין נתון >60ש'.
-
-### בלי שינויי DB
-המבנה הקיים (`driver_locations` + RLS + טריגר מחיקה ב-`completed`) מספיק. אין מיגרציה.
-
-### Edge cases
-- נהג מנהל כמה נסיעות פעילות במקביל — ה-Provider עושה upsert בלולאה על כולן עבור כל פיקס.
-- טלפון נעול / טאב ברקע — `watchPosition` ממשיך בדפדפנים נתמכים. מסמכים את המגבלה ב-tooltip על הצ׳יפ.
-- אין שום שינוי בלוגיקת הזמנות/הרשאות/ניתוב.
+## פתוח להחלטה
+האם להוסיף כפתורי **התקשרות לנהג** ו/או **פתח ב־Waze/Google Maps** בכרטיס התחתון? (דורש קריאת `phone` מטבלת `profiles` של הנהג — קיימת.) ברירת המחדל שלי: כן, שניהם.
