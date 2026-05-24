@@ -184,6 +184,36 @@ export type Database = {
         }
         Relationships: []
       }
+      ride_messages: {
+        Row: {
+          body: string
+          created_at: string
+          id: string
+          read: boolean
+          recipient_id: string
+          ride_id: string
+          sender_id: string
+        }
+        Insert: {
+          body: string
+          created_at?: string
+          id?: string
+          read?: boolean
+          recipient_id: string
+          ride_id: string
+          sender_id: string
+        }
+        Update: {
+          body?: string
+          created_at?: string
+          id?: string
+          read?: boolean
+          recipient_id?: string
+          ride_id?: string
+          sender_id?: string
+        }
+        Relationships: []
+      }
       rides: {
         Row: {
           available_seats: number
@@ -269,6 +299,10 @@ export type Database = {
           _role: Database["public"]["Enums"]["app_role"]
           _user_id: string
         }
+        Returns: boolean
+      }
+      is_user_in_ride: {
+        Args: { _ride_id: string; _user_id: string }
         Returns: boolean
       }
     }
