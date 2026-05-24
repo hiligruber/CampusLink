@@ -21,7 +21,7 @@ interface LocationRow {
 const mapContainerStyle = { width: "100%", borderRadius: "1rem" };
 const defaultCenter = { lat: 32.0853, lng: 34.7818 };
 
-export default function DriverLiveTracker({ rideId, destination, height = "260px" }: Props) {
+export default function DriverLiveTracker({ rideId, destination, height = "260px", phase = "scheduled" }: Props) {
   const [location, setLocation] = useState<LocationRow | null>(null);
   const [eta, setEta] = useState<{ duration: string; distance: string } | null>(null);
   const [directions, setDirections] = useState<google.maps.DirectionsResult | null>(null);
