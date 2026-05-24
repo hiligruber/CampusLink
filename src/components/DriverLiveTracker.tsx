@@ -1,7 +1,8 @@
-import { useEffect, useState, useRef } from "react";
+import { useState } from "react";
 import { GoogleMap, Marker, DirectionsRenderer } from "@react-google-maps/api";
-import { supabase } from "@/integrations/supabase/client";
-import { Loader2, Navigation, Clock } from "lucide-react";
+import { Loader2, Navigation, Clock, Maximize2 } from "lucide-react";
+import { useDriverLiveLocation } from "@/hooks/use-driver-live-location";
+import LiveTrackingSheet from "./LiveTrackingSheet";
 
 interface Props {
   rideId: string;
@@ -9,100 +10,26 @@ interface Props {
   height?: string;
   phase?: "scheduled" | "en_route" | "picked_up" | "in_progress" | "completed";
   pickupLocation?: string | null;
+  driverName?: string;
 }
 
-interface LocationRow {
-  ride_id: string;
-  lat: number;
-  lng: number;
-  heading: number | null;
-  updated_at: string;
-}
+const mapContainerStyle = { width: "100%", borderRadius: "1.25rem" };
 
-const mapContainerStyle = { width: "100%", borderRadius: "1rem" };
-const defaultCenter = { lat: 32.0853, lng: 34.7818 };
-
-export default function DriverLiveTracker({ rideId, destination, height = "260px", phase = "scheduled", pickupLocation }: Props) {
-  const [location, setLocation] = useState<LocationRow | null>(null);
-  const [eta, setEta] = useState<{ duration: string; distance: string } | null>(null);
-  const [directions, setDirections] = useState<google.maps.DirectionsResult | null>(null);
-  const [loading, setLoading] = useState(true);
-  const lastEtaCalcRef = useRef(0);
-
-  // Initial fetch + realtime subscription
-  useEffect(() => {
-    let active = true;
-
-    (async () => {
-      const { data } = await supabase
-        .from("driver_locations")
-        .select("*")
-        .eq("ride_id", rideId)
-        .maybeSingle();
-      if (active) {
-        setLocation((data as LocationRow) ?? null);
-        setLoading(false);
-      }
-    })();
-
-    const channel = supabase
-      .channel(`driver-loc-${rideId}`)
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "driver_locations", filter: `ride_id=eq.${rideId}` },
-        (payload) => {
-          if (payload.eventType === "DELETE") {
-            setLocation(null);
-            setEta(null);
-            setDirections(null);
-          } else {
-            setLocation(payload.new as LocationRow);
-          }
-        }
-      )
-      .subscribe();
-
-    return () => {
-      active = false;
-      supabase.removeChannel(channel);
-    };
-  }, [rideId]);
-
-  // Reset throttle when phase changes (so we recompute toward new target)
-  useEffect(() => {
-    lastEtaCalcRef.current = 0;
-  }, [phase]);
-
-  // Recalculate ETA when location updates (throttled to once per 15s)
-  useEffect(() => {
-    if (!location || typeof google === "undefined") return;
-    const target = phase === "en_route" && pickupLocation ? pickupLocation : destination;
-    if (!target) return;
-    const now = Date.now();
-    if (now - lastEtaCalcRef.current < 15000) return;
-    lastEtaCalcRef.current = now;
-
-    const service = new google.maps.DirectionsService();
-    service.route(
-      {
-        origin: { lat: location.lat, lng: location.lng },
-        destination: target,
-        travelMode: google.maps.TravelMode.DRIVING,
-      },
-      (result, status) => {
-        if (status === "OK" && result) {
-          setDirections(result);
-          const leg = result.routes[0]?.legs[0];
-          if (leg) {
-            setEta({
-              duration: leg.duration?.text ?? "",
-              distance: leg.distance?.text ?? "",
-            });
-          }
-        }
-      }
-    );
-  }, [location, destination, pickupLocation, phase]);
+export default function DriverLiveTracker({
+  rideId,
+  destination,
+  height = "260px",
+  phase = "scheduled",
+  pickupLocation,
+  driverName,
+}: Props) {
+  const [expanded, setExpanded] = useState(false);
+  const { location, eta, directions, loading } = useDriverLiveLocation({
+    rideId,
+    destination,
+    pickupLocation,
+    phase,
+  });
 
   if (loading) {
     return (
@@ -124,7 +51,7 @@ export default function DriverLiveTracker({ rideId, destination, height = "260px
       : isActivePhase ? "הנהג בדרך — מחכים לפיקס GPS ראשון"
       : "ברגע שהנהג ילחץ \"בדרך אליך\" המיקום יעודכן כאן בזמן אמת";
     return (
-      <div className="bg-secondary/40 rounded-xl p-4 text-center">
+      <div className="bg-secondary/40 rounded-2xl p-4 text-center">
         {isActivePhase
           ? <Loader2 className="w-6 h-6 mx-auto text-primary/60 mb-2 animate-spin" />
           : <Navigation className="w-6 h-6 mx-auto text-muted-foreground/50 mb-2" />}
@@ -142,7 +69,6 @@ export default function DriverLiveTracker({ rideId, destination, height = "260px
     : "ממתין ליציאה";
 
   const etaPrefix = phase === "en_route" ? "מגיע אליך בעוד" : "ETA";
-
   const updatedSecAgo = Math.floor((Date.now() - new Date(location.updated_at).getTime()) / 1000);
 
   return (
@@ -159,33 +85,63 @@ export default function DriverLiveTracker({ rideId, destination, height = "260px
           </span>
         )}
       </div>
-      <GoogleMap
-        mapContainerStyle={{ ...mapContainerStyle, height }}
-        center={{ lat: location.lat, lng: location.lng }}
-        zoom={14}
-        options={{ disableDefaultUI: true, zoomControl: true }}
+
+      {/* Clickable map preview */}
+      <button
+        type="button"
+        onClick={() => setExpanded(true)}
+        aria-label="הרחב מפת מעקב"
+        className="relative w-full block group rounded-[1.25rem] overflow-hidden ring-1 ring-border focus:outline-none focus:ring-2 focus:ring-primary"
       >
-        {directions && (
-          <DirectionsRenderer
-            directions={directions}
-            options={{ suppressMarkers: true, polylineOptions: { strokeColor: "#0d8a5c", strokeWeight: 5 } }}
-          />
-        )}
-        <Marker
-          position={{ lat: location.lat, lng: location.lng }}
-          icon={{
-            url: "data:image/svg+xml;charset=UTF-8," + encodeURIComponent(`
-              <svg xmlns='http://www.w3.org/2000/svg' width='52' height='52' viewBox='0 0 52 52'>
-                <circle cx='26' cy='26' r='22' fill='#10b981' stroke='#ffffff' stroke-width='3'/>
-                <text x='26' y='34' font-size='26' text-anchor='middle'>🚗</text>
-              </svg>
-            `),
-            scaledSize: new google.maps.Size(52, 52),
-            anchor: new google.maps.Point(26, 26),
+        <GoogleMap
+          mapContainerStyle={{ ...mapContainerStyle, height }}
+          center={{ lat: location.lat, lng: location.lng }}
+          zoom={14}
+          options={{
+            disableDefaultUI: true,
+            gestureHandling: "none",
+            keyboardShortcuts: false,
+            clickableIcons: false,
+            styles: [
+              { featureType: "poi", stylers: [{ visibility: "off" }] },
+              { featureType: "transit", stylers: [{ visibility: "off" }] },
+            ],
           }}
-          title="הנהג"
-        />
-      </GoogleMap>
+        >
+          {directions && (
+            <DirectionsRenderer
+              directions={directions}
+              options={{
+                suppressMarkers: true,
+                polylineOptions: { strokeColor: "hsl(var(--primary))", strokeWeight: 5, strokeOpacity: 0.9 },
+              }}
+            />
+          )}
+          <Marker
+            position={{ lat: location.lat, lng: location.lng }}
+            icon={{
+              url: "data:image/svg+xml;charset=UTF-8," + encodeURIComponent(`
+                <svg xmlns='http://www.w3.org/2000/svg' width='52' height='52' viewBox='0 0 52 52'>
+                  <circle cx='26' cy='26' r='22' fill='#10b981' stroke='#ffffff' stroke-width='3'/>
+                  <text x='26' y='34' font-size='26' text-anchor='middle'>🚗</text>
+                </svg>
+              `),
+              scaledSize: new google.maps.Size(52, 52),
+              anchor: new google.maps.Point(26, 26),
+            }}
+            title="הנהג"
+          />
+        </GoogleMap>
+
+        {/* Expand hint */}
+        <div className="absolute top-2.5 left-2.5 inline-flex items-center gap-1 px-2.5 py-1.5 rounded-full bg-background/95 backdrop-blur shadow-md text-[11px] font-bold border border-border group-hover:scale-105 transition">
+          <Maximize2 className="w-3 h-3" />
+          הקש להרחבה
+        </div>
+
+        {/* Subtle gradient to lift bottom chips */}
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 h-12 bg-gradient-to-t from-background/40 to-transparent" />
+      </button>
 
       <div className="flex items-center gap-2 flex-wrap">
         {eta && (
@@ -205,6 +161,16 @@ export default function DriverLiveTracker({ rideId, destination, height = "260px
           עודכן {updatedSecAgo < 60 ? `לפני ${updatedSecAgo}ש'` : "לפני כדקה"}
         </span>
       </div>
+
+      <LiveTrackingSheet
+        open={expanded}
+        onOpenChange={setExpanded}
+        rideId={rideId}
+        destination={destination}
+        pickupLocation={pickupLocation}
+        phase={phase}
+        driverName={driverName}
+      />
     </div>
   );
 }
