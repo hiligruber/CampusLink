@@ -14,6 +14,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
 import { useLang } from "@/contexts/LanguageContext";
 import logo from "@/assets/campuslink-logo.svg";
+import InboxDropdown from "@/components/InboxDropdown";
 
 interface NotificationRow {
   id: string;
@@ -159,6 +160,8 @@ const AppHeader = ({ subtitle }: AppHeaderProps) => {
             <span className="text-border">/</span>
             <span className={lang === "HE" ? "text-primary" : "text-muted-foreground"}>עב</span>
           </button>
+
+          {user && <InboxDropdown />}
 
           {user && (
             <DropdownMenu open={open} onOpenChange={setOpen}>

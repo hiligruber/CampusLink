@@ -1,4 +1,4 @@
-import { Home, PlusCircle, User, Search } from "lucide-react";
+import { Home, PlusCircle, User, Search, Activity } from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { useLang } from "@/contexts/LanguageContext";
@@ -11,6 +11,7 @@ const BottomNav = () => {
   const navItems = [
     { path: "/", icon: Home, label: t("nav_home") },
     { path: "/search", icon: Search, label: t("nav_search") },
+    { path: "/active", icon: Activity, label: "פעילות" },
     { path: "/post", icon: PlusCircle, label: t("nav_post") },
     { path: "/profile", icon: User, label: t("nav_profile") },
   ];
@@ -25,7 +26,7 @@ const BottomNav = () => {
               key={path}
               onClick={() => navigate(path)}
               className={cn(
-                "relative flex flex-col items-center gap-1 px-4 py-2 transition-colors",
+                "relative flex flex-col items-center gap-1 px-3 py-2 transition-colors",
                 active ? "text-primary" : "text-muted-foreground hover:text-foreground"
               )}
             >
