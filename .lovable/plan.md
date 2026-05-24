@@ -1,55 +1,64 @@
-## מה מוסיפים
+# תיקון שיתוף מיקום הנהג
 
-### 1. אייקון הודעות (Inbox) ליד הפעמון
-ב-`AppHeader.tsx` נוסיף כפתור צ'אט (`MessageCircle`) משמאל לפעמון, שפותח Dropdown בסגנון זהה להתראות.
+## מה הבעיה
+בנסיעה של ליאם הטבלה `driver_locations` נשארה ריקה לכל אורך הנסיעה — לכן הנוסעת לא ראתה כלום. שלושת שורשי הבעיה:
 
-**מבנה התיבה:**
-- כותרת "הודעות" + "סמן הכל כנקרא"
-- רשימה **מקובצת לפי נסיעה** (group by `ride_id`): לכל נסיעה כרטיס עם מסלול (`origin ← destination`), שם הצד השני (נהג/נוסע), תצוגה מקדימה של ההודעה האחרונה, חותמת זמן ו-badge עם מספר ההודעות שלא נקראו.
-- לחיצה על שורה פותחת את `RideChat` הקיים בדיאלוג ישירות מהכותרת (בלי לעבור דרך /bookings).
-- ריק → מסך empty state מעוצב.
-- Badge אדום עם סך כל ההודעות שלא נקראו על כפתור התיבה (Realtime — כבר יש subscription על `ride_messages` ב-`use-unread-messages`).
+1. **המעקב חי רק כשהדף מוצג** — `watchPosition` רץ בתוך `DriverLocationSharer`. ברגע שהנהג עובר ל"בית"/"בקשות"/סוגר לשונית, המעקב נעצר.
+2. **אין פיקס ראשון מיידי** — `watchPosition` יכול לקחת 10–30 שניות עד קואורדינטה ראשונה. ליאם עברה בין השלבים מהר מדי, ולכן שום שורה לא נכתבה.
+3. **הנהג לא מודע לכשל** — הצ׳יפ "המיקום שלך משותף" מופיע מיד אחרי לחיצה, גם אם ההרשאה נדחתה או שאין GPS. שגיאות נופלות ל-toast חד-פעמי שנעלם.
 
-**hook חדש `use-message-threads.ts`:**
-שולף את כל ההודעות שבהן המשתמש sender/recipient, מקבץ לפי `ride_id` + `other_user_id`, ומחזיר רשימת threads עם: `rideId`, `otherUserId`, `otherUserName`, `rideOrigin`, `rideDestination`, `lastMessage`, `lastMessageAt`, `unreadCount`. Subscribe ל-realtime על `ride_messages`.
+---
 
-### 2. עמוד "נסיעות פעילות" (`/active`)
-עמוד חדש שמרכז את כל הנסיעות שהמשתמש משתתף בהן כרגע (כנהג או נוסע) — בלי להיכנס לטאבים של בקשות.
+## הפתרון
 
-**מה נחשב "פעיל":**
-- נסיעות שהמשתמש הוא הנהג שלהן ו-`status='active'` ו-`ride_phase != 'completed'`.
-- בקשות `status='accepted'` שלו כנוסע, על נסיעה פעילה.
+### 1. Provider גלובלי שמשתף מיקום ברקע
+ספק חדש `LocationSharingProvider` שיעטוף את כל האפליקציה ב-`App.tsx`. הוא:
+- מאזין לנסיעות שבהן המשתמש הנוכחי הוא נהג ובשלב `en_route` / `picked_up` / `in_progress` (subscription על `rides`).
+- מריץ `watchPosition` יחיד גלובלי כשיש לפחות נסיעה אחת פעילה. כותב upsert ל-`driver_locations` עבור **כל** הנסיעות הפעילות של הנהג.
+- מנקה את ה-watcher כשאין יותר נסיעות פעילות.
+- שורד מעבר בין דפים — בניגוד לרכיב הנוכחי שמת ברגע ש-`DriverLocationSharer` נשלף מה-DOM.
+- חושף `useLocationSharing()` עם: `status` (`idle` / `requesting` / `active` / `denied` / `unavailable`), `lastFix` (timestamp), `error`, ו-`retry()`.
 
-**עיצוב — כרטיס פעולה מהיר לכל נסיעה:**
-- שורה עליונה: תווית תפקיד ("אתה הנהג" / "אתה נוסע"), שלב הנסיעה כ-pill צבעוני (`scheduled` / `en_route` / `picked_up` / `in_progress`), שעת יציאה.
-- מסלול עם בולטים מרובעים (עיצוב RideCard הקיים).
-- שורת CTA אחת ברורה לפי תפקיד+שלב:
-  - **נהג**: כפתור גדול "נהל נסיעה" שפותח את `DriverLocationSharer` inline + כפתורי השלבים.
-  - **נוסע**: כפתור "עקוב אחר הנהג" שפותח `DriverLiveTracker` inline (ETA + מפה).
-- שורת actions משנית: "הודעה" (פותח `RideChat`), "התקשר" (אם יש טלפון בפרופיל — לא ב-scope עכשיו, נדלג), "פרטים" (פותח `RideCard` מלא ב-dialog).
-- מיון: שלב פעיל קודם (`en_route` → `picked_up` → `in_progress`), אחר כך לפי `departure_time` הקרוב.
+### 2. פיקס מיידי בלחיצה על "בדרך אליך"
+ב-`DriverLocationSharer.advance()` כשעוברים מ-`scheduled` ל-`en_route`:
+1. לפני `setRidePhase`, להריץ `getCurrentPosition` (פעם אחת, timeout 8 שניות).
+2. לכתוב upsert ראשון ל-`driver_locations` עם הקואורדינטה שהתקבלה.
+3. רק אז להעביר את ה-phase ולהמשיך לסטרימינג רגיל דרך ה-Provider.
+4. אם `getCurrentPosition` נכשל (הרשאה נדחתה/timeout): הצגת `AlertDialog` עם הסבר "לא הצלחנו לקרוא את המיקום שלך — הנוסעים לא יראו אותך. ניתן להמשיך בכל זאת או לתת הרשאה ולנסות שוב". זה מבטיח שהפיקס הראשון נוצר *לפני* שמישהו מצפה לראות אותו.
 
-**Empty state:** אייקון + טקסט "אין לך נסיעות פעילות כרגע" + כפתור "חפש נסיעה".
+### 3. אינדיקטור סטטוס GPS אמיתי לנהג
+החלפת הצ׳יפ הסטטי "המיקום שלך משותף" בצ׳יפ דינמי הקורא מ-`useLocationSharing()`:
+- 🟢 `active` + "עודכן לפני Xש'" — מבוסס על `lastFix`.
+- 🟡 `requesting` + ספינר — מחפש GPS.
+- 🔴 `denied` + כפתור "אפשר גישה" שמריץ `retry()`.
+- ⚪ `unavailable` + "GPS לא זמין בדפדפן".
+זה נותן לנהג ביטחון שהמיקום *באמת* יוצא, ומבליט מיד תקלות.
 
-### 3. ניווט
-- מוסיפים פריט חדש ל-`BottomNav.tsx`: "פעילות" (אייקון `Activity` או `Car`) שמפנה ל-`/active`. סה"כ 5 פריטים — בית, חיפוש, **פעילות**, פרסם, פרופיל.
-- נוסיף route ב-`App.tsx` ל-`/active` שמרנדר את `ActiveRides.tsx`.
-- כפתור הסטטוס "עקוב" שכבר קיים ב-`Bookings` ימשיך לעבוד, אבל ה-CTA הראשי לנוסעים עם בקשה מאושרת יוביל עכשיו ל-`/active`.
+### 4. עדכון `DriverLiveTracker` (צד נוסע) למצבי שוליים
+התוספת ל-empty state הקיים:
+- אם `phase` ב-`en_route`/`picked_up`/`in_progress` אבל אין `driver_locations` כבר 60+ שניות → "הנהג חזר לחיבור" עם spinner קטן (במקום הריק הנוכחי).
+- אם `phase === 'completed'` ויש last-known location עם השלב הקודם — להשאיר את הסיכום במקום מסך ריק. (אופציונלי, אם מתאפשר.)
 
-## פירוט טכני
+---
 
-**קבצים חדשים:**
-- `src/pages/ActiveRides.tsx` — עמוד הנסיעות הפעילות (query משולב נהג+נוסע, ממיין לפי שלב).
-- `src/components/InboxDropdown.tsx` — תיבת ההודעות בכותרת (משתמשת ב-hook למטה).
-- `src/hooks/use-message-threads.ts` — שולף ומקבץ הודעות + realtime + סך unread.
+## פרטים טכניים
 
-**קבצים שמשתנים:**
-- `src/components/AppHeader.tsx` — מוסיפים את `InboxDropdown` משמאל לפעמון.
-- `src/components/BottomNav.tsx` — מוסיפים פריט "פעילות" עם אייקון.
-- `src/App.tsx` — route חדש `/active`.
-- `src/contexts/LanguageContext.tsx` — מפתחות תרגום: `messages`, `active_rides_title`, `you_are_driver`, `you_are_passenger`, `manage_ride`, `track_driver`, `no_active_rides`.
+### קבצים חדשים
+- `src/contexts/LocationSharingContext.tsx` — Provider + hook. שימוש ב-`useAuth()` ושאילתת TanStack על `rides` עם `driver_id = user.id` ו-`ride_phase in (en_route, picked_up, in_progress)`. subscription realtime על שינויי שלב כדי להתחיל/לעצור watcher.
 
-## מחוץ ל-Scope
-- אין שינוי במבנה ה-DB — מנצלים את `ride_messages`, `bookings`, `rides` כפי שהם.
-- אין כפתור התקשרות (אין שדה טלפון מוצג כרגע).
-- אין שינוי לוגיקה בקבלת/דחיית בקשות — נשאר ב-`Bookings`.
+### קבצים שמתעדכנים
+- `src/App.tsx` — עטיפה ב-`<LocationSharingProvider>` בתוך `<AuthProvider>`.
+- `src/components/DriverLocationSharer.tsx`:
+  - הסרת ה-`watchPosition` המקומי (הועבר ל-Provider).
+  - הוספת קריאת `getCurrentPosition` יחידה כ"פיקס ראשון" ב-`advance("en_route", …)`.
+  - שימוש ב-`useLocationSharing()` לרינדור הצ׳יפ הדינמי.
+  - `AlertDialog` למקרה של דחיית הרשאה.
+- `src/components/DriverLiveTracker.tsx` — תוספת מסך "מתחבר מחדש" כש-phase פעיל אך אין נתון >60ש'.
+
+### בלי שינויי DB
+המבנה הקיים (`driver_locations` + RLS + טריגר מחיקה ב-`completed`) מספיק. אין מיגרציה.
+
+### Edge cases
+- נהג מנהל כמה נסיעות פעילות במקביל — ה-Provider עושה upsert בלולאה על כולן עבור כל פיקס.
+- טלפון נעול / טאב ברקע — `watchPosition` ממשיך בדפדפנים נתמכים. מסמכים את המגבלה ב-tooltip על הצ׳יפ.
+- אין שום שינוי בלוגיקת הזמנות/הרשאות/ניתוב.
