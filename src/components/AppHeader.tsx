@@ -15,6 +15,7 @@ import { toast } from "sonner";
 import { useLang } from "@/contexts/LanguageContext";
 import logo from "@/assets/campuslink-logo.svg";
 import InboxDropdown from "@/components/InboxDropdown";
+import AvatarImage from "@/components/AvatarImage";
 
 interface NotificationRow {
   id: string;
@@ -288,11 +289,12 @@ const AppHeader = ({ subtitle }: AppHeaderProps) => {
               className="w-9 h-9 rounded-full bg-secondary overflow-hidden ring-2 ring-background border border-border tap-scale flex items-center justify-center"
               aria-label="פרופיל"
             >
-              {profile?.avatar_url ? (
-                <img src={profile.avatar_url} alt="" className="w-full h-full object-cover" />
-              ) : (
-                <UserIcon className="w-4 h-4 text-muted-foreground" />
-              )}
+              <AvatarImage
+                src={profile?.avatar_url}
+                name={profile?.full_name}
+                className="w-full h-full rounded-full text-xs"
+                iconClassName="w-4 h-4"
+              />
             </button>
           )}
         </div>

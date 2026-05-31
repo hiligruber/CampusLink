@@ -24,7 +24,7 @@ export default function DriverLiveTracker({
   driverName,
 }: Props) {
   const [expanded, setExpanded] = useState(false);
-  const { location, eta, directions, loading } = useDriverLiveLocation({
+  const { location, eta, directions, loading, pickupLatLng, destinationLatLng } = useDriverLiveLocation({
     rideId,
     destination,
     pickupLocation,

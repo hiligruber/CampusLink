@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import AppHeader from "@/components/AppHeader";
+import AvatarImage from "@/components/AvatarImage";
 import BottomNav from "@/components/BottomNav";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -121,10 +122,11 @@ const EditProfile = () => {
         <div className="bg-card rounded-2xl border border-border p-5 shadow-sm flex flex-col items-center">
           <div className="relative">
             {avatarUrl ? (
-              <img
+              <AvatarImage
                 src={avatarUrl}
+                name={fullName}
                 alt="profile"
-                className="w-24 h-24 rounded-full object-cover border-2 border-primary/20"
+                className="w-24 h-24 rounded-full object-cover border-2 border-primary/20 text-2xl"
               />
             ) : (
               <div className="w-24 h-24 rounded-full bg-primary/10 flex items-center justify-center text-2xl font-bold text-primary">
