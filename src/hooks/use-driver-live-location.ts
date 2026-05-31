@@ -69,26 +69,51 @@ export function useDriverLiveLocation({
   const [destinationLatLng, setDestinationLatLng] = useState<LatLng | null>(null);
   const lastEtaCalcRef = useRef(0);
 
+  // 1. אפקט ייעודי להבאת המיקום הראשוני (Fetch Initial Data)
   useEffect(() => {
-    if (!enabled) return;
-    let active = true;
-    (async () => {
-      const { data } = await supabase
-        .from("driver_locations")
-        .select("*")
-        .eq("ride_id", rideId)
-        .maybeSingle();
-      if (active) {
-        setLocation((data as LiveLocation) ?? null);
-        setLoading(false);
-      }
-    })();
+    if (!enabled || !rideId) return;
 
+    let active = true;
+    setLoading(true);
+
+    const fetchInitialLocation = async () => {
+      try {
+        const { data, error } = await supabase.from("driver_locations").select("*").eq("ride_id", rideId).maybeSingle();
+
+        if (error) throw error;
+
+        if (active) {
+          setLocation((data as LiveLocation) ?? null);
+          setLoading(false);
+        }
+      } catch (err) {
+        console.error("Error fetching initial driver location:", err);
+        if (active) setLoading(false);
+      }
+    };
+
+    fetchInitialLocation();
+
+    return () => {
+      active = false;
+    };
+  }, [rideId, enabled]);
+
+  // 2. אפקט נפרד ונקי לניהול ה-Realtime (בלי Async/Await שמפריע לסינכרוניזציה)
+  useEffect(() => {
+    if (!enabled || !rideId) return;
+
+    // יצירת ערוץ ייחודי לחלוטין עבור ה-rideId הנוכחי
     const channel = supabase
       .channel(`driver-loc-${rideId}`)
       .on(
         "postgres_changes",
-        { event: "*", schema: "public", table: "driver_locations", filter: `ride_id=eq.${rideId}` },
+        {
+          event: "*",
+          schema: "public",
+          table: "driver_locations",
+          filter: `ride_id=eq.${rideId}`,
+        },
         (payload) => {
           if (payload.eventType === "DELETE") {
             setLocation(null);
@@ -97,12 +122,12 @@ export function useDriverLiveLocation({
           } else {
             setLocation(payload.new as LiveLocation);
           }
-        }
+        },
       )
       .subscribe();
 
+    // ניקוי מוחלט של הערוץ ברגע שהקומפוננטה יורדת, או כש-enabled/rideId משתנים
     return () => {
-      active = false;
       supabase.removeChannel(channel);
     };
   }, [rideId, enabled]);
@@ -167,7 +192,7 @@ export function useDriverLiveLocation({
             });
           }
         }
-      }
+      },
     );
   }, [location, destination, pickupLocation, phase]);
 
