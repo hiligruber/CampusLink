@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { RealtimeChannel } from "@supabase/supabase-js";
 
 export interface LiveLocation {
   ride_id: string;
@@ -50,10 +51,6 @@ async function geocodeOnce(address: string): Promise<LatLng | null> {
   });
 }
 
-/**
- * Subscribes to driver_locations for a ride and computes a throttled ETA
- * using the Google Directions service. Shared between map preview & fullscreen sheet.
- */
 export function useDriverLiveLocation({
   rideId,
   destination,
@@ -69,7 +66,10 @@ export function useDriverLiveLocation({
   const [destinationLatLng, setDestinationLatLng] = useState<LatLng | null>(null);
   const lastEtaCalcRef = useRef(0);
 
-  // 1. אפקט ייעודי להבאת המיקום הראשוני (Fetch Initial Data)
+  // שימוש ב-ref כדי להחזיק את הערוץ בצורה בטוחה בין רינדורים
+  const channelRef = useRef<RealtimeChannel | null>(null);
+
+  // 1. הבאת המיקום הראשוני
   useEffect(() => {
     if (!enabled || !rideId) return;
 
@@ -99,45 +99,65 @@ export function useDriverLiveLocation({
     };
   }, [rideId, enabled]);
 
-  // 2. אפקט נפרד ונקי לניהול ה-Realtime (בלי Async/Await שמפריע לסינכרוניזציה)
+  // 2. ניהול ה-Realtime בצורה חסינת-קריסות (בעזרת useRef)
   useEffect(() => {
-    if (!enabled || !rideId) return;
+    if (!enabled || !rideId) {
+      // אם הכלי כבוי, ננקה את הערוץ הקיים במידה וישנו
+      if (channelRef.current) {
+        supabase.removeChannel(channelRef.current);
+        channelRef.current = null;
+      }
+      return;
+    }
 
-    // יצירת ערוץ ייחודי לחלוטין עבור ה-rideId הנוכחי
-    const channel = supabase
-      .channel(`driver-loc-${rideId}`)
-      .on(
-        "postgres_changes",
-        {
-          event: "*",
-          schema: "public",
-          table: "driver_locations",
-          filter: `ride_id=eq.${rideId}`,
-        },
-        (payload) => {
-          if (payload.eventType === "DELETE") {
-            setLocation(null);
-            setEta(null);
-            setDirections(null);
-          } else {
-            setLocation(payload.new as LiveLocation);
-          }
-        },
-      )
-      .subscribe();
+    // הגנה: אם כבר יש ערוץ קיים ב-Ref, ננקה אותו קודם כדי שלא יהיו כפילויות לעולם
+    if (channelRef.current) {
+      supabase.removeChannel(channelRef.current);
+      channelRef.current = null;
+    }
 
-    // ניקוי מוחלט של הערוץ ברגע שהקומפוננטה יורדת, או כש-enabled/rideId משתנים
+    // יצירת הערוץ החדש
+    const channel = supabase.channel(`driver-loc-${rideId}`);
+
+    // הגדרת המאזין (קורה ב-100% לפני ה-subscribe)
+    channel.on(
+      "postgres_changes",
+      {
+        event: "*",
+        schema: "public",
+        table: "driver_locations",
+        filter: `ride_id=eq.${rideId}`,
+      },
+      (payload) => {
+        if (payload.eventType === "DELETE") {
+          setLocation(null);
+          setEta(null);
+          setDirections(null);
+        } else {
+          setLocation(payload.new as LiveLocation);
+        }
+      },
+    );
+
+    // שמירה ב-Ref וביצוע המנוי
+    channelRef.current = channel;
+    channel.subscribe();
+
+    // פונקציית ניקוי רשמית של ה-Effect
     return () => {
-      supabase.removeChannel(channel);
+      if (channelRef.current) {
+        supabase.removeChannel(channelRef.current);
+        channelRef.current = null;
+      }
     };
   }, [rideId, enabled]);
 
-  // Reset throttle when phase changes (target switches)
+  // Reset throttle when phase changes
   useEffect(() => {
     lastEtaCalcRef.current = 0;
   }, [phase]);
 
-  // Geocode pickup + destination once each (cached)
+  // Geocode pickup
   useEffect(() => {
     let active = true;
     if (pickupLocation) {
@@ -152,6 +172,7 @@ export function useDriverLiveLocation({
     };
   }, [pickupLocation]);
 
+  // Geocode destination
   useEffect(() => {
     let active = true;
     if (destination) {
@@ -164,6 +185,7 @@ export function useDriverLiveLocation({
     };
   }, [destination]);
 
+  // ETA Calculation
   useEffect(() => {
     if (!location || typeof google === "undefined") return;
     const target = phase === "en_route" && pickupLocation ? pickupLocation : destination;
