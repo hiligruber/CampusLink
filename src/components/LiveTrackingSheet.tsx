@@ -38,14 +38,14 @@ const carIcon = (heading: number | null) => ({
   anchor: typeof google !== "undefined" ? new google.maps.Point(32, 32) : undefined,
 });
 
-const destinationIcon = () => ({
+const pinIcon = (color: string, label: string) => ({
   url:
     "data:image/svg+xml;charset=UTF-8," +
     encodeURIComponent(`
       <svg xmlns='http://www.w3.org/2000/svg' width='44' height='56' viewBox='0 0 44 56'>
         <path d='M22 2 C10 2 2 11 2 22 C2 36 22 54 22 54 C22 54 42 36 42 22 C42 11 34 2 22 2 Z'
-              fill='#ec4899' stroke='#ffffff' stroke-width='3'/>
-        <circle cx='22' cy='22' r='7' fill='#ffffff'/>
+              fill='${color}' stroke='#ffffff' stroke-width='3'/>
+        <text x='22' y='28' font-size='16' text-anchor='middle' fill='#ffffff' font-weight='bold'>${label}</text>
       </svg>
     `),
   scaledSize: typeof google !== "undefined" ? new google.maps.Size(44, 56) : undefined,
