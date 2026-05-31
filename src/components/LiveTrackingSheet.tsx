@@ -98,6 +98,8 @@ export default function LiveTrackingSheet({
       const bounds = new google.maps.LatLngBounds();
       directions.routes[0]?.overview_path.forEach((p) => bounds.extend(p));
       bounds.extend({ lat: location.lat, lng: location.lng });
+      if (pickupLatLng) bounds.extend(pickupLatLng);
+      if (destinationLatLng) bounds.extend(destinationLatLng);
       mapRef.current.fitBounds(bounds, 80);
       fittedRef.current = true;
       return;
@@ -105,7 +107,7 @@ export default function LiveTrackingSheet({
     if (followDriver) {
       mapRef.current.panTo({ lat: location.lat, lng: location.lng });
     }
-  }, [location, directions, followDriver]);
+  }, [location, directions, followDriver, pickupLatLng, destinationLatLng]);
 
   // Reset fit when sheet reopens
   useEffect(() => {
