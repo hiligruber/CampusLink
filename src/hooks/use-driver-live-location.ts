@@ -51,6 +51,10 @@ async function geocodeOnce(address: string): Promise<LatLng | null> {
   });
 }
 
+/**
+ * Subscribes to driver_locations for a ride and computes a throttled ETA
+ * using the Google Directions service. Shared between map preview & fullscreen sheet.
+ */
 export function useDriverLiveLocation({
   rideId,
   destination,
@@ -69,7 +73,10 @@ export function useDriverLiveLocation({
   // שימוש ב-ref כדי להחזיק את הערוץ בצורה בטוחה בין רינדורים
   const channelRef = useRef<RealtimeChannel | null>(null);
 
-  // 1. הבאת המיקום הראשוני
+  // מזהה ייחודי קבוע לכל מופע (Instance) של ה-Hook כדי למנוע התנגשויות ב-Cache של Supabase
+  const hookInstanceId = useRef(Math.random().toString(36).substring(7));
+
+  // 1. הבאת המיקום הראשוני (Fetch Initial Data)
   useEffect(() => {
     if (!enabled || !rideId) return;
 
@@ -99,10 +106,9 @@ export function useDriverLiveLocation({
     };
   }, [rideId, enabled]);
 
-  // 2. ניהול ה-Realtime בצורה חסינת-קריסות (בעזרת useRef)
+  // 2. ניהול ה-Realtime בצורה חסינת-קריסות לחלוטין (בעזרת שם ערוץ דינמי וייחודי)
   useEffect(() => {
     if (!enabled || !rideId) {
-      // אם הכלי כבוי, ננקה את הערוץ הקיים במידה וישנו
       if (channelRef.current) {
         supabase.removeChannel(channelRef.current);
         channelRef.current = null;
@@ -110,16 +116,17 @@ export function useDriverLiveLocation({
       return;
     }
 
-    // הגנה: אם כבר יש ערוץ קיים ב-Ref, ננקה אותו קודם כדי שלא יהיו כפילויות לעולם
+    // הגנה אגרסיבית: ניקוי ערוץ קודם במידה והיה קיים ב-Ref
     if (channelRef.current) {
       supabase.removeChannel(channelRef.current);
       channelRef.current = null;
     }
 
-    // יצירת הערוץ החדש
-    const channel = supabase.channel(`driver-loc-${rideId}`);
+    // שם ערוץ ייחודי לחלוטין שמונע מ-Supabase למחזר ערוצים קיימים שכבר עברו subscribe
+    const channelName = `driver-loc-${rideId}-${hookInstanceId.current}`;
+    const channel = supabase.channel(channelName);
 
-    // הגדרת המאזין (קורה ב-100% לפני ה-subscribe)
+    // הגדרת המאזין (מובטח במאה אחוז שקורה לפני ה-subscribe)
     channel.on(
       "postgres_changes",
       {
@@ -139,14 +146,17 @@ export function useDriverLiveLocation({
       },
     );
 
-    // שמירה ב-Ref וביצוע המנוי
+    // שמירה ב-Ref וביצוע הרישום
     channelRef.current = channel;
     channel.subscribe();
 
     // פונקציית ניקוי רשמית של ה-Effect
     return () => {
       if (channelRef.current) {
-        supabase.removeChannel(channelRef.current);
+        const activeChannel = channelRef.current;
+        activeChannel.unsubscribe().then(() => {
+          supabase.removeChannel(activeChannel);
+        });
         channelRef.current = null;
       }
     };
