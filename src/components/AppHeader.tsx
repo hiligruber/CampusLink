@@ -15,6 +15,7 @@ import { toast } from "sonner";
 import { useLang } from "@/contexts/LanguageContext";
 import logo from "@/assets/campuslink-logo.svg";
 import InboxDropdown from "@/components/InboxDropdown";
+import AvatarImage from "@/components/AvatarImage";
 
 interface NotificationRow {
   id: string;
