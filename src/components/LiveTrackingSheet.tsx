@@ -185,8 +185,19 @@ export default function LiveTrackingSheet({
                   />
                 )}
                 <Marker position={{ lat: location.lat, lng: location.lng }} icon={carIcon(location.heading)} title="הנהג" />
-                {directions?.routes[0]?.legs[0]?.end_location && (
-                  <Marker position={directions.routes[0].legs[0].end_location} icon={destinationIcon()} />
+                {pickupLatLng && phase !== "in_progress" && phase !== "completed" && (
+                  <Marker
+                    position={pickupLatLng}
+                    icon={pinIcon("#10b981", "A")}
+                    title={`איסוף: ${pickupLocation ?? ""}`}
+                  />
+                )}
+                {destinationLatLng && (
+                  <Marker
+                    position={destinationLatLng}
+                    icon={pinIcon("#ec4899", "B")}
+                    title={`יעד: ${destination}`}
+                  />
                 )}
               </GoogleMap>
             ) : (
