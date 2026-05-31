@@ -57,19 +57,12 @@ const Profile = () => {
         className="max-w-lg mx-auto px-4 py-6 space-y-4"
       >
         <div className="bg-card rounded-2xl border border-border p-5 shadow-sm text-center">
-          {profile?.avatar_url ? (
-            <img
-              src={profile.avatar_url}
-              alt="profile"
-              className="w-20 h-20 rounded-full mx-auto mb-3 object-cover border-2 border-primary/20"
-            />
-          ) : (
-            <div className="w-20 h-20 rounded-full bg-primary/10 mx-auto flex items-center justify-center mb-3">
-              <span className="text-2xl font-bold text-primary">
-                {(profile?.full_name || "?").split(" ").map((n: string) => n[0]).join("")}
-              </span>
-            </div>
-          )}
+          <AvatarImage
+            src={profile?.avatar_url}
+            name={profile?.full_name}
+            alt="profile"
+            className="w-20 h-20 rounded-full mx-auto mb-3 border-2 border-primary/20 text-2xl"
+          />
           <h2 className="text-lg font-bold text-foreground">{profile?.full_name || "Student"}</h2>
           <p className="text-sm text-muted-foreground flex items-center justify-center gap-1 mt-1">
             <Mail className="w-3.5 h-3.5" /> {profile?.email || user?.email}
