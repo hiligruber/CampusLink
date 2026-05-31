@@ -4,8 +4,9 @@ import path from "path";
 import { componentTagger } from "lovable-tagger";
 
 // https://vitejs.dev/config/
-export default defineConfig(({ mode }) => ({
-  base: mode === "production" ? "/CampusLink/" : "/",
+export default defineConfig({
+  // הגדרה קבועה שמאלצת את האתר לחפש את הקבצים בתוך תיקיית הקמפוסלינק בגיטהאב
+  base: "/CampusLink/",
 
   server: {
     host: "::",
@@ -14,7 +15,10 @@ export default defineConfig(({ mode }) => ({
       overlay: false,
     },
   },
-  plugins: [react(), mode === "development" && componentTagger()].filter(Boolean),
+  plugins: [
+    react(),
+    typeof process !== "undefined" && process.env.NODE_ENV === "development" && componentTagger(),
+  ].filter(Boolean),
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
@@ -28,4 +32,4 @@ export default defineConfig(({ mode }) => ({
       "@tanstack/query-core",
     ],
   },
-}));
+});
