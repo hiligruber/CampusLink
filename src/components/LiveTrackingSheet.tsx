@@ -38,14 +38,14 @@ const carIcon = (heading: number | null) => ({
   anchor: typeof google !== "undefined" ? new google.maps.Point(32, 32) : undefined,
 });
 
-const destinationIcon = () => ({
+const pinIcon = (color: string, label: string) => ({
   url:
     "data:image/svg+xml;charset=UTF-8," +
     encodeURIComponent(`
       <svg xmlns='http://www.w3.org/2000/svg' width='44' height='56' viewBox='0 0 44 56'>
         <path d='M22 2 C10 2 2 11 2 22 C2 36 22 54 22 54 C22 54 42 36 42 22 C42 11 34 2 22 2 Z'
-              fill='#ec4899' stroke='#ffffff' stroke-width='3'/>
-        <circle cx='22' cy='22' r='7' fill='#ffffff'/>
+              fill='${color}' stroke='#ffffff' stroke-width='3'/>
+        <text x='22' y='28' font-size='16' text-anchor='middle' fill='#ffffff' font-weight='bold'>${label}</text>
       </svg>
     `),
   scaledSize: typeof google !== "undefined" ? new google.maps.Size(44, 56) : undefined,
@@ -61,7 +61,7 @@ export default function LiveTrackingSheet({
   phase = "scheduled",
   driverName,
 }: Props) {
-  const { location, eta, directions, loading } = useDriverLiveLocation({
+  const { location, eta, directions, loading, pickupLatLng, destinationLatLng } = useDriverLiveLocation({
     rideId,
     destination,
     pickupLocation,
@@ -98,6 +98,8 @@ export default function LiveTrackingSheet({
       const bounds = new google.maps.LatLngBounds();
       directions.routes[0]?.overview_path.forEach((p) => bounds.extend(p));
       bounds.extend({ lat: location.lat, lng: location.lng });
+      if (pickupLatLng) bounds.extend(pickupLatLng);
+      if (destinationLatLng) bounds.extend(destinationLatLng);
       mapRef.current.fitBounds(bounds, 80);
       fittedRef.current = true;
       return;
@@ -105,7 +107,7 @@ export default function LiveTrackingSheet({
     if (followDriver) {
       mapRef.current.panTo({ lat: location.lat, lng: location.lng });
     }
-  }, [location, directions, followDriver]);
+  }, [location, directions, followDriver, pickupLatLng, destinationLatLng]);
 
   // Reset fit when sheet reopens
   useEffect(() => {
@@ -183,8 +185,19 @@ export default function LiveTrackingSheet({
                   />
                 )}
                 <Marker position={{ lat: location.lat, lng: location.lng }} icon={carIcon(location.heading)} title="הנהג" />
-                {directions?.routes[0]?.legs[0]?.end_location && (
-                  <Marker position={directions.routes[0].legs[0].end_location} icon={destinationIcon()} />
+                {pickupLatLng && phase !== "in_progress" && phase !== "completed" && (
+                  <Marker
+                    position={pickupLatLng}
+                    icon={pinIcon("#10b981", "A")}
+                    title={`איסוף: ${pickupLocation ?? ""}`}
+                  />
+                )}
+                {destinationLatLng && (
+                  <Marker
+                    position={destinationLatLng}
+                    icon={pinIcon("#ec4899", "B")}
+                    title={`יעד: ${destination}`}
+                  />
                 )}
               </GoogleMap>
             ) : (
