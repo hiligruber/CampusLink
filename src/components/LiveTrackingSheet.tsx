@@ -61,7 +61,7 @@ export default function LiveTrackingSheet({
   phase = "scheduled",
   driverName,
 }: Props) {
-  const { location, eta, directions, loading } = useDriverLiveLocation({
+  const { location, eta, directions, loading, pickupLatLng, destinationLatLng } = useDriverLiveLocation({
     rideId,
     destination,
     pickupLocation,
