@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useVerificationStatus } from "@/hooks/use-verification";
 import AppHeader from "@/components/AppHeader";
+import AvatarImage from "@/components/AvatarImage";
 import BottomNav from "@/components/BottomNav";
 import RideHistory from "@/components/RideHistory";
 import { Button } from "@/components/ui/button";
