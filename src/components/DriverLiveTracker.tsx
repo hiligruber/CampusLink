@@ -87,11 +87,18 @@ export default function DriverLiveTracker({
       </div>
 
       {/* Clickable map preview */}
-      <button
-        type="button"
+      <div
+        role="button"
+        tabIndex={0}
         onClick={() => setExpanded(true)}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            setExpanded(true);
+          }
+        }}
         aria-label="הרחב מפת מעקב"
-        className="relative w-full block group rounded-[1.25rem] overflow-hidden ring-1 ring-border focus:outline-none focus:ring-2 focus:ring-primary"
+        className="relative w-full block group rounded-[1.25rem] overflow-hidden ring-1 ring-border cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary"
       >
         <GoogleMap
           mapContainerStyle={{ ...mapContainerStyle, height }}
@@ -117,6 +124,45 @@ export default function DriverLiveTracker({
               }}
             />
           )}
+
+          {/* Pickup marker (green square pin) */}
+          {pickupLatLng && phase !== "in_progress" && phase !== "completed" && (
+            <Marker
+              position={pickupLatLng}
+              icon={{
+                url: "data:image/svg+xml;charset=UTF-8," + encodeURIComponent(`
+                  <svg xmlns='http://www.w3.org/2000/svg' width='40' height='48' viewBox='0 0 40 48'>
+                    <path d='M20 2 C9 2 2 10 2 19 C2 31 20 46 20 46 C20 46 38 31 38 19 C38 10 31 2 20 2 Z'
+                          fill='#10b981' stroke='#ffffff' stroke-width='3'/>
+                    <text x='20' y='25' font-size='16' text-anchor='middle' fill='#ffffff' font-weight='bold'>A</text>
+                  </svg>
+                `),
+                scaledSize: new google.maps.Size(40, 48),
+                anchor: new google.maps.Point(20, 48),
+              }}
+              title={`איסוף: ${pickupLocation ?? ""}`}
+            />
+          )}
+
+          {/* Destination marker (pink pin) */}
+          {destinationLatLng && (
+            <Marker
+              position={destinationLatLng}
+              icon={{
+                url: "data:image/svg+xml;charset=UTF-8," + encodeURIComponent(`
+                  <svg xmlns='http://www.w3.org/2000/svg' width='40' height='48' viewBox='0 0 40 48'>
+                    <path d='M20 2 C9 2 2 10 2 19 C2 31 20 46 20 46 C20 46 38 31 38 19 C38 10 31 2 20 2 Z'
+                          fill='#ec4899' stroke='#ffffff' stroke-width='3'/>
+                    <text x='20' y='25' font-size='16' text-anchor='middle' fill='#ffffff' font-weight='bold'>B</text>
+                  </svg>
+                `),
+                scaledSize: new google.maps.Size(40, 48),
+                anchor: new google.maps.Point(20, 48),
+              }}
+              title={`יעד: ${destination}`}
+            />
+          )}
+
           <Marker
             position={{ lat: location.lat, lng: location.lng }}
             icon={{
@@ -134,14 +180,14 @@ export default function DriverLiveTracker({
         </GoogleMap>
 
         {/* Expand hint */}
-        <div className="absolute top-2.5 left-2.5 inline-flex items-center gap-1 px-2.5 py-1.5 rounded-full bg-background/95 backdrop-blur shadow-md text-[11px] font-bold border border-border group-hover:scale-105 transition">
+        <div className="absolute top-2.5 left-2.5 inline-flex items-center gap-1 px-2.5 py-1.5 rounded-full bg-background/95 backdrop-blur shadow-md text-[11px] font-bold border border-border group-hover:scale-105 transition pointer-events-none">
           <Maximize2 className="w-3 h-3" />
           הקש להרחבה
         </div>
 
         {/* Subtle gradient to lift bottom chips */}
         <div className="pointer-events-none absolute inset-x-0 bottom-0 h-12 bg-gradient-to-t from-background/40 to-transparent" />
-      </button>
+      </div>
 
       <div className="flex items-center gap-2 flex-wrap">
         {eta && (
