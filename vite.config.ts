@@ -5,9 +5,6 @@ import { componentTagger } from "lovable-tagger";
 
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => ({
-  // הטריק המנצח: בפיתוח (Lovable) משתמש ב-/, ובבנייה הסופית ל-GitHub משתמש ב-/CampusLink/
-  base: mode === "production" ? "/CampusLink/" : "/",
-
   server: {
     host: "::",
     port: 8080,
