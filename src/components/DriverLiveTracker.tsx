@@ -3,6 +3,7 @@ import { GoogleMap, Marker, DirectionsRenderer } from "@react-google-maps/api";
 import { Loader2, Navigation, Clock, Maximize2 } from "lucide-react";
 import { useDriverLiveLocation } from "@/hooks/use-driver-live-location";
 import LiveTrackingSheet from "./LiveTrackingSheet";
+import { getExternalMapHrefFromTarget, openExternalUrl } from "@/lib/external-navigation";
 
 interface Props {
   rideId: string;
@@ -90,6 +91,14 @@ export default function DriverLiveTracker({
       <div
         role="button"
         tabIndex={0}
+        onClickCapture={(event) => {
+          const href = getExternalMapHrefFromTarget(event.target);
+          if (!href) return;
+
+          event.preventDefault();
+          event.stopPropagation();
+          openExternalUrl(href);
+        }}
         onClick={() => setExpanded(true)}
         onKeyDown={(e) => {
           if (e.key === "Enter" || e.key === " ") {
