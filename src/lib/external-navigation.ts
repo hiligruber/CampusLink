@@ -1,6 +1,19 @@
 export const openExternalUrl = (url: string) => {
   if (!url || typeof window === "undefined") return;
 
+  const isFramed = window.self !== window.top;
+
+  if (isFramed) {
+    const link = document.createElement("a");
+    link.href = url;
+    link.target = "_top";
+    link.rel = "noopener noreferrer";
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    return;
+  }
+
   const popup = window.open("about:blank", "_blank");
 
   if (popup) {
