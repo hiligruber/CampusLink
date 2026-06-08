@@ -307,17 +307,20 @@ export default function LiveTrackingSheet({
 
               {/* Actions */}
               <div className="grid grid-cols-2 gap-2">
-                <Button asChild variant="outline" className="rounded-xl h-11 font-bold gap-1.5">
-                  <a href={wazeUrl} target="_blank" rel="noreferrer">
-                    <Navigation className="w-4 h-4" />
-                    פתח ב‑Waze
-                  </a>
+                <Button
+                  variant="outline"
+                  className="rounded-xl h-11 font-bold gap-1.5"
+                  onClick={() => window.open(wazeUrl, "_blank", "noopener,noreferrer")}
+                >
+                  <Navigation className="w-4 h-4" />
+                  פתח ב‑Waze
                 </Button>
-                <Button asChild className="rounded-xl h-11 font-bold gap-1.5 bg-gradient-to-r from-primary to-accent border-0">
-                  <a href={gmapsUrl} target="_blank" rel="noreferrer">
-                    <ExternalLink className="w-4 h-4" />
-                    Google Maps
-                  </a>
+                <Button
+                  className="rounded-xl h-11 font-bold gap-1.5 bg-gradient-to-r from-primary to-accent border-0"
+                  onClick={() => window.open(gmapsUrl, "_blank", "noopener,noreferrer")}
+                >
+                  <ExternalLink className="w-4 h-4" />
+                  Google Maps
                 </Button>
               </div>
 
