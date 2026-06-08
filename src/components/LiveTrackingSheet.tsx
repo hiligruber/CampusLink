@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { X, Navigation, Clock, MapPin, Locate, ExternalLink, Loader2 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
+import { getExternalMapHrefFromTarget, openExternalUrl } from "@/lib/external-navigation";
 
 interface Props {
   open: boolean;
@@ -147,7 +148,17 @@ export default function LiveTrackingSheet({
           aria-label="מעקב חי אחרי הנהג"
         >
           {/* Map fills the screen */}
-          <div className="absolute inset-0">
+          <div
+            className="absolute inset-0"
+            onClickCapture={(event) => {
+              const href = getExternalMapHrefFromTarget(event.target);
+              if (!href) return;
+
+              event.preventDefault();
+              event.stopPropagation();
+              openExternalUrl(href);
+            }}
+          >
             {location ? (
               <GoogleMap
                 mapContainerStyle={{ width: "100%", height: "100%" }}
@@ -310,14 +321,14 @@ export default function LiveTrackingSheet({
                 <Button
                   variant="outline"
                   className="rounded-xl h-11 font-bold gap-1.5"
-                  onClick={() => window.open(wazeUrl, "_blank", "noopener,noreferrer")}
+                  onClick={() => openExternalUrl(wazeUrl)}
                 >
                   <Navigation className="w-4 h-4" />
                   פתח ב‑Waze
                 </Button>
                 <Button
                   className="rounded-xl h-11 font-bold gap-1.5 bg-gradient-to-r from-primary to-accent border-0"
-                  onClick={() => window.open(gmapsUrl, "_blank", "noopener,noreferrer")}
+                  onClick={() => openExternalUrl(gmapsUrl)}
                 >
                   <ExternalLink className="w-4 h-4" />
                   Google Maps
