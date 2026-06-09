@@ -13,7 +13,7 @@ import { Button } from "@/components/ui/button";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
 import { useLang } from "@/contexts/LanguageContext";
-import logo from "@/assets/campuslink-logo.svg";
+import logo from "@/assets/campuslink-logo-new.png";
 import InboxDropdown from "@/components/InboxDropdown";
 import AvatarImage from "@/components/AvatarImage";
 
@@ -141,14 +141,17 @@ const AppHeader = ({ subtitle }: AppHeaderProps) => {
   };
 
   return (
-    <header className="sticky top-0 z-40 bg-background/85 backdrop-blur-xl border-b border-border">
-      <div className="max-w-2xl mx-auto px-4 h-24 flex items-center justify-between gap-3">
+    <header className="sticky top-0 z-40 bg-background/80 backdrop-blur-xl border-b border-border">
+      <div className="max-w-6xl mx-auto px-5 h-16 flex items-center justify-between gap-3">
         <button
           onClick={() => navigate("/")}
-          className="flex items-center tap-scale"
+          className="flex items-center gap-2 tap-scale"
           aria-label="CampusLink"
         >
-          <img src={logo} alt="CampusLink" className="h-24 w-auto object-contain -my-3" />
+          <img src={logo} alt="CampusLink" className="h-10 w-10 object-contain" />
+          <span className="hidden sm:inline text-base font-extrabold tracking-tight bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
+            CampusLink
+          </span>
         </button>
 
         <div className="flex items-center gap-2">
@@ -300,7 +303,7 @@ const AppHeader = ({ subtitle }: AppHeaderProps) => {
         </div>
       </div>
       {subtitle && (
-        <div className="max-w-2xl mx-auto px-4 pb-2 -mt-1">
+        <div className="max-w-6xl mx-auto px-5 pb-2 -mt-1">
           <p className="text-[12px] text-muted-foreground font-medium">{subtitle}</p>
         </div>
       )}
