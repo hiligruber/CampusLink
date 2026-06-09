@@ -49,15 +49,15 @@ const Profile = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background pb-20">
+    <div className="min-h-screen pb-24">
       <AppHeader title="Profile" />
       <motion.main
         initial={{ opacity: 0, y: 16 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.35 }}
-        className="max-w-lg mx-auto px-4 py-6 space-y-4"
+        className="max-w-5xl mx-auto px-5 lg:px-8 py-6 grid grid-cols-1 lg:grid-cols-3 gap-5"
       >
-        <div className="bg-card rounded-2xl border border-border p-5 shadow-sm text-center">
+        <div className="lg:col-span-1 glass-card rounded-3xl p-6 text-center">
           <AvatarImage
             src={profile?.avatar_url}
             name={profile?.full_name}
