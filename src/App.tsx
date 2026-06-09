@@ -10,7 +10,7 @@ import GoogleMapsProvider from "@/components/GoogleMapsProvider";
 import { useVerificationStatus } from "@/hooks/use-verification";
 import Index from "./pages/Index";
 import PostRide from "./pages/PostRide";
-import SearchRides from "./pages/SearchRides";
+
 import Profile from "./pages/Profile";
 import EditProfile from "./pages/EditProfile";
 import Bookings from "./pages/Bookings";
