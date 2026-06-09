@@ -55,7 +55,7 @@ export default function AvatarImage({
         onError={() => setFailed(true)}
         loading="lazy"
         referrerPolicy="no-referrer"
-        crossOrigin="anonymous"
+        
         className={cn("object-cover w-full h-full", className)}
       />
     );
