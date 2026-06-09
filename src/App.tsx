@@ -10,7 +10,7 @@ import GoogleMapsProvider from "@/components/GoogleMapsProvider";
 import { useVerificationStatus } from "@/hooks/use-verification";
 import Index from "./pages/Index";
 import PostRide from "./pages/PostRide";
-import SearchRides from "./pages/SearchRides";
+
 import Profile from "./pages/Profile";
 import EditProfile from "./pages/EditProfile";
 import Bookings from "./pages/Bookings";
@@ -62,7 +62,7 @@ const App = () => (
                   <Route path="/verify" element={<VerifyRoute><StudentVerification /></VerifyRoute>} />
                   <Route path="/" element={<ProtectedRoute><Index /></ProtectedRoute>} />
                   <Route path="/post" element={<ProtectedRoute><PostRide /></ProtectedRoute>} />
-                  <Route path="/search" element={<ProtectedRoute><SearchRides /></ProtectedRoute>} />
+                  <Route path="/search" element={<Navigate to="/" replace />} />
                   <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
                   <Route path="/profile/edit" element={<ProtectedRoute><EditProfile /></ProtectedRoute>} />
                   <Route path="/bookings" element={<ProtectedRoute><Bookings /></ProtectedRoute>} />

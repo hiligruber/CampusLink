@@ -33,12 +33,16 @@ export default function AvatarImage({
     .slice(0, 2)
     .toUpperCase();
 
-  if (src && !failed) {
+  const hasSrc = typeof src === "string" && src.trim().length > 0;
+
+  if (hasSrc && !failed) {
     return (
       <img
-        src={src}
+        src={src!}
         alt={alt}
         onError={() => setFailed(true)}
+        loading="lazy"
+        referrerPolicy="no-referrer"
         className={cn("object-cover", className)}
       />
     );

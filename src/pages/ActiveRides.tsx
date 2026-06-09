@@ -196,27 +196,27 @@ const ActiveRides = () => {
   });
 
   return (
-    <div className="min-h-screen bg-background pb-24" dir="rtl">
+    <div className="min-h-screen pb-24" dir="rtl">
       <AppHeader title="פעילות" subtitle={`${items.length} נסיעות פעילות`} />
       <motion.main
         initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.25 }}
-        className="max-w-2xl mx-auto px-4 py-4 space-y-3"
+        className="max-w-6xl mx-auto px-5 lg:px-8 py-6 grid grid-cols-1 lg:grid-cols-2 gap-4"
       >
         {isLoading ? (
-          <div className="flex justify-center py-20">
+          <div className="lg:col-span-2 flex justify-center py-20">
             <Loader2 className="w-6 h-6 animate-spin text-primary" />
           </div>
         ) : items.length === 0 ? (
-          <div className="text-center py-20">
+          <div className="lg:col-span-2 text-center py-20 glass-card rounded-3xl">
             <Activity className="w-12 h-12 mx-auto text-muted-foreground/40 mb-3" strokeWidth={1.5} />
             <p className="text-lg font-bold mb-1">אין לך נסיעות פעילות</p>
             <p className="text-sm text-muted-foreground mb-5">
               ברגע שתפרסם נסיעה או תצטרף לאחת — היא תופיע כאן
             </p>
             <div className="flex gap-2 justify-center">
-              <Button onClick={() => navigate("/search")} className="gap-1.5">
+              <Button onClick={() => navigate("/")} className="gap-1.5">
                 <Search className="w-4 h-4" /> חפש נסיעה
               </Button>
               <Button variant="outline" onClick={() => navigate("/post")} className="gap-1.5">
@@ -234,7 +234,7 @@ const ActiveRides = () => {
             return (
               <div
                 key={it.rideId + it.role}
-                className="bg-card border border-border rounded-2xl shadow-sm overflow-hidden"
+                className="glass-card rounded-3xl overflow-hidden"
               >
                 <div className="p-4 space-y-3">
                   <div className="flex items-center justify-between gap-2">
