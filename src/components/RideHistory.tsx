@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Loader2, MapPin, Clock, Car, User } from "lucide-react";
+import { useLang } from "@/contexts/LanguageContext";
 
 type Phase = "scheduled" | "en_route" | "picked_up" | "in_progress" | "completed";
 
@@ -46,6 +47,7 @@ const RideRow = ({ ride }: { ride: any }) => {
 
 export default function RideHistory() {
   const { user } = useAuth();
+  const { t } = useLang();
 
   const { data: asDriver, isLoading: l1 } = useQuery({
     queryKey: ["history", "driver", user?.id],
@@ -83,30 +85,30 @@ export default function RideHistory() {
   });
 
   return (
-    <div className="bg-card rounded-2xl border border-border p-4 shadow-sm">
+    <div className="glass-card rounded-3xl p-5">
       <h3 className="text-sm font-bold mb-3 flex items-center gap-1.5">
         <Car className="w-4 h-4 text-primary" />
-        הנסיעות שלי
+        {t("my_rides")}
       </h3>
       <Tabs defaultValue="driver" className="w-full">
         <TabsList className="grid grid-cols-2 w-full mb-3">
-          <TabsTrigger value="driver">כנהג</TabsTrigger>
-          <TabsTrigger value="passenger">כנוסע</TabsTrigger>
+          <TabsTrigger value="driver">{t("as_driver")}</TabsTrigger>
+          <TabsTrigger value="passenger">{t("as_passenger")}</TabsTrigger>
         </TabsList>
-        <TabsContent value="driver" className="space-y-2">
+        <TabsContent value="driver" className="space-y-2 max-h-[420px] overflow-y-auto pr-1">
           {l1 ? (
             <div className="flex justify-center py-6"><Loader2 className="w-4 h-4 animate-spin text-primary" /></div>
           ) : !asDriver || asDriver.length === 0 ? (
-            <p className="text-center text-xs text-muted-foreground py-6">עוד לא פרסמת נסיעות.</p>
+            <p className="text-center text-xs text-muted-foreground py-6">{t("no_rides_driver")}</p>
           ) : (
             asDriver.map((r: any) => <RideRow key={r.id} ride={r} />)
           )}
         </TabsContent>
-        <TabsContent value="passenger" className="space-y-2">
+        <TabsContent value="passenger" className="space-y-2 max-h-[420px] overflow-y-auto pr-1">
           {l2 ? (
             <div className="flex justify-center py-6"><Loader2 className="w-4 h-4 animate-spin text-primary" /></div>
           ) : !asPassenger || asPassenger.length === 0 ? (
-            <p className="text-center text-xs text-muted-foreground py-6">עוד לא הצטרפת לנסיעות.</p>
+            <p className="text-center text-xs text-muted-foreground py-6">{t("no_rides_passenger")}</p>
           ) : (
             asPassenger.map((r: any) => <RideRow key={r.id} ride={r} />)
           )}
