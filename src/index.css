@@ -91,11 +91,40 @@
     font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
     font-feature-settings: 'ss01', 'ss03';
     background-color: hsl(var(--background));
+    position: relative;
+    min-height: 100vh;
+  }
+
+  /* Hi-tech animated gradient + grid backdrop */
+  body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    z-index: -2;
+    background:
+      radial-gradient(circle at 15% 10%, hsl(152 70% 38% / 0.18), transparent 40%),
+      radial-gradient(circle at 85% 0%, hsl(180 70% 45% / 0.14), transparent 45%),
+      radial-gradient(circle at 50% 110%, hsl(145 80% 50% / 0.16), transparent 55%);
+    animation: bg-drift 18s ease-in-out infinite alternate;
+    pointer-events: none;
+  }
+  body::after {
+    content: "";
+    position: fixed;
+    inset: 0;
+    z-index: -1;
     background-image:
-      radial-gradient(circle at 0% 0%, hsl(152 70% 38% / 0.06), transparent 45%),
-      radial-gradient(circle at 100% 0%, hsl(152 65% 48% / 0.04), transparent 45%),
-      radial-gradient(circle at 50% 100%, hsl(145 70% 52% / 0.04), transparent 50%);
-    background-attachment: fixed;
+      linear-gradient(to right, hsl(152 30% 50% / 0.06) 1px, transparent 1px),
+      linear-gradient(to bottom, hsl(152 30% 50% / 0.06) 1px, transparent 1px);
+    background-size: 56px 56px;
+    mask-image: radial-gradient(ellipse at center, black 40%, transparent 80%);
+    pointer-events: none;
+  }
+
+  @keyframes bg-drift {
+    0%   { transform: translate3d(0,0,0) scale(1); }
+    50%  { transform: translate3d(-2%, 1%, 0) scale(1.04); }
+    100% { transform: translate3d(2%, -1%, 0) scale(1.02); }
   }
 }
 
@@ -109,7 +138,8 @@
   .scrollbar-hide { scrollbar-width: none; }
 
   .glass-card {
-    @apply bg-card/80 backdrop-blur-md border border-border;
+    @apply bg-card/70 backdrop-blur-xl border border-border/60;
+    box-shadow: 0 1px 0 hsl(0 0% 100% / 0.6) inset, 0 12px 40px -16px hsl(152 70% 38% / 0.18);
   }
 
   .tap-scale {
@@ -125,4 +155,11 @@
   .gradient-warm { background: var(--gradient-warm); }
   .gradient-primary { background: var(--gradient-primary); }
   .gradient-accent { background: var(--gradient-accent); }
+
+  .text-gradient {
+    background: var(--gradient-primary);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
 }
