@@ -1,4 +1,4 @@
-import { Bell, Check, X, Inbox as InboxIcon, User as UserIcon, MapPin, CheckCheck } from "lucide-react";
+import { Bell, Check, X, Inbox as InboxIcon, MapPin, CheckCheck, Settings as SettingsIcon } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -141,15 +141,15 @@ const AppHeader = ({ subtitle }: AppHeaderProps) => {
   };
 
   return (
-    <header className="sticky top-0 z-40 bg-background/80 backdrop-blur-xl border-b border-border">
-      <div className="max-w-6xl mx-auto px-5 h-16 flex items-center justify-between gap-3">
+    <header className="sticky top-0 z-40 bg-background/70 backdrop-blur-xl border-b border-border">
+      <div className="max-w-6xl mx-auto px-5 h-[68px] flex items-center justify-between gap-3">
         <button
           onClick={() => navigate("/")}
-          className="flex items-center gap-2 tap-scale"
+          className="flex items-center gap-2.5 tap-scale"
           aria-label="CampusLink"
         >
-          <img src={logo} alt="CampusLink" className="h-10 w-10 object-contain" />
-          <span className="hidden sm:inline text-base font-extrabold tracking-tight bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
+          <img src={logo} alt="CampusLink" className="h-14 w-14 object-contain drop-shadow-[0_4px_18px_hsl(var(--primary)/0.35)]" />
+          <span className="hidden sm:inline text-xl font-extrabold tracking-tight bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
             CampusLink
           </span>
         </button>
@@ -157,12 +157,20 @@ const AppHeader = ({ subtitle }: AppHeaderProps) => {
         <div className="flex items-center gap-2">
           <button
             onClick={toggle}
-            className="h-9 px-2.5 rounded-full border border-border bg-card hover:bg-secondary transition-colors text-[11px] font-bold tracking-wide flex items-center gap-1"
+            className="h-9 px-2.5 rounded-full border border-border bg-card/70 hover:bg-secondary transition-colors text-[11px] font-bold tracking-wide flex items-center gap-1"
             aria-label="Toggle language"
           >
             <span className={lang === "EN" ? "text-primary" : "text-muted-foreground"}>EN</span>
             <span className="text-border">/</span>
             <span className={lang === "HE" ? "text-primary" : "text-muted-foreground"}>עב</span>
+          </button>
+
+          <button
+            onClick={() => navigate("/settings")}
+            className="w-9 h-9 rounded-full bg-card/70 hover:bg-secondary flex items-center justify-center border border-border tap-scale transition-colors"
+            aria-label="Settings"
+          >
+            <SettingsIcon className="w-[18px] h-[18px] text-foreground" strokeWidth={2} />
           </button>
 
           {user && <InboxDropdown />}
@@ -202,7 +210,7 @@ const AppHeader = ({ subtitle }: AppHeaderProps) => {
                       className="text-[11px] font-semibold text-primary hover:underline flex items-center gap-1"
                     >
                       <CheckCheck className="w-3.5 h-3.5" />
-                      סמן הכל כנקרא
+                      {t("notif_mark_all_read")}
                     </button>
                   )}
                 </div>
