@@ -28,13 +28,24 @@ export const getDisplayStatus = (r: RideRow): RideDisplayStatus => {
   return "active";
 };
 
+/** Hide rides that ended more than 2 days ago. */
+export const isRecentlyVisible = (r: RideRow): boolean => {
+  const status = getDisplayStatus(r);
+  if (status === "active") return true;
+  const ref = r.completed_at
+    ? new Date(r.completed_at).getTime()
+    : new Date(r.departure_time).getTime();
+  const ageMs = Date.now() - ref;
+  return ageMs < 2 * 24 * 60 * 60 * 1000;
+};
+
 export async function fetchRides(): Promise<RideRow[]> {
   const { data, error } = await supabase
     .from("rides")
     .select("*")
     .order("departure_time", { ascending: true });
   if (error) throw error;
-  return (data ?? []) as RideRow[];
+  return ((data ?? []) as RideRow[]).filter(isRecentlyVisible);
 }
 
 export async function postRide(input: {
@@ -42,7 +53,7 @@ export async function postRide(input: {
   driver_name: string;
   origin: string;
   destination: string;
-  departure_time: string; // ISO
+  departure_time: string;
   total_seats: number;
   notes?: string;
 }) {

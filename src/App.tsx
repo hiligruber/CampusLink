@@ -6,6 +6,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { LocationSharingProvider } from "@/contexts/LocationSharingContext";
 import { LanguageProvider } from "@/contexts/LanguageContext";
+import { ThemeProvider } from "@/contexts/ThemeContext";
 import GoogleMapsProvider from "@/components/GoogleMapsProvider";
 import { useVerificationStatus } from "@/hooks/use-verification";
 import Index from "./pages/Index";
@@ -15,6 +16,7 @@ import Profile from "./pages/Profile";
 import EditProfile from "./pages/EditProfile";
 import Bookings from "./pages/Bookings";
 import ActiveRides from "./pages/ActiveRides";
+import Settings from "./pages/Settings";
 import Auth from "./pages/Auth";
 import StudentVerification from "./pages/StudentVerification";
 import Admin from "./pages/Admin";
@@ -49,33 +51,36 @@ const AuthRoute = ({ children }: { children: React.ReactNode }) => {
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
-    <LanguageProvider>
-      <AuthProvider>
-        <GoogleMapsProvider>
-          <LocationSharingProvider>
-            <TooltipProvider>
-              <Toaster />
-              <Sonner />
-              <BrowserRouter>
-                <Routes>
-                  <Route path="/auth" element={<AuthRoute><Auth /></AuthRoute>} />
-                  <Route path="/verify" element={<VerifyRoute><StudentVerification /></VerifyRoute>} />
-                  <Route path="/" element={<ProtectedRoute><Index /></ProtectedRoute>} />
-                  <Route path="/post" element={<ProtectedRoute><PostRide /></ProtectedRoute>} />
-                  <Route path="/search" element={<Navigate to="/" replace />} />
-                  <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
-                  <Route path="/profile/edit" element={<ProtectedRoute><EditProfile /></ProtectedRoute>} />
-                  <Route path="/bookings" element={<ProtectedRoute><Bookings /></ProtectedRoute>} />
-                  <Route path="/active" element={<ProtectedRoute><ActiveRides /></ProtectedRoute>} />
-                  <Route path="/admin" element={<ProtectedRoute><Admin /></ProtectedRoute>} />
-                  <Route path="*" element={<NotFound />} />
-                </Routes>
-              </BrowserRouter>
-            </TooltipProvider>
-          </LocationSharingProvider>
-        </GoogleMapsProvider>
-      </AuthProvider>
-    </LanguageProvider>
+    <ThemeProvider>
+      <LanguageProvider>
+        <AuthProvider>
+          <GoogleMapsProvider>
+            <LocationSharingProvider>
+              <TooltipProvider>
+                <Toaster />
+                <Sonner />
+                <BrowserRouter>
+                  <Routes>
+                    <Route path="/auth" element={<AuthRoute><Auth /></AuthRoute>} />
+                    <Route path="/verify" element={<VerifyRoute><StudentVerification /></VerifyRoute>} />
+                    <Route path="/" element={<ProtectedRoute><Index /></ProtectedRoute>} />
+                    <Route path="/post" element={<ProtectedRoute><PostRide /></ProtectedRoute>} />
+                    <Route path="/search" element={<Navigate to="/" replace />} />
+                    <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+                    <Route path="/profile/edit" element={<ProtectedRoute><EditProfile /></ProtectedRoute>} />
+                    <Route path="/bookings" element={<ProtectedRoute><Bookings /></ProtectedRoute>} />
+                    <Route path="/active" element={<ProtectedRoute><ActiveRides /></ProtectedRoute>} />
+                    <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
+                    <Route path="/admin" element={<ProtectedRoute><Admin /></ProtectedRoute>} />
+                    <Route path="*" element={<NotFound />} />
+                  </Routes>
+                </BrowserRouter>
+              </TooltipProvider>
+            </LocationSharingProvider>
+          </GoogleMapsProvider>
+        </AuthProvider>
+      </LanguageProvider>
+    </ThemeProvider>
   </QueryClientProvider>
 );
 
