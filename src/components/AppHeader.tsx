@@ -244,7 +244,7 @@ const AppHeader = ({ subtitle }: AppHeaderProps) => {
                             )}
                             {n.type === "booking_accepted" && n.ride_id && (
                               <div className="mt-2 inline-flex items-center gap-1 text-[11px] font-semibold text-primary">
-                                <MapPin className="w-3 h-3" /> עקוב אחר הנהג
+                                <MapPin className="w-3 h-3" /> {t("follow_driver")}
                               </div>
                             )}
                           </div>
