@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { User as UserIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -33,17 +33,30 @@ export default function AvatarImage({
     .slice(0, 2)
     .toUpperCase();
 
-  const hasSrc = typeof src === "string" && src.trim().length > 0;
+  const finalSrc = useMemo(() => {
+    if (!src || typeof src !== "string" || src.trim().length === 0) return null;
+    // Cache-bust Supabase storage URLs once so refreshed avatars actually re-render
+    try {
+      const u = new URL(src);
+      if (!u.searchParams.has("v") && !u.searchParams.has("t")) {
+        u.searchParams.set("v", "1");
+      }
+      return u.toString();
+    } catch {
+      return src;
+    }
+  }, [src]);
 
-  if (hasSrc && !failed) {
+  if (finalSrc && !failed) {
     return (
       <img
-        src={src!}
+        src={finalSrc}
         alt={alt}
         onError={() => setFailed(true)}
         loading="lazy"
         referrerPolicy="no-referrer"
-        className={cn("object-cover", className)}
+        
+        className={cn("object-cover w-full h-full", className)}
       />
     );
   }

@@ -5,18 +5,17 @@ import RideCard from "@/components/RideCard";
 import AppHeader from "@/components/AppHeader";
 import BottomNav from "@/components/BottomNav";
 import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { Loader2, Search, Sparkles, Plus } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { Loader2, Search, Sparkles } from "lucide-react";
 import { useLang } from "@/contexts/LanguageContext";
 import { supabase } from "@/integrations/supabase/client";
 import { motion } from "framer-motion";
+import { cn } from "@/lib/utils";
 
 const Index = () => {
   const { t } = useLang();
-  const navigate = useNavigate();
   const [query, setQuery] = useState("");
   const [dateFilter, setDateFilter] = useState("");
+  const [showEnded, setShowEnded] = useState(false);
 
   const { data: rides, isLoading } = useQuery({
     queryKey: ["rides"],
@@ -43,6 +42,9 @@ const Index = () => {
   const sorted = useMemo(() => {
     const base = (rides ?? []).filter((r) => {
       const q = query.trim().toLowerCase();
+      const status = getDisplayStatus(r);
+      // Search filter: only joinable rides by default (active + seats available)
+      if (!showEnded && (status !== "active" || r.available_seats <= 0)) return false;
       const matchesQuery =
         !q || r.origin.toLowerCase().includes(q) || r.destination.toLowerCase().includes(q);
       const matchesDate = !dateFilter || r.departure_time.startsWith(dateFilter);
@@ -58,9 +60,11 @@ const Index = () => {
         return new Date(a.departure_time).getTime() - new Date(b.departure_time).getTime();
       return new Date(b.departure_time).getTime() - new Date(a.departure_time).getTime();
     });
-  }, [rides, query, dateFilter]);
+  }, [rides, query, dateFilter, showEnded]);
 
-  const activeCount = sorted.filter((r) => getDisplayStatus(r) === "active").length;
+  const activeCount = (rides ?? []).filter(
+    (r) => getDisplayStatus(r) === "active" && r.available_seats > 0
+  ).length;
   const isFiltering = !!query.trim() || !!dateFilter;
 
   return (
@@ -73,31 +77,21 @@ const Index = () => {
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.4 }}
-          className="relative overflow-hidden rounded-3xl border border-border/60 glass-card p-6 md:p-8"
+          className="relative overflow-hidden rounded-3xl border border-border/60 glass-card p-6 md:p-9"
         >
           <div className="absolute -top-20 -left-20 w-72 h-72 rounded-full bg-primary/20 blur-3xl pointer-events-none" />
           <div className="absolute -bottom-24 -right-10 w-80 h-80 rounded-full bg-accent/20 blur-3xl pointer-events-none" />
-          <div className="relative flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-            <div>
-              <div className="inline-flex items-center gap-1.5 text-[11px] font-bold px-3 py-1 rounded-full bg-primary/10 text-primary mb-3">
-                <Sparkles className="w-3 h-3" />
-                {activeCount} {t("active_rides")}
-              </div>
-              <h1 className="text-2xl md:text-4xl font-extrabold tracking-tight">
-                <span className="text-gradient">CampusLink</span> — נסיעות סטודנטים בקליק
-              </h1>
-              <p className="text-sm md:text-base text-muted-foreground mt-1.5 max-w-xl">
-                גלה נסיעות פעילות, חבר/י לקהילה ופרסם/י טרמפ משלך — הכל במקום אחד.
-              </p>
+          <div className="relative">
+            <div className="inline-flex items-center gap-1.5 text-[11px] font-bold px-3 py-1 rounded-full bg-primary/10 text-primary mb-3">
+              <Sparkles className="w-3 h-3" />
+              {activeCount} {t("active_rides")}
             </div>
-            <Button
-              size="lg"
-              onClick={() => navigate("/post")}
-              className="rounded-2xl h-12 gap-2 font-bold bg-gradient-to-br from-primary to-accent shadow-pop"
-            >
-              <Plus className="w-4 h-4" />
-              פרסם נסיעה חדשה
-            </Button>
+            <h1 className="text-3xl md:text-5xl font-extrabold tracking-tight leading-tight">
+              <span className="text-gradient">CampusLink</span>
+            </h1>
+            <p className="text-base md:text-lg text-muted-foreground mt-2 font-medium">
+              {t("home_tagline")}
+            </p>
           </div>
         </motion.section>
 
@@ -106,18 +100,29 @@ const Index = () => {
           <div className="relative flex-1">
             <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <Input
-              placeholder="חיפוש לפי מוצא או יעד..."
-              className="pr-9 h-12 rounded-2xl bg-card/80 backdrop-blur border-border/60"
+              placeholder={t("search_placeholder")}
+              className="pr-9 h-12 rounded-2xl bg-card/70 backdrop-blur border-border/60"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
             />
           </div>
           <Input
             type="date"
-            className="sm:w-48 h-12 rounded-2xl bg-card/80 backdrop-blur border-border/60"
+            className="sm:w-48 h-12 rounded-2xl bg-card/70 backdrop-blur border-border/60"
             value={dateFilter}
             onChange={(e) => setDateFilter(e.target.value)}
           />
+          <button
+            onClick={() => setShowEnded((v) => !v)}
+            className={cn(
+              "h-12 px-4 rounded-2xl border text-sm font-bold transition-colors",
+              showEnded
+                ? "bg-muted text-foreground border-border"
+                : "bg-card/70 text-muted-foreground border-border/60 hover:text-foreground"
+            )}
+          >
+            {showEnded ? t("hide_ended") : t("show_all")}
+          </button>
         </div>
 
         {/* Rides grid */}
@@ -129,7 +134,7 @@ const Index = () => {
           <>
             {isFiltering && (
               <p className="text-sm text-muted-foreground">
-                {sorted.length} תוצאות
+                {sorted.length} {t("results")}
               </p>
             )}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
@@ -146,10 +151,10 @@ const Index = () => {
         ) : (
           <div className="text-center py-24">
             <p className="text-lg font-bold mb-1">
-              {isFiltering ? "לא נמצאו נסיעות תואמות" : t("no_rides_title")}
+              {isFiltering ? t("no_match_title") : t("no_rides_title")}
             </p>
             <p className="text-sm text-muted-foreground">
-              {isFiltering ? "נסה/י לחפש מילים אחרות" : t("no_rides_desc")}
+              {isFiltering ? t("no_match_desc") : t("no_rides_desc")}
             </p>
           </div>
         )}

@@ -11,7 +11,7 @@ const BottomNav = () => {
   const navItems = [
     { path: "/", icon: Home, label: t("nav_home") },
     { path: "/post", icon: PlusCircle, label: t("nav_post"), primary: true },
-    { path: "/active", icon: Activity, label: "פעילות" },
+    { path: "/active", icon: Activity, label: t("nav_activity") },
   ];
 
   return (

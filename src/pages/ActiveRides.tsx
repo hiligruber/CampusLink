@@ -1,13 +1,14 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import AppHeader from "@/components/AppHeader";
 import BottomNav from "@/components/BottomNav";
-import DriverLiveTracker from "@/components/DriverLiveTracker";
 import DriverLocationSharer from "@/components/DriverLocationSharer";
+import LiveTrackingSheet from "@/components/LiveTrackingSheet";
 import RideChat from "@/components/RideChat";
+import RideRatingDialog from "@/components/RideRatingDialog";
 import { Button } from "@/components/ui/button";
 import {
   Loader2,
@@ -19,8 +20,10 @@ import {
   User as UserIcon,
   Search,
   Activity,
+  Star,
 } from "lucide-react";
 import { motion } from "framer-motion";
+import { useLang } from "@/contexts/LanguageContext";
 import type { RidePhase } from "@/lib/rides-api";
 
 interface ActiveRideItem {
@@ -40,14 +43,6 @@ interface ActiveRideItem {
   bookingId?: string;
 }
 
-const phaseMeta: Record<RidePhase, { label: string; cls: string }> = {
-  scheduled: { label: "מתוכננת", cls: "bg-secondary text-secondary-foreground" },
-  en_route: { label: "בדרך אליך", cls: "bg-accent/15 text-accent" },
-  picked_up: { label: "אספו את הנוסעים", cls: "bg-primary/15 text-primary" },
-  in_progress: { label: "בנסיעה", cls: "bg-emerald-500/15 text-emerald-700 dark:text-emerald-400" },
-  completed: { label: "הסתיימה", cls: "bg-muted text-muted-foreground" },
-};
-
 const phaseRank: Record<RidePhase, number> = {
   en_route: 0,
   picked_up: 1,
@@ -60,10 +55,12 @@ const ActiveRides = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  
-  const [chat, setChat] = useState<{ rideId: string; userId: string; name: string } | null>(null);
+  const { t, lang } = useLang();
 
-  // Realtime invalidation
+  const [chat, setChat] = useState<{ rideId: string; userId: string; name: string } | null>(null);
+  const [trackingRide, setTrackingRide] = useState<ActiveRideItem | null>(null);
+  const [ratingTarget, setRatingTarget] = useState<{ rideId: string; rateeId: string; rateeName: string } | null>(null);
+
   useEffect(() => {
     if (!user) return;
     const ch = supabase
@@ -80,19 +77,27 @@ const ActiveRides = () => {
     };
   }, [user, queryClient]);
 
+  const phaseMeta = (p: RidePhase) => {
+    switch (p) {
+      case "en_route":    return { label: t("phase_en_route"),    cls: "bg-accent/15 text-accent" };
+      case "picked_up":   return { label: t("phase_picked_up"),   cls: "bg-primary/15 text-primary" };
+      case "in_progress": return { label: t("phase_in_progress"), cls: "bg-emerald-500/15 text-emerald-700 dark:text-emerald-400" };
+      case "completed":   return { label: t("phase_completed"),   cls: "bg-muted text-muted-foreground" };
+      default:            return { label: t("phase_scheduled"),   cls: "bg-secondary text-secondary-foreground" };
+    }
+  };
+
+  // Active + recently completed rides (so we can show rating prompts)
   const { data: items = [], isLoading } = useQuery({
     queryKey: ["active-rides", user?.id],
     enabled: !!user,
     queryFn: async (): Promise<ActiveRideItem[]> => {
-      // 1. Rides I drive
       const { data: myRides } = await supabase
         .from("rides")
         .select("*")
         .eq("driver_id", user!.id)
-        .eq("status", "active")
-        .neq("ride_phase", "completed");
+        .eq("status", "active");
 
-      // 2. Bookings where I'm an accepted passenger
       const { data: myBookings } = await supabase
         .from("bookings")
         .select("id, ride_id, pickup_location, status")
@@ -101,12 +106,7 @@ const ActiveRides = () => {
 
       const passengerRideIds = (myBookings ?? []).map((b) => b.ride_id);
       const { data: passengerRides } = passengerRideIds.length
-        ? await supabase
-            .from("rides")
-            .select("*")
-            .in("id", passengerRideIds)
-            .eq("status", "active")
-            .neq("ride_phase", "completed")
+        ? await supabase.from("rides").select("*").in("id", passengerRideIds).eq("status", "active")
         : { data: [] as any[] };
 
       const driverIds = [
@@ -116,13 +116,9 @@ const ActiveRides = () => {
         ]),
       ];
       const { data: profiles } = driverIds.length
-        ? await supabase
-            .from("profiles")
-            .select("user_id, full_name, avatar_url")
-            .in("user_id", driverIds)
+        ? await supabase.from("profiles").select("user_id, full_name, avatar_url").in("user_id", driverIds)
         : { data: [] as any[] };
 
-      // Get all accepted passenger names for driver's rides (first one shown)
       const myRideIds = (myRides ?? []).map((r) => r.id);
       const { data: ridePassengers } = myRideIds.length
         ? await supabase
@@ -134,15 +130,11 @@ const ActiveRides = () => {
 
       const passengerIds = [...new Set((ridePassengers ?? []).map((b: any) => b.passenger_id))];
       const { data: passengerProfiles } = passengerIds.length
-        ? await supabase
-            .from("profiles")
-            .select("user_id, full_name, avatar_url")
-            .in("user_id", passengerIds)
+        ? await supabase.from("profiles").select("user_id, full_name, avatar_url").in("user_id", passengerIds)
         : { data: [] as any[] };
 
       const items: ActiveRideItem[] = [];
 
-      // Driver items
       for (const r of myRides ?? []) {
         const driverProf = profiles?.find((p: any) => p.user_id === r.driver_id);
         const firstPassenger = (ridePassengers ?? []).find((b: any) => b.ride_id === r.id);
@@ -157,7 +149,7 @@ const ActiveRides = () => {
           departureTime: r.departure_time,
           phase: (r.ride_phase ?? "scheduled") as RidePhase,
           driverId: r.driver_id,
-          driverName: r.driver_name || driverProf?.full_name || "את/ה",
+          driverName: r.driver_name || driverProf?.full_name || (lang === "EN" ? "You" : "את/ה"),
           driverAvatar: driverProf?.avatar_url ?? null,
           passengerId: firstPassenger?.passenger_id,
           passengerName: passProf?.full_name,
@@ -167,7 +159,6 @@ const ActiveRides = () => {
         });
       }
 
-      // Passenger items
       for (const r of passengerRides ?? []) {
         const driverProf = profiles?.find((p: any) => p.user_id === r.driver_id);
         const myB = (myBookings ?? []).find((b) => b.ride_id === r.id);
@@ -179,7 +170,7 @@ const ActiveRides = () => {
           departureTime: r.departure_time,
           phase: (r.ride_phase ?? "scheduled") as RidePhase,
           driverId: r.driver_id,
-          driverName: r.driver_name || driverProf?.full_name || "נהג",
+          driverName: r.driver_name || driverProf?.full_name || (lang === "EN" ? "Driver" : "נהג"),
           driverAvatar: driverProf?.avatar_url ?? null,
           pickupLocation: myB?.pickup_location,
           bookingId: myB?.id,
@@ -195,9 +186,41 @@ const ActiveRides = () => {
     },
   });
 
+  // Find unrated completed rides where current user participated -> auto-trigger rating
+  const completedRides = useMemo(
+    () => items.filter((i) => i.phase === "completed"),
+    [items]
+  );
+
+  const { data: myRatings = [] } = useQuery({
+    queryKey: ["my-ratings", user?.id, completedRides.map((r) => r.rideId).join(",")],
+    enabled: !!user && completedRides.length > 0,
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("ride_ratings")
+        .select("ride_id, ratee_id")
+        .eq("rater_id", user!.id)
+        .in("ride_id", completedRides.map((r) => r.rideId));
+      return data ?? [];
+    },
+  });
+
+  useEffect(() => {
+    if (!user || ratingTarget || completedRides.length === 0) return;
+    const ratedSet = new Set(myRatings.map((r: any) => `${r.ride_id}:${r.ratee_id}`));
+    for (const c of completedRides) {
+      const rateeId = c.role === "passenger" ? c.driverId : c.passengerId;
+      const rateeName = c.role === "passenger" ? c.driverName : c.passengerName;
+      if (!rateeId || !rateeName) continue;
+      if (ratedSet.has(`${c.rideId}:${rateeId}`)) continue;
+      setRatingTarget({ rideId: c.rideId, rateeId, rateeName });
+      break;
+    }
+  }, [user, completedRides, myRatings, ratingTarget]);
+
   return (
-    <div className="min-h-screen pb-24" dir="rtl">
-      <AppHeader title="פעילות" subtitle={`${items.length} נסיעות פעילות`} />
+    <div className="min-h-screen pb-24">
+      <AppHeader subtitle={`${items.length} ${t("active_rides")}`} />
       <motion.main
         initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
@@ -211,32 +234,27 @@ const ActiveRides = () => {
         ) : items.length === 0 ? (
           <div className="lg:col-span-2 text-center py-20 glass-card rounded-3xl">
             <Activity className="w-12 h-12 mx-auto text-muted-foreground/40 mb-3" strokeWidth={1.5} />
-            <p className="text-lg font-bold mb-1">אין לך נסיעות פעילות</p>
-            <p className="text-sm text-muted-foreground mb-5">
-              ברגע שתפרסם נסיעה או תצטרף לאחת — היא תופיע כאן
-            </p>
+            <p className="text-lg font-bold mb-1">{t("no_active_title")}</p>
+            <p className="text-sm text-muted-foreground mb-5">{t("no_active_desc")}</p>
             <div className="flex gap-2 justify-center">
               <Button onClick={() => navigate("/")} className="gap-1.5">
-                <Search className="w-4 h-4" /> חפש נסיעה
+                <Search className="w-4 h-4" /> {t("find_ride")}
               </Button>
               <Button variant="outline" onClick={() => navigate("/post")} className="gap-1.5">
-                <Car className="w-4 h-4" /> פרסם נסיעה
+                <Car className="w-4 h-4" /> {t("post_ride")}
               </Button>
             </div>
           </div>
         ) : (
           items.map((it) => {
             const d = new Date(it.departureTime);
-
-            const meta = phaseMeta[it.phase];
+            const meta = phaseMeta(it.phase);
             const otherUserId = it.role === "passenger" ? it.driverId : it.passengerId;
-            const otherUserName = it.role === "passenger" ? it.driverName : it.passengerName ?? "נוסע";
+            const otherUserName = it.role === "passenger" ? it.driverName : it.passengerName ?? t("passenger_short");
+            const isCompleted = it.phase === "completed";
             return (
-              <div
-                key={it.rideId + it.role}
-                className="glass-card rounded-3xl overflow-hidden"
-              >
-                <div className="p-4 space-y-3">
+              <div key={it.rideId + it.role} className="glass-card rounded-3xl overflow-hidden">
+                <div className="p-5 space-y-3">
                   <div className="flex items-center justify-between gap-2">
                     <div className="flex items-center gap-2">
                       <span
@@ -246,7 +264,7 @@ const ActiveRides = () => {
                             : "bg-secondary text-secondary-foreground"
                         }`}
                       >
-                        {it.role === "driver" ? "את/ה הנהג" : "את/ה נוסע"}
+                        {it.role === "driver" ? t("you_driver") : t("you_passenger")}
                       </span>
                       <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${meta.cls}`}>
                         {meta.label}
@@ -254,7 +272,7 @@ const ActiveRides = () => {
                     </div>
                     <span className="text-[11px] text-muted-foreground flex items-center gap-1">
                       <Clock className="w-3 h-3" />
-                      {d.toLocaleTimeString("he-IL", { hour: "2-digit", minute: "2-digit" })}
+                      {d.toLocaleTimeString(lang === "EN" ? "en-US" : "he-IL", { hour: "2-digit", minute: "2-digit" })}
                     </span>
                   </div>
 
@@ -275,7 +293,7 @@ const ActiveRides = () => {
                       <MapPin className="w-3.5 h-3.5 text-primary mt-0.5 shrink-0" />
                       <div className="min-w-0">
                         <p className="text-[10px] font-bold text-primary uppercase tracking-wide">
-                          איסוף שלך
+                          {t("pickup_yours")}
                         </p>
                         <p className="text-foreground font-semibold truncate">{it.pickupLocation}</p>
                       </div>
@@ -291,55 +309,53 @@ const ActiveRides = () => {
                       )}
                     </div>
                     <span className="text-muted-foreground">
-                      נהג: <span className="font-semibold text-foreground">{it.driverName}</span>
+                      {t("driver_short")}: <span className="font-semibold text-foreground">{it.driverName}</span>
                     </span>
                   </div>
 
-                  {/* Map is always visible for active rides */}
-                  {it.role === "driver" ? (
-                    <div className="pt-2 border-t border-border space-y-3">
-                      <DriverLocationSharer
-                        rideId={it.rideId}
-                        driverId={it.driverId}
-                        phase={it.phase}
-                      />
-                      <DriverLiveTracker
-                        rideId={it.rideId}
-                        destination={it.destination}
-                        phase={it.phase}
-                        pickupLocation={it.pickupLocation}
-                        driverName={it.driverName}
-                      />
-                    </div>
-                  ) : (
+                  {it.role === "driver" && !isCompleted && (
                     <div className="pt-2 border-t border-border">
-                      <DriverLiveTracker
-                        rideId={it.rideId}
-                        destination={it.destination}
-                        phase={it.phase}
-                        pickupLocation={it.pickupLocation}
-                        driverName={it.driverName}
-                      />
+                      <DriverLocationSharer rideId={it.rideId} driverId={it.driverId} phase={it.phase} />
                     </div>
                   )}
 
-                  {/* Secondary action: message the other party */}
-                  {otherUserId && (
-                    <div className="pt-1">
+                  <div className="grid grid-cols-2 gap-2 pt-2">
+                    {!isCompleted ? (
+                      <Button
+                        size="sm"
+                        className="gap-1.5 rounded-xl text-xs font-bold h-10 bg-gradient-to-r from-primary to-accent border-0 shadow-pop"
+                        onClick={() => setTrackingRide(it)}
+                      >
+                        <Navigation className="w-4 h-4" />
+                        {t("open_map")}
+                      </Button>
+                    ) : (
+                      otherUserId && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="gap-1.5 rounded-xl text-xs font-bold h-10 border-warning/40 text-warning hover:bg-warning/10 hover:text-warning"
+                          onClick={() =>
+                            setRatingTarget({ rideId: it.rideId, rateeId: otherUserId!, rateeName: otherUserName })
+                          }
+                        >
+                          <Star className="w-4 h-4" />
+                          {t("rate_with")} {otherUserName}
+                        </Button>
+                      )
+                    )}
+                    {otherUserId && (
                       <Button
                         size="sm"
                         variant="outline"
-                        className="w-full gap-1.5 rounded-xl text-xs font-bold h-10"
-                        onClick={() =>
-                          setChat({ rideId: it.rideId, userId: otherUserId, name: otherUserName })
-                        }
+                        className="gap-1.5 rounded-xl text-xs font-bold h-10"
+                        onClick={() => setChat({ rideId: it.rideId, userId: otherUserId, name: otherUserName })}
                       >
                         <MessageCircle className="w-3.5 h-3.5" />
-                        שלח/י הודעה ל{otherUserName}
+                        {t("send_message")}
                       </Button>
-                    </div>
-                  )}
-
+                    )}
+                  </div>
                 </div>
               </div>
             );
@@ -356,6 +372,33 @@ const ActiveRides = () => {
           otherUserName={chat.name}
         />
       )}
+
+      {trackingRide && (
+        <LiveTrackingSheet
+          open={!!trackingRide}
+          onOpenChange={(o) => !o && setTrackingRide(null)}
+          rideId={trackingRide.rideId}
+          destination={trackingRide.destination}
+          pickupLocation={trackingRide.pickupLocation ?? undefined}
+          phase={trackingRide.phase}
+          driverName={trackingRide.driverName}
+        />
+      )}
+
+      {ratingTarget && (
+        <RideRatingDialog
+          open={!!ratingTarget}
+          onOpenChange={(o) => !o && setRatingTarget(null)}
+          rideId={ratingTarget.rideId}
+          rateeId={ratingTarget.rateeId}
+          rateeName={ratingTarget.rateeName}
+          onDone={() => {
+            setRatingTarget(null);
+            queryClient.invalidateQueries({ queryKey: ["my-ratings"] });
+          }}
+        />
+      )}
+
       <BottomNav />
     </div>
   );
