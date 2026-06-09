@@ -80,50 +80,52 @@ const Profile = () => {
           </div>
         </div>
 
-        {(profile?.hobbies || profile?.music_preference) && (
-          <div className="bg-card rounded-2xl border border-border p-5 shadow-sm space-y-3">
-            {profile?.hobbies && (
-              <div className="flex items-start gap-2">
-                <Heart className="w-4 h-4 text-primary mt-0.5 shrink-0" />
-                <div>
-                  <p className="text-xs font-semibold text-muted-foreground">תחביבים</p>
-                  <p className="text-sm text-foreground">{profile.hobbies}</p>
+        <div className="lg:col-span-2 space-y-5">
+          {(profile?.hobbies || profile?.music_preference) && (
+            <div className="glass-card rounded-3xl p-6 space-y-3">
+              {profile?.hobbies && (
+                <div className="flex items-start gap-2">
+                  <Heart className="w-4 h-4 text-primary mt-0.5 shrink-0" />
+                  <div>
+                    <p className="text-xs font-semibold text-muted-foreground">תחביבים</p>
+                    <p className="text-sm text-foreground">{profile.hobbies}</p>
+                  </div>
                 </div>
-              </div>
-            )}
-            {profile?.music_preference && (
-              <div className="flex items-start gap-2">
-                <Music className="w-4 h-4 text-primary mt-0.5 shrink-0" />
-                <div>
-                  <p className="text-xs font-semibold text-muted-foreground">מוזיקה / שיחה בנסיעה</p>
-                  <p className="text-sm text-foreground">{profile.music_preference}</p>
+              )}
+              {profile?.music_preference && (
+                <div className="flex items-start gap-2">
+                  <Music className="w-4 h-4 text-primary mt-0.5 shrink-0" />
+                  <div>
+                    <p className="text-xs font-semibold text-muted-foreground">מוזיקה / שיחה בנסיעה</p>
+                    <p className="text-sm text-foreground">{profile.music_preference}</p>
+                  </div>
                 </div>
-              </div>
-            )}
-          </div>
-        )}
-
-        <RideHistory />
-
-        <div className="space-y-2">
-          <Button variant="outline" className="w-full justify-start gap-2 h-12 rounded-xl" onClick={() => navigate("/profile/edit")}>
-            <UserCog className="w-4 h-4 text-primary" />
-            עריכת פרופיל
-          </Button>
-          {isAdmin && (
-            <Button variant="outline" className="w-full justify-start gap-2 h-12 rounded-xl" onClick={() => navigate("/admin")}>
-              <ShieldCheck className="w-4 h-4 text-primary" />
-              פאנל ניהול - אימות סטודנטים
-            </Button>
+              )}
+            </div>
           )}
-          <Button variant="outline" className="w-full justify-start gap-2 h-12 rounded-xl" onClick={handleCalendarSync}>
-            <Calendar className="w-4 h-4 text-primary" />
-            Sync with Google Calendar
-          </Button>
-          <Button variant="outline" className="w-full justify-start gap-2 h-12 rounded-xl text-destructive" onClick={handleSignOut}>
-            <LogOut className="w-4 h-4" />
-            Sign Out
-          </Button>
+
+          <RideHistory />
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            <Button variant="outline" className="justify-start gap-2 h-12 rounded-2xl" onClick={() => navigate("/profile/edit")}>
+              <UserCog className="w-4 h-4 text-primary" />
+              עריכת פרופיל
+            </Button>
+            {isAdmin && (
+              <Button variant="outline" className="justify-start gap-2 h-12 rounded-2xl" onClick={() => navigate("/admin")}>
+                <ShieldCheck className="w-4 h-4 text-primary" />
+                פאנל ניהול
+              </Button>
+            )}
+            <Button variant="outline" className="justify-start gap-2 h-12 rounded-2xl" onClick={handleCalendarSync}>
+              <Calendar className="w-4 h-4 text-primary" />
+              Google Calendar
+            </Button>
+            <Button variant="outline" className="justify-start gap-2 h-12 rounded-2xl text-destructive" onClick={handleSignOut}>
+              <LogOut className="w-4 h-4" />
+              Sign Out
+            </Button>
+          </div>
         </div>
       </motion.main>
       <BottomNav />
