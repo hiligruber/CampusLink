@@ -125,9 +125,9 @@ const RideCard = ({ ride, index, driverAvatarUrl }: RideCardProps) => {
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: index * 0.05, duration: 0.3 }}
-      className={`bg-card rounded-3xl border border-border shadow-card overflow-hidden hover:-translate-y-0.5 hover:shadow-pop transition-all duration-200 ${
-        isInactive ? "opacity-60" : ""
-      }`}
+      className={`relative bg-card/80 backdrop-blur-xl rounded-3xl border border-border/70 shadow-card overflow-hidden hover:-translate-y-0.5 hover:shadow-pop transition-all duration-200 ${
+        display === "completed" ? "opacity-80 stamp-ended grayscale-[40%]" : ""
+      } ${display === "cancelled" ? "opacity-60" : ""}`}
     >
       {/* Author header — warm tint */}
       <div className="flex items-center gap-3 px-4 pt-4 pb-3 bg-gradient-to-br from-primary/[0.04] via-transparent to-primary/[0.06]">
