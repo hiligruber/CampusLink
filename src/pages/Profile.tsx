@@ -138,7 +138,7 @@ const Profile = () => {
           <div className="glass-card rounded-3xl p-5">
             <div className="flex items-center justify-between mb-3">
               <h3 className="text-sm font-bold uppercase tracking-wider text-muted-foreground">
-                {t("quick_actions") || "Quick actions"}
+                Quick actions
               </h3>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
