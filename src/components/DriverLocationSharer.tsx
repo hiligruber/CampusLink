@@ -65,12 +65,12 @@ export default function DriverLocationSharer({ rideId, driverId, phase, onComple
       setPendingDialog(true);
       return;
     }
-    await doAdvance("en_route", "הנוסעים יודעים שאתה בדרך");
+    await doAdvance("en_route", t("toast_passengers_notified"));
   };
 
   const continueWithoutLocation = async () => {
     setPendingDialog(false);
-    await doAdvance("en_route", "התחלת — אך המיקום לא משותף");
+    await doAdvance("en_route", t("toast_started_no_loc"));
   };
 
   const renderStatusChip = () => {
