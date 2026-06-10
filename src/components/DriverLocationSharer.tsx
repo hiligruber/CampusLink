@@ -121,44 +121,44 @@ export default function DriverLocationSharer({ rideId, driverId, phase, onComple
             className="gap-1.5 rounded-xl text-xs font-bold h-9 bg-gradient-to-r from-primary to-accent border-0"
           >
             {busy ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Car className="w-3.5 h-3.5" />}
-            בדרך אליך
+            {t("btn_on_the_way")}
           </Button>
         )}
 
         {phase === "en_route" && (
           <Button
-            onClick={() => doAdvance("picked_up", "מצויין — הנוסעים אצלך")}
+            onClick={() => doAdvance("picked_up", t("toast_passengers_with_you"))}
             disabled={busy}
             size="sm"
             className="gap-1.5 rounded-xl text-xs font-bold h-9 bg-gradient-to-r from-primary to-accent border-0"
           >
             <Users className="w-3.5 h-3.5" />
-            אספתי את הנוסעים
+            {t("btn_picked_up")}
           </Button>
         )}
 
         {phase === "picked_up" && (
           <Button
-            onClick={() => doAdvance("in_progress", "הנסיעה התחילה")}
+            onClick={() => doAdvance("in_progress", t("toast_ride_started"))}
             disabled={busy}
             size="sm"
             className="gap-1.5 rounded-xl text-xs font-bold h-9 bg-gradient-to-r from-primary to-accent border-0"
           >
             <NavIcon className="w-3.5 h-3.5" />
-            התחל נסיעה
+            {t("btn_start_ride")}
           </Button>
         )}
 
         {phase === "in_progress" && (
           <Button
-            onClick={() => doAdvance("completed", "הנסיעה הסתיימה")}
+            onClick={() => doAdvance("completed", t("toast_ride_finished"))}
             disabled={busy}
             size="sm"
             variant="outline"
             className="gap-1.5 rounded-xl text-xs font-bold h-9 border-primary/40 text-primary hover:bg-primary/10"
           >
             <CheckCircle2 className="w-3.5 h-3.5" />
-            הורדתי את הנוסעים
+            {t("btn_drop_off")}
           </Button>
         )}
       </div>
