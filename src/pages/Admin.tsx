@@ -12,6 +12,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Loader2, CheckCircle2, XCircle, Mail, Building2, ShieldCheck, UserPlus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
+import AdminSupportSection from "@/components/AdminSupportSection";
 
 const Admin = () => {
   const { user } = useAuth();
