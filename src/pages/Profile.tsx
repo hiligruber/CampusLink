@@ -79,8 +79,10 @@ const Profile = () => {
                     src={avatarSrc}
                     name={displayName}
                     alt={displayName}
+                    version={profile?.updated_at || undefined}
                     className="w-full h-full text-3xl"
                   />
+
                 </div>
               </div>
               <h2 className="text-2xl font-extrabold tracking-tight mt-4">
