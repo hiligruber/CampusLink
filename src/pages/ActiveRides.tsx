@@ -58,6 +58,8 @@ const ActiveRides = () => {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { t, lang } = useLang();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const focusRideId = searchParams.get("ride");
 
   const [chat, setChat] = useState<{ rideId: string; userId: string; name: string } | null>(null);
   const [trackingRide, setTrackingRide] = useState<ActiveRideItem | null>(null);
