@@ -9,6 +9,8 @@ interface Props {
   fallbackClassName?: string;
   iconClassName?: string;
   alt?: string;
+  /** Pass a changing value (e.g. updatedAt) to bust the browser cache after upload. */
+  version?: string | number;
 }
 
 /** Avatar with graceful fallback to initials (or icon) on missing/broken image. */
@@ -19,11 +21,12 @@ export default function AvatarImage({
   fallbackClassName,
   iconClassName,
   alt = "",
+  version,
 }: Props) {
   const [failed, setFailed] = useState(false);
   useEffect(() => {
     setFailed(false);
-  }, [src]);
+  }, [src, version]);
 
   const initials = (name || "")
     .split(" ")
@@ -35,27 +38,32 @@ export default function AvatarImage({
 
   const finalSrc = useMemo(() => {
     if (!src || typeof src !== "string" || src.trim().length === 0) return null;
-    // Cache-bust Supabase storage URLs once so refreshed avatars actually re-render
+    if (version === undefined || version === null) return src;
     try {
       const u = new URL(src);
-      if (!u.searchParams.has("v") && !u.searchParams.has("t")) {
-        u.searchParams.set("v", "1");
-      }
+      u.searchParams.set("v", String(version));
       return u.toString();
     } catch {
       return src;
     }
-  }, [src]);
+  }, [src, version]);
+
+  // Only Google/Gravatar style external avatars need no-referrer. Supabase storage doesn't.
+  const isExternal =
+    !!finalSrc && /googleusercontent\.com|gravatar\.com/i.test(finalSrc);
 
   if (finalSrc && !failed) {
     return (
       <img
         src={finalSrc}
         alt={alt}
-        onError={() => setFailed(true)}
+        onError={() => {
+          // eslint-disable-next-line no-console
+          console.warn("[AvatarImage] failed to load", finalSrc);
+          setFailed(true);
+        }}
         loading="lazy"
-        referrerPolicy="no-referrer"
-        
+        referrerPolicy={isExternal ? "no-referrer" : undefined}
         className={cn("object-cover w-full h-full", className)}
       />
     );
