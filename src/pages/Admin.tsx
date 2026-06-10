@@ -21,8 +21,6 @@ const Admin = () => {
   const [reason, setReason] = useState("");
   const [newAdminEmail, setNewAdminEmail] = useState("");
   const [addingAdmin, setAddingAdmin] = useState(false);
-  const [rejectingId, setRejectingId] = useState<string | null>(null);
-  const [reason, setReason] = useState("");
 
   const { data: pending, isLoading } = useQuery({
     queryKey: ["pending-verifications"],
