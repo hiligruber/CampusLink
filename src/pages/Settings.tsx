@@ -2,8 +2,9 @@ import AppHeader from "@/components/AppHeader";
 import BottomNav from "@/components/BottomNav";
 import { useTheme } from "@/contexts/ThemeContext";
 import { useLang } from "@/contexts/LanguageContext";
-import { Sun, Moon, Globe } from "lucide-react";
+import { Sun, Moon, Globe, LifeBuoy } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { Link } from "react-router-dom";
 
 const Settings = () => {
   const { theme, setTheme } = useTheme();
@@ -63,6 +64,19 @@ const Settings = () => {
               </button>
             ))}
           </div>
+        </section>
+
+        <section className="glass-card rounded-3xl p-6">
+          <h2 className="text-sm font-bold uppercase tracking-wider text-muted-foreground mb-4 flex items-center gap-2">
+            <LifeBuoy className="w-4 h-4" /> Support
+          </h2>
+          <Link to="/support" className="flex items-center justify-between rounded-2xl border-2 border-border hover:border-primary/40 bg-card/60 p-4 transition-all">
+            <div>
+              <p className="font-bold text-sm">Contact Support</p>
+              <p className="text-xs text-muted-foreground mt-0.5">Submit a request, report an issue, or appeal a block</p>
+            </div>
+            <LifeBuoy className="w-5 h-5 text-primary" />
+          </Link>
         </section>
       </main>
       <BottomNav />
