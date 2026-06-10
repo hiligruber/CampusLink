@@ -288,7 +288,16 @@ const ActiveRides = () => {
 
                   {it.role === "driver" && !isCompleted && (
                     <div className="pt-2 border-t border-border">
-                      <DriverLocationSharer rideId={it.rideId} driverId={it.driverId} phase={it.phase} />
+                      <DriverLocationSharer
+                        rideId={it.rideId}
+                        driverId={it.driverId}
+                        phase={it.phase}
+                        onCompleted={() => {
+                          if (otherUserId && otherUserName) {
+                            setRatingTarget({ rideId: it.rideId, rateeId: otherUserId, rateeName: otherUserName });
+                          }
+                        }}
+                      />
                     </div>
                   )}
 
