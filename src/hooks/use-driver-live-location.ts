@@ -227,16 +227,33 @@ export function useDriverLiveLocation({
     (async () => {
       try {
         const origin = { lat: location.lat, lng: location.lng };
-        if (phase === "en_route" && pickupLocation) {
+        const hasPickup = phase === "en_route" && pickupLocation && pickupLocation.trim().length > 0;
+
+        if (hasPickup) {
+          // Compute both segments in parallel: driver→pickup and pickup→destination.
           const [seg1, seg2] = await Promise.all([
-            routePromise(origin, pickupLocation),
-            destination ? routePromise(pickupLocation, destination) : Promise.resolve(null),
+            routePromise(origin, pickupLocation as string),
+            destination ? routePromise(pickupLocation as string, destination) : Promise.resolve(null),
           ]);
           if (cancelled) return;
           setToPickup(seg1);
-          setToDestination(seg2);
-          setRouteError(!seg1);
+          // If seg1 succeeded, use seg2 as-is (may be null if no destination).
+          // If seg1 FAILED, fall back to a single driver→destination route so the
+          // passenger still sees the driver moving toward them on the map.
+          if (seg1) {
+            setToDestination(seg2);
+            setRouteError(false);
+          } else if (destination) {
+            const fallback = await routePromise(origin, destination);
+            if (cancelled) return;
+            setToDestination(fallback);
+            setRouteError(!fallback);
+          } else {
+            setToDestination(null);
+            setRouteError(true);
+          }
         } else if (destination) {
+          // picked_up / in_progress / scheduled — single driver→destination route.
           const seg = await routePromise(origin, destination);
           if (cancelled) return;
           setToPickup(null);
