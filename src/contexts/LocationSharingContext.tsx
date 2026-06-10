@@ -118,8 +118,12 @@ export function LocationSharingProvider({ children }: { children: ReactNode }) {
     );
   }, [upsertAll]);
 
-  // Manage watcher — only auto-start if permission is ALREADY granted.
-  // This prevents the browser permission prompt from firing on every refresh.
+  // Manage watcher — start the live watcher whenever the driver has an
+  // active ride (en_route / picked_up / in_progress). watchPosition itself
+  // will trigger the browser permission prompt once if needed; if the user
+  // already accepted the one-shot prompt from captureOnceAndUpsert, the
+  // watcher reuses that permission and streams updates without re-prompting.
+  // We only short-circuit when permission is explicitly "denied".
   useEffect(() => {
     const shouldWatch = activeRides.length > 0;
     if (!shouldWatch) {
@@ -138,24 +142,24 @@ export function LocationSharingProvider({ children }: { children: ReactNode }) {
     }
 
     let cancelled = false;
+    let permResult: any = null;
+
     const maybeStart = async () => {
       try {
         if ("permissions" in navigator && (navigator as any).permissions?.query) {
-          const result = await (navigator as any).permissions.query({ name: "geolocation" });
+          permResult = await (navigator as any).permissions.query({ name: "geolocation" });
           if (cancelled) return;
-          if (result.state === "granted") {
-            startWatcher();
-          } else if (result.state === "denied") {
+          if (permResult.state === "denied") {
             setStatus("denied");
             setError("גישה למיקום נדחתה");
-          } else {
-            // "prompt" — wait for explicit user action (captureOnceAndUpsert / retry)
-            setStatus("idle");
+            return;
           }
-          // React to live changes (user grants/denies in browser settings)
-          result.onchange = () => {
-            if (result.state === "granted") startWatcher();
-            else if (result.state === "denied") {
+          // "granted" OR "prompt" — start the watcher. If permission is
+          // "prompt", watchPosition itself triggers the browser prompt.
+          startWatcher();
+          permResult.onchange = () => {
+            if (permResult.state === "granted") startWatcher();
+            else if (permResult.state === "denied") {
               if (watchIdRef.current !== null) {
                 navigator.geolocation.clearWatch(watchIdRef.current);
                 watchIdRef.current = null;
@@ -164,7 +168,6 @@ export function LocationSharingProvider({ children }: { children: ReactNode }) {
             }
           };
         } else {
-          // No Permissions API — fall back to starting watcher (legacy browsers)
           startWatcher();
         }
       } catch {
@@ -175,6 +178,7 @@ export function LocationSharingProvider({ children }: { children: ReactNode }) {
 
     return () => {
       cancelled = true;
+      if (permResult) permResult.onchange = null;
       if (watchIdRef.current !== null) {
         navigator.geolocation.clearWatch(watchIdRef.current);
         watchIdRef.current = null;
