@@ -60,6 +60,7 @@ const ActiveRides = () => {
   const [chat, setChat] = useState<{ rideId: string; userId: string; name: string } | null>(null);
   const [trackingRide, setTrackingRide] = useState<ActiveRideItem | null>(null);
   const [ratingTarget, setRatingTarget] = useState<{ rideId: string; rateeId: string; rateeName: string } | null>(null);
+  const [handledRatings, setHandledRatings] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     if (!user) return;
@@ -212,11 +213,12 @@ const ActiveRides = () => {
       const rateeId = c.role === "passenger" ? c.driverId : c.passengerId;
       const rateeName = c.role === "passenger" ? c.driverName : c.passengerName;
       if (!rateeId || !rateeName) continue;
-      if (ratedSet.has(`${c.rideId}:${rateeId}`)) continue;
+      const key = `${c.rideId}:${rateeId}`;
+      if (ratedSet.has(key) || handledRatings.has(key)) continue;
       setRatingTarget({ rideId: c.rideId, rateeId, rateeName });
       break;
     }
-  }, [user, completedRides, myRatings, ratingTarget]);
+  }, [user, completedRides, myRatings, ratingTarget, handledRatings]);
 
   return (
     <div className="min-h-screen pb-24">
@@ -388,11 +390,19 @@ const ActiveRides = () => {
       {ratingTarget && (
         <RideRatingDialog
           open={!!ratingTarget}
-          onOpenChange={(o) => !o && setRatingTarget(null)}
+          onOpenChange={(o) => {
+            if (!o) {
+              const key = `${ratingTarget.rideId}:${ratingTarget.rateeId}`;
+              setHandledRatings((prev) => new Set(prev).add(key));
+              setRatingTarget(null);
+            }
+          }}
           rideId={ratingTarget.rideId}
           rateeId={ratingTarget.rateeId}
           rateeName={ratingTarget.rateeName}
           onDone={() => {
+            const key = `${ratingTarget.rideId}:${ratingTarget.rateeId}`;
+            setHandledRatings((prev) => new Set(prev).add(key));
             setRatingTarget(null);
             queryClient.invalidateQueries({ queryKey: ["my-ratings"] });
           }}
