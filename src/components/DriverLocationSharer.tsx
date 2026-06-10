@@ -166,16 +166,13 @@ export default function DriverLocationSharer({ rideId, driverId, phase, onComple
       <AlertDialog open={pendingDialog} onOpenChange={setPendingDialog}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>לא הצלחנו לקרוא את המיקום שלך</AlertDialogTitle>
-            <AlertDialogDescription>
-              ייתכן שדחית את ההרשאה למיקום או שאין GPS זמין. אם תמשיך בלי מיקום, הנוסעים לא יראו אותך על המפה.
-              מומלץ לאשר גישה למיקום בדפדפן ולנסות שוב.
-            </AlertDialogDescription>
+            <AlertDialogTitle>{t("loc_error_title")}</AlertDialogTitle>
+            <AlertDialogDescription>{t("loc_error_desc")}</AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel onClick={continueWithoutLocation}>המשך בלי מיקום</AlertDialogCancel>
+            <AlertDialogCancel onClick={continueWithoutLocation}>{t("loc_continue_without")}</AlertDialogCancel>
             <AlertDialogAction onClick={() => { setPendingDialog(false); startRide(); }}>
-              נסה שוב
+              {t("retry")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
