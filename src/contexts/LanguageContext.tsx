@@ -94,7 +94,7 @@ const dict = {
 
   // Profile
   profile_title: { EN: "Profile", HE: "פרופיל" },
-  reliability: { EN: "Reliability", HE: "אמינות" },
+  reliability: { EN: "Rating", HE: "דירוג" },
   hobbies: { EN: "Hobbies", HE: "תחביבים" },
   music_pref: { EN: "Music / ride vibe", HE: "מוזיקה / שיחה בנסיעה" },
   edit_profile: { EN: "Edit profile", HE: "עריכת פרופיל" },
