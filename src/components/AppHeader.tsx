@@ -133,8 +133,10 @@ const AppHeader = ({ subtitle }: AppHeaderProps) => {
   const handleNotifClick = (n: NotificationRow) => {
     if (!n.read) markRead(n.id);
     setOpen(false);
-    if (n.type === "booking_accepted" && n.ride_id) {
-      navigate(`/bookings?track=${n.ride_id}`);
+    if (n.type?.startsWith("ride_phase_") && n.ride_id) {
+      navigate(`/active?ride=${n.ride_id}`);
+    } else if (n.type === "booking_accepted" && n.ride_id) {
+      navigate(`/active?ride=${n.ride_id}`);
     } else if (n.ride_id) {
       navigate("/bookings");
     }
