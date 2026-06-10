@@ -61,7 +61,7 @@ export default function LiveTrackingSheet({
   phase = "scheduled",
   driverName,
 }: Props) {
-  const { t, dir, interp } = useLang();
+  const { t, dir } = useLang();
   const {
     location,
     loading,
@@ -310,7 +310,7 @@ export default function LiveTrackingSheet({
                       <p className="text-[11px] text-muted-foreground text-end">
                         {t("live_updated_ago")}{" "}
                         {updatedSecAgo < 60
-                          ? interp(t("live_seconds_ago"), { s: String(updatedSecAgo) })
+                          ? t("live_seconds_ago", { s: String(updatedSecAgo) })
                           : t("live_about_minute_ago")}
                       </p>
                     )}
@@ -376,7 +376,7 @@ export default function LiveTrackingSheet({
                     {driverName && (
                       <p className="text-center text-xs text-muted-foreground pt-1">
                         <MapPin className="w-3 h-3 inline -mt-0.5 me-1" />
-                        {interp(t("live_track_of"), { name: driverName })}
+                        {t("live_track_of", { name: driverName })}
                       </p>
                     )}
                   </div>
