@@ -15,6 +15,7 @@ import { cn } from "@/lib/utils";
 
 const Index = () => {
   const { t } = useLang();
+  const navigate = useNavigate();
   const [query, setQuery] = useState("");
   const [dateFilter, setDateFilter] = useState("");
   const [showEnded, setShowEnded] = useState(false);
