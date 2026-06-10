@@ -81,11 +81,11 @@ const RideCard = ({ ride, index, driverAvatarUrl }: RideCardProps) => {
     window.open(url.toString(), "_blank");
   };
 
-  const handleJoinSubmit = async (pickupLocation: string) => {
+  const handleJoinSubmit = async (pickupLocation: string, pickupCoords?: { lat: number | null; lng: number | null }) => {
     if (!user) return;
     setJoining(true);
     try {
-      await joinRide(ride.id, user.id, pickupLocation);
+      await joinRide(ride.id, user.id, pickupLocation, pickupCoords);
       queryClient.invalidateQueries({ queryKey: ["rides"] });
       queryClient.invalidateQueries({ queryKey: ["bookings"] });
       toast.success(`הבקשה נשלחה ל${driverName}`, {
