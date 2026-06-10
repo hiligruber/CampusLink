@@ -43,10 +43,12 @@ interface ActiveRideItem {
   bookingId?: string;
 }
 
+// Lower rank = higher priority (top of list).
+// Live phases first, then upcoming, then completed.
 const phaseRank: Record<RidePhase, number> = {
-  en_route: 0,
+  in_progress: 0,
   picked_up: 1,
-  in_progress: 2,
+  en_route: 2,
   scheduled: 3,
   completed: 4,
 };
