@@ -188,7 +188,7 @@ const StudentVerification = () => {
         <motion.div
           initial={{ opacity: 0, y: 16, scale: 0.97 }}
           animate={{ opacity: 1, y: 0, scale: 1 }}
-          className="w-full max-w-md bg-card rounded-3xl border border-border p-8 text-center space-y-5 shadow-lg"
+          className="w-full max-w-md bg-card rounded-3xl border border-border p-8 text-center space-y-5 shadow-lg relative z-10"
         >
           <div className="w-16 h-16 rounded-full bg-gradient-to-br from-indigo-600 to-violet-600 mx-auto flex items-center justify-center">
             <Clock className="w-8 h-8 text-white" />
