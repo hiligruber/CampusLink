@@ -9,10 +9,9 @@ const Settings = () => {
   const { theme, setTheme } = useTheme();
   const { lang, setLang, t } = useLang();
 
-  const themes: { id: "light" | "dark" | "system"; label: string; icon: any }[] = [
+  const themes: { id: "light" | "dark"; label: string; icon: any }[] = [
     { id: "light", label: t("theme_light"), icon: Sun },
     { id: "dark", label: t("theme_dark"), icon: Moon },
-    { id: "system", label: t("theme_system"), icon: Monitor },
   ];
 
   return (
@@ -25,7 +24,7 @@ const Settings = () => {
           <h2 className="text-sm font-bold uppercase tracking-wider text-muted-foreground mb-4 flex items-center gap-2">
             <Sun className="w-4 h-4" /> {t("appearance")}
           </h2>
-          <div className="grid grid-cols-3 gap-3">
+          <div className="grid grid-cols-2 gap-3">
             {themes.map(({ id, label, icon: Icon }) => (
               <button
                 key={id}
