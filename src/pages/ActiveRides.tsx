@@ -338,17 +338,13 @@ const ActiveRides = () => {
                   </div>
 
                   {it.role === "driver" && !isCompleted && (
-                    <div className="pt-2 border-t border-border">
+                    <div className="pt-2 border-t border-border space-y-3">
                       <DriverLocationSharer
                         rideId={it.rideId}
                         driverId={it.driverId}
                         phase={it.phase}
-                        onCompleted={() => {
-                          if (otherUserId && otherUserName) {
-                            setRatingTarget({ rideId: it.rideId, rateeId: otherUserId, rateeName: otherUserName });
-                          }
-                        }}
                       />
+                      <DriverStopsWaze rideId={it.rideId} destination={it.destination} />
                     </div>
                   )}
 
@@ -363,7 +359,8 @@ const ActiveRides = () => {
                         {t("open_map")}
                       </Button>
                     ) : (
-                      otherUserId && (
+                      // Only passengers rate the driver. Drivers don't rate their own ride.
+                      it.role === "passenger" && otherUserId && (
                         <Button
                           size="sm"
                           variant="outline"
@@ -373,7 +370,7 @@ const ActiveRides = () => {
                           }
                         >
                           <Star className="w-4 h-4" />
-                          {t("rate_with")} {otherUserName}
+                          {t("rate_driver")}
                         </Button>
                       )
                     )}
