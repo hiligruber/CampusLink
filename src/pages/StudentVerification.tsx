@@ -225,7 +225,7 @@ const StudentVerification = () => {
       <motion.main
         initial={{ opacity: 0, y: 16 }}
         animate={{ opacity: 1, y: 0 }}
-        className="max-w-md mx-auto px-4 py-8 space-y-6"
+        className="max-w-md mx-auto px-4 py-8 space-y-6 relative z-10"
       >
         {/* Progress */}
         <div className="flex items-center gap-2">
