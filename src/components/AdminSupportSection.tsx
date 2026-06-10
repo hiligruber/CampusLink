@@ -23,7 +23,7 @@ const STATUS: Record<string, string> = {
 };
 const STATUS_STYLE: Record<string, string> = {
   open: "bg-amber-500/15 text-amber-600 dark:text-amber-400",
-  in_progress: "bg-indigo-500/15 text-indigo-600 dark:text-indigo-400",
+  in_progress: "bg-primary/15 text-primary",
   resolved: "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400",
 };
 
@@ -174,7 +174,7 @@ const AdminSupportSection = () => {
                       {msgs.map((m: any) => (
                         <div key={m.id} className={`flex ${m.is_admin ? "justify-end" : "justify-start"}`}>
                           <div className={`max-w-[85%] rounded-2xl px-3 py-2 text-sm ${
-                            m.is_admin ? "bg-gradient-to-r from-indigo-600 to-violet-600 text-white" : "bg-card border border-border"
+                            m.is_admin ? "bg-gradient-to-r from-primary to-accent text-white" : "bg-card border border-border"
                           }`}>
                             <p className="whitespace-pre-wrap">{m.body}</p>
                             <p className={`text-[10px] mt-1 ${m.is_admin ? "text-white/70" : "text-muted-foreground"}`}>
@@ -189,7 +189,7 @@ const AdminSupportSection = () => {
                       <Textarea value={reply} onChange={(e) => setReply(e.target.value)}
                         rows={2} placeholder="כתוב תגובה למשתמש..." className="text-sm" />
                       <Button onClick={() => sendReply(t.id)} disabled={sending || !reply.trim()}
-                        size="icon" className="rounded-full shrink-0 bg-gradient-to-r from-indigo-600 to-violet-600">
+                        size="icon" className="rounded-full shrink-0 bg-gradient-to-r from-primary to-accent">
                         {sending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
                       </Button>
                     </div>

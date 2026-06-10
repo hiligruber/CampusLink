@@ -51,8 +51,8 @@ const Auth = () => {
   return (
     <div dir={dir} className="min-h-screen bg-background relative overflow-hidden flex items-center justify-center px-4 py-10">
       {/* Decorative gradient blobs — same language as onboarding */}
-      <div className="absolute -top-32 -left-32 w-96 h-96 rounded-full bg-indigo-500/20 blur-3xl pointer-events-none" />
-      <div className="absolute -bottom-32 -right-32 w-96 h-96 rounded-full bg-violet-500/20 blur-3xl pointer-events-none" />
+      <div className="absolute -top-32 -left-32 w-96 h-96 rounded-full bg-primary/20 blur-3xl pointer-events-none" />
+      <div className="absolute -bottom-32 -right-32 w-96 h-96 rounded-full bg-accent/20 blur-3xl pointer-events-none" />
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[640px] h-[640px] rounded-full bg-primary/[0.04] blur-3xl pointer-events-none" />
 
       {/* Language switcher */}
@@ -62,7 +62,7 @@ const Auth = () => {
           <button
             onClick={() => setLang("EN")}
             className={`px-3 py-1 text-xs font-semibold rounded-full transition ${
-              lang === "EN" ? "bg-gradient-to-r from-indigo-600 to-violet-600 text-white shadow-sm" : "text-muted-foreground hover:text-foreground"
+              lang === "EN" ? "bg-gradient-to-r from-primary to-accent text-white shadow-sm" : "text-muted-foreground hover:text-foreground"
             }`}
           >
             EN
@@ -70,7 +70,7 @@ const Auth = () => {
           <button
             onClick={() => setLang("HE")}
             className={`px-3 py-1 text-xs font-semibold rounded-full transition ${
-              lang === "HE" ? "bg-gradient-to-r from-indigo-600 to-violet-600 text-white shadow-sm" : "text-muted-foreground hover:text-foreground"
+              lang === "HE" ? "bg-gradient-to-r from-primary to-accent text-white shadow-sm" : "text-muted-foreground hover:text-foreground"
             }`}
           >
             עב
@@ -86,7 +86,7 @@ const Auth = () => {
       >
         {/* Logo header — mirrors onboarding step-icon */}
         <div className="text-center space-y-3">
-          <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-indigo-600 to-violet-600 mx-auto flex items-center justify-center shadow-lg shadow-indigo-500/25">
+          <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-primary to-accent mx-auto flex items-center justify-center shadow-lg shadow-primary/25">
             <GraduationCap className="w-8 h-8 text-white" />
           </div>
           <div>
@@ -158,7 +158,7 @@ const Auth = () => {
 
             <Button
               type="submit"
-              className="w-full rounded-full h-11 bg-gradient-to-r from-indigo-600 to-violet-600 hover:opacity-95 text-white font-semibold shadow-md shadow-indigo-500/20 transition-transform hover:-translate-y-0.5"
+              className="w-full rounded-full h-11 bg-gradient-to-r from-primary to-accent hover:opacity-95 text-white font-semibold shadow-md shadow-primary/20 transition-transform hover:-translate-y-0.5"
               disabled={loading}
             >
               {loading ? t("auth_loading") : isSignUp ? t("auth_create_btn") : t("auth_sign_in")}
@@ -174,7 +174,7 @@ const Auth = () => {
           {isSignUp ? t("auth_have_account") : t("auth_no_account")}{" "}
           <button
             onClick={() => setIsSignUp(!isSignUp)}
-            className="font-semibold bg-gradient-to-r from-indigo-600 to-violet-600 bg-clip-text text-transparent hover:underline underline-offset-4"
+            className="font-semibold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent hover:underline underline-offset-4"
           >
             {isSignUp ? t("auth_sign_in_link") : t("auth_sign_up_link")}
           </button>

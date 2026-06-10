@@ -30,7 +30,7 @@ const STATUS_LABEL: Record<string, string> = {
 
 const STATUS_STYLE: Record<string, string> = {
   open: "bg-amber-500/15 text-amber-600 dark:text-amber-400",
-  in_progress: "bg-indigo-500/15 text-indigo-600 dark:text-indigo-400",
+  in_progress: "bg-primary/15 text-primary",
   resolved: "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400",
 };
 
@@ -125,8 +125,8 @@ const Support = () => {
     <div className="min-h-screen bg-background relative overflow-hidden pb-24" dir="rtl">
       {restricted && (
         <>
-          <div className="absolute -top-32 -left-32 w-96 h-96 rounded-full bg-indigo-500/20 blur-3xl pointer-events-none" />
-          <div className="absolute -bottom-32 -right-32 w-96 h-96 rounded-full bg-violet-500/20 blur-3xl pointer-events-none" />
+          <div className="absolute -top-32 -left-32 w-96 h-96 rounded-full bg-primary/20 blur-3xl pointer-events-none" />
+          <div className="absolute -bottom-32 -right-32 w-96 h-96 rounded-full bg-accent/20 blur-3xl pointer-events-none" />
         </>
       )}
       {!restricted && <AppHeader subtitle="תמיכה" />}
@@ -137,7 +137,7 @@ const Support = () => {
       >
         {restricted && (
           <div className="text-center space-y-2 pt-4">
-            <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-indigo-600 to-violet-600 mx-auto flex items-center justify-center">
+            <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-primary to-accent mx-auto flex items-center justify-center">
               <LifeBuoy className="w-7 h-7 text-white" />
             </div>
             <h1 className="text-2xl font-bold">תמיכה וערעורים</h1>
@@ -151,7 +151,7 @@ const Support = () => {
           <>
             <div className="flex items-center justify-between">
               <h2 className="text-lg font-bold">הפניות שלי</h2>
-              <Button size="sm" className="rounded-full gap-1 bg-gradient-to-r from-indigo-600 to-violet-600"
+              <Button size="sm" className="rounded-full gap-1 bg-gradient-to-r from-primary to-accent"
                 onClick={() => setView("new")}>
                 <Plus className="w-4 h-4" /> פנייה חדשה
               </Button>
@@ -221,7 +221,7 @@ const Support = () => {
                 placeholder="ספר לנו מה קרה..." />
             </div>
             <Button onClick={submit} disabled={sending || !subject.trim() || !body.trim()}
-              className="w-full rounded-full bg-gradient-to-r from-indigo-600 to-violet-600">
+              className="w-full rounded-full bg-gradient-to-r from-primary to-accent">
               {sending ? <Loader2 className="w-4 h-4 animate-spin" /> : "שלח פנייה"}
             </Button>
           </div>
@@ -250,7 +250,7 @@ const Support = () => {
                   <div className={`max-w-[85%] rounded-2xl px-4 py-2.5 text-sm ${
                     m.is_admin
                       ? "bg-card border border-border"
-                      : "bg-gradient-to-r from-indigo-600 to-violet-600 text-white"
+                      : "bg-gradient-to-r from-primary to-accent text-white"
                   }`}>
                     <p className="whitespace-pre-wrap">{m.body}</p>
                     <p className={`text-[10px] mt-1 ${m.is_admin ? "text-muted-foreground" : "text-white/70"}`}>
@@ -264,7 +264,7 @@ const Support = () => {
               <div className="flex gap-2 sticky bottom-20 bg-background/80 backdrop-blur p-2 rounded-2xl">
                 <Input value={reply} onChange={(e) => setReply(e.target.value)} placeholder="כתוב הודעה..." />
                 <Button onClick={sendReply} disabled={sending || !reply.trim()} size="icon"
-                  className="rounded-full bg-gradient-to-r from-indigo-600 to-violet-600 shrink-0">
+                  className="rounded-full bg-gradient-to-r from-primary to-accent shrink-0">
                   <Send className="w-4 h-4" />
                 </Button>
               </div>
