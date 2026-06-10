@@ -218,6 +218,8 @@ const Admin = () => {
             </div>
           </div>
         </div>
+
+        <AdminSupportSection />
       </main>
       <BottomNav />
 
