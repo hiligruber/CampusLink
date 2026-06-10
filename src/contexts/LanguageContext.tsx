@@ -134,6 +134,29 @@ const dict = {
   phase_picked_up: { EN: "Picked up", HE: "אספו את הנוסעים" },
   phase_in_progress: { EN: "In progress", HE: "בנסיעה" },
   phase_completed: { EN: "Completed", HE: "הסתיימה" },
+
+  // Auth
+  auth_tagline: { EN: "Carpool with fellow students on campus", HE: "טרמפים בקמפוס עם סטודנטים אחרים" },
+  auth_welcome_back: { EN: "Welcome back", HE: "ברוך/ה שובך" },
+  auth_create_account: { EN: "Create your account", HE: "יצירת חשבון חדש" },
+  auth_signin_subtitle: { EN: "Sign in to continue to CampusLink", HE: "התחברו כדי להמשיך ל-CampusLink" },
+  auth_signup_subtitle: { EN: "Join the student carpool community", HE: "הצטרפו לקהילת הטרמפים הסטודנטיאלית" },
+  auth_full_name: { EN: "Full name", HE: "שם מלא" },
+  auth_full_name_ph: { EN: "Noa Cohen", HE: "נועה כהן" },
+  auth_email: { EN: "Email", HE: "אימייל" },
+  auth_email_ph: { EN: "you@mta.ac.il", HE: "you@mta.ac.il" },
+  auth_password: { EN: "Password", HE: "סיסמה" },
+  auth_password_ph: { EN: "••••••••", HE: "••••••••" },
+  auth_sign_in: { EN: "Sign In", HE: "התחברות" },
+  auth_create_btn: { EN: "Create Account", HE: "יצירת חשבון" },
+  auth_loading: { EN: "Loading...", HE: "טוען..." },
+  auth_have_account: { EN: "Already have an account?", HE: "כבר יש לך חשבון?" },
+  auth_no_account: { EN: "Don't have an account?", HE: "אין לך חשבון?" },
+  auth_sign_up_link: { EN: "Sign up", HE: "הרשמה" },
+  auth_sign_in_link: { EN: "Sign in", HE: "התחברות" },
+  auth_signup_success: { EN: "Signed up successfully! Continue to verification.", HE: "נרשמת בהצלחה! המשך לאימות סטודנט" },
+  auth_signin_success: { EN: "Welcome back!", HE: "ברוך/ה הבא/ה!" },
+  auth_terms: { EN: "By continuing you agree to our terms & privacy policy.", HE: "בהמשך התחברות את/ה מסכים/ה לתנאי השימוש ולמדיניות הפרטיות." },
 } as const;
 
 type Key = keyof typeof dict;
