@@ -200,41 +200,60 @@ export function LocationSharingProvider({ children }: { children: ReactNode }) {
       setStatus("unavailable");
       return false;
     }
-    return new Promise((resolve) => {
-      navigator.geolocation.getCurrentPosition(
-        async (pos) => {
-          const { latitude, longitude, heading } = pos.coords;
-          const { error: upErr } = await supabase.from("driver_locations").upsert(
-            {
-              ride_id: rideId,
-              driver_id: user.id,
-              lat: latitude,
-              lng: longitude,
-              heading: heading ?? null,
-              updated_at: new Date().toISOString(),
-            },
-            { onConflict: "ride_id" }
-          );
-          if (!upErr) {
-            setLastFix(Date.now());
-            setStatus("active");
-          }
-          resolve(!upErr);
-        },
-        (err) => {
-          if (err.code === err.PERMISSION_DENIED) {
-            setStatus("denied");
-            setError("גישה למיקום נדחתה");
-          } else {
-            setStatus("error");
-            setError(err.message);
-          }
-          resolve(false);
-        },
-        { enableHighAccuracy: true, timeout: 8000, maximumAge: 0 }
-      );
-    });
-  }, [user]);
+
+    const tryGetPosition = (opts: PositionOptions): Promise<GeolocationPosition | GeolocationPositionError> =>
+      new Promise((resolve) => {
+        navigator.geolocation.getCurrentPosition(
+          (pos) => resolve(pos),
+          (err) => resolve(err as unknown as GeolocationPositionError),
+          opts,
+        );
+      });
+
+    // First try: fast, high-accuracy fix.
+    let result = await tryGetPosition({ enableHighAccuracy: true, timeout: 10000, maximumAge: 30000 });
+    // Fallback: relax accuracy & accept older cached fixes (helps desktops without GPS / weak signal).
+    if (!("coords" in result)) {
+      const err = result as GeolocationPositionError;
+      if (err.code === err.PERMISSION_DENIED) {
+        setStatus("denied");
+        setError("גישה למיקום נדחתה");
+        return false;
+      }
+      result = await tryGetPosition({ enableHighAccuracy: false, timeout: 15000, maximumAge: 120000 });
+    }
+    if (!("coords" in result)) {
+      const err = result as GeolocationPositionError;
+      setStatus("error");
+      setError(err.message || "Location unavailable");
+      return false;
+    }
+
+    const { latitude, longitude, heading } = result.coords;
+    const { error: upErr } = await supabase.from("driver_locations").upsert(
+      {
+        ride_id: rideId,
+        driver_id: user.id,
+        lat: latitude,
+        lng: longitude,
+        heading: heading ?? null,
+        updated_at: new Date().toISOString(),
+      },
+      { onConflict: "ride_id" },
+    );
+    if (upErr) {
+      setStatus("error");
+      setError(upErr.message);
+      return false;
+    }
+    setLastFix(Date.now());
+    setStatus("active");
+    // Permission has just been granted via the prompt — start the live
+    // watcher immediately so passengers see continuous updates instead of
+    // a single frozen pin.
+    startWatcher();
+    return true;
+  }, [user, startWatcher]);
 
   return (
     <LocationSharingContext.Provider
