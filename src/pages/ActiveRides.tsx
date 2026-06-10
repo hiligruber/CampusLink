@@ -6,6 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import AppHeader from "@/components/AppHeader";
 import BottomNav from "@/components/BottomNav";
 import DriverLocationSharer from "@/components/DriverLocationSharer";
+import DriverStopsWaze from "@/components/DriverStopsWaze";
 import LiveTrackingSheet from "@/components/LiveTrackingSheet";
 import RideChat from "@/components/RideChat";
 import RideRatingDialog from "@/components/RideRatingDialog";
@@ -337,17 +338,13 @@ const ActiveRides = () => {
                   </div>
 
                   {it.role === "driver" && !isCompleted && (
-                    <div className="pt-2 border-t border-border">
+                    <div className="pt-2 border-t border-border space-y-3">
                       <DriverLocationSharer
                         rideId={it.rideId}
                         driverId={it.driverId}
                         phase={it.phase}
-                        onCompleted={() => {
-                          if (otherUserId && otherUserName) {
-                            setRatingTarget({ rideId: it.rideId, rateeId: otherUserId, rateeName: otherUserName });
-                          }
-                        }}
                       />
+                      <DriverStopsWaze rideId={it.rideId} destination={it.destination} />
                     </div>
                   )}
 
@@ -362,7 +359,8 @@ const ActiveRides = () => {
                         {t("open_map")}
                       </Button>
                     ) : (
-                      otherUserId && (
+                      // Only passengers rate the driver. Drivers don't rate their own ride.
+                      it.role === "passenger" && otherUserId && (
                         <Button
                           size="sm"
                           variant="outline"
@@ -372,7 +370,7 @@ const ActiveRides = () => {
                           }
                         >
                           <Star className="w-4 h-4" />
-                          {t("rate_with")} {otherUserName}
+                          {t("rate_driver")}
                         </Button>
                       )
                     )}

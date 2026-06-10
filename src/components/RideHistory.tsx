@@ -1,9 +1,12 @@
-import { useQuery } from "@tanstack/react-query";
+import { useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Loader2, MapPin, Clock, Car, User } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Loader2, MapPin, Clock, Car, User, Star, CheckCircle2 } from "lucide-react";
 import { useLang } from "@/contexts/LanguageContext";
+import RideRatingDialog from "./RideRatingDialog";
 
 type Phase = "scheduled" | "en_route" | "picked_up" | "in_progress" | "completed";
 
@@ -18,11 +21,19 @@ const phaseLabel = (p: Phase | undefined, status: string) => {
   }
 };
 
-const RideRow = ({ ride }: { ride: any }) => {
+interface RowProps {
+  ride: any;
+  canRate?: boolean;
+  alreadyRated?: boolean;
+  onRate?: () => void;
+}
+
+const RideRow = ({ ride, canRate, alreadyRated, onRate }: RowProps) => {
+  const { t } = useLang();
   const d = new Date(ride.departure_time);
   const lbl = phaseLabel(ride.ride_phase, ride.status);
   return (
-    <div className="bg-card border border-border rounded-2xl p-4 shadow-sm space-y-1.5">
+    <div className="bg-card border border-border rounded-2xl p-4 shadow-sm space-y-2">
       <div className="flex items-center justify-between">
         <p className="text-sm font-bold flex items-center gap-1.5">
           <MapPin className="w-3.5 h-3.5 text-primary" />
@@ -41,6 +52,24 @@ const RideRow = ({ ride }: { ride: any }) => {
           {ride.driver_name}
         </p>
       )}
+      {canRate && (
+        alreadyRated ? (
+          <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-600 dark:text-emerald-400">
+            <CheckCircle2 className="w-3 h-3" />
+            {t("rating_submitted")}
+          </span>
+        ) : (
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={onRate}
+            className="gap-1.5 rounded-xl text-xs h-9 border-warning/40 text-warning hover:bg-warning/10 hover:text-warning"
+          >
+            <Star className="w-3.5 h-3.5" />
+            {t("rate_driver")}
+          </Button>
+        )
+      )}
     </div>
   );
 };
@@ -48,6 +77,8 @@ const RideRow = ({ ride }: { ride: any }) => {
 export default function RideHistory() {
   const { user } = useAuth();
   const { t } = useLang();
+  const qc = useQueryClient();
+  const [ratingTarget, setRatingTarget] = useState<{ rideId: string; rateeId: string; rateeName: string } | null>(null);
 
   const { data: asDriver, isLoading: l1 } = useQuery({
     queryKey: ["history", "driver", user?.id],
@@ -84,6 +115,21 @@ export default function RideHistory() {
     enabled: !!user,
   });
 
+  const { data: myRatings = [] } = useQuery({
+    queryKey: ["my-ratings", user?.id],
+    enabled: !!user,
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("ride_ratings")
+        .select("ride_id, ratee_id")
+        .eq("rater_id", user!.id);
+      return data ?? [];
+    },
+  });
+
+  const hasRated = (rideId: string, rateeId: string) =>
+    myRatings.some((r: any) => r.ride_id === rideId && r.ratee_id === rateeId);
+
   return (
     <div className="glass-card rounded-3xl p-5">
       <h3 className="text-sm font-bold mb-3 flex items-center gap-1.5">
@@ -110,10 +156,41 @@ export default function RideHistory() {
           ) : !asPassenger || asPassenger.length === 0 ? (
             <p className="text-center text-xs text-muted-foreground py-6">{t("no_rides_passenger")}</p>
           ) : (
-            asPassenger.map((r: any) => <RideRow key={r.id} ride={r} />)
+            asPassenger.map((r: any) => {
+              const completed = r.ride_phase === "completed";
+              return (
+                <RideRow
+                  key={r.id}
+                  ride={r}
+                  canRate={completed && !!r.driver_id && r.driver_id !== user?.id}
+                  alreadyRated={hasRated(r.id, r.driver_id)}
+                  onRate={() =>
+                    setRatingTarget({
+                      rideId: r.id,
+                      rateeId: r.driver_id,
+                      rateeName: r.driver_name || t("passenger_short"),
+                    })
+                  }
+                />
+              );
+            })
           )}
         </TabsContent>
       </Tabs>
+
+      {ratingTarget && (
+        <RideRatingDialog
+          open={!!ratingTarget}
+          onOpenChange={(o) => !o && setRatingTarget(null)}
+          rideId={ratingTarget.rideId}
+          rateeId={ratingTarget.rateeId}
+          rateeName={ratingTarget.rateeName}
+          onDone={() => {
+            qc.invalidateQueries({ queryKey: ["my-ratings"] });
+            setRatingTarget(null);
+          }}
+        />
+      )}
     </div>
   );
 }
