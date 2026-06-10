@@ -165,6 +165,58 @@ const Admin = () => {
         ) : (
           <div className="text-center py-16 text-muted-foreground text-sm">אין בקשות ממתינות</div>
         )}
+
+        <div className="bg-card rounded-2xl border border-border p-4 space-y-3 mt-4">
+          <div className="flex items-center gap-2">
+            <ShieldCheck className="w-4 h-4 text-primary" />
+            <h2 className="font-bold">ניהול מנהלים</h2>
+          </div>
+
+          <div className="space-y-2">
+            {adminsLoading ? (
+              <div className="flex justify-center py-4"><Loader2 className="w-4 h-4 animate-spin text-primary" /></div>
+            ) : admins.length === 0 ? (
+              <p className="text-xs text-muted-foreground">אין מנהלים רשומים</p>
+            ) : (
+              admins.map((a) => (
+                <div key={a.user_id} className="flex items-center justify-between gap-2 bg-secondary/40 rounded-xl p-2.5">
+                  <div className="min-w-0">
+                    <p className="text-sm font-semibold truncate">{a.full_name || "ללא שם"}</p>
+                    <p className="text-[11px] text-muted-foreground truncate">{a.email}</p>
+                  </div>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className="text-destructive hover:text-destructive gap-1"
+                    onClick={() => removeAdmin(a.user_id)}
+                    disabled={a.user_id === user?.id}
+                    title={a.user_id === user?.id ? "לא ניתן להסיר את עצמך" : "הסר מנהל"}
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </Button>
+                </div>
+              ))
+            )}
+          </div>
+
+          <div className="border-t border-border pt-3 space-y-2">
+            <p className="text-xs font-semibold text-muted-foreground">הוסף מנהל לפי מייל</p>
+            <div className="flex gap-2">
+              <Input
+                type="email"
+                placeholder="student@example.com"
+                value={newAdminEmail}
+                onChange={(e) => setNewAdminEmail(e.target.value)}
+                className="flex-1"
+                dir="ltr"
+              />
+              <Button onClick={addAdmin} disabled={addingAdmin || !newAdminEmail.trim()} className="gap-1">
+                {addingAdmin ? <Loader2 className="w-4 h-4 animate-spin" /> : <UserPlus className="w-4 h-4" />}
+                הוסף
+              </Button>
+            </div>
+          </div>
+        </div>
       </main>
       <BottomNav />
 
