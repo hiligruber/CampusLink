@@ -155,7 +155,7 @@ export default function DriverLocationSharer({ rideId, driverId, phase, onComple
             className="gap-1.5 rounded-xl text-xs font-bold h-9 border-primary/40 text-primary hover:bg-primary/10"
           >
             <CheckCircle2 className="w-3.5 h-3.5" />
-            סיים נסיעה
+            הורדתי את הנוסעים
           </Button>
         )}
       </div>
