@@ -12,6 +12,8 @@ interface Props {
   rideId: string;
   destination: string;
   pickupLocation?: string | null;
+  pickupLat?: number | null;
+  pickupLng?: number | null;
   phase?: "scheduled" | "en_route" | "picked_up" | "in_progress" | "completed";
   driverName?: string;
 }
@@ -58,6 +60,8 @@ export default function LiveTrackingSheet({
   rideId,
   destination,
   pickupLocation,
+  pickupLat,
+  pickupLng,
   phase = "scheduled",
   driverName,
 }: Props) {
@@ -70,7 +74,7 @@ export default function LiveTrackingSheet({
     toPickup,
     toDestination,
     routeError,
-  } = useDriverLiveLocation({ rideId, destination, pickupLocation, phase, enabled: open });
+  } = useDriverLiveLocation({ rideId, destination, pickupLocation, pickupLat, pickupLng, phase, enabled: open });
 
   const mapRef = useRef<google.maps.Map | null>(null);
   const [followDriver, setFollowDriver] = useState(true);

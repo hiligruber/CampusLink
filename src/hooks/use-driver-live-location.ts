@@ -31,6 +31,8 @@ interface Options {
   rideId: string;
   destination: string;
   pickupLocation?: string | null;
+  pickupLat?: number | null;
+  pickupLng?: number | null;
   phase?: "scheduled" | "en_route" | "picked_up" | "in_progress" | "completed";
   enabled?: boolean;
 }
@@ -92,6 +94,8 @@ export function useDriverLiveLocation({
   rideId,
   destination,
   pickupLocation,
+  pickupLat,
+  pickupLng,
   phase = "scheduled",
   enabled = true,
 }: Options) {
@@ -194,7 +198,9 @@ export function useDriverLiveLocation({
   // Geocode pickup & destination
   useEffect(() => {
     let active = true;
-    if (pickupLocation) {
+    if (typeof pickupLat === "number" && typeof pickupLng === "number") {
+      setPickupLatLng({ lat: pickupLat, lng: pickupLng });
+    } else if (pickupLocation) {
       geocodeOnce(pickupLocation).then((ll) => active && setPickupLatLng(ll));
     } else {
       setPickupLatLng(null);
@@ -202,7 +208,7 @@ export function useDriverLiveLocation({
     return () => {
       active = false;
     };
-  }, [pickupLocation]);
+  }, [pickupLocation, pickupLat, pickupLng]);
 
   useEffect(() => {
     let active = true;
@@ -227,13 +233,14 @@ export function useDriverLiveLocation({
     (async () => {
       try {
         const origin = { lat: location.lat, lng: location.lng };
-        const hasPickup = phase === "en_route" && pickupLocation && pickupLocation.trim().length > 0;
+        const pickupTarget = pickupLatLng ?? (pickupLocation && pickupLocation.trim().length > 0 ? pickupLocation : null);
+        const hasPickup = phase === "en_route" && !!pickupTarget;
 
         if (hasPickup) {
           // Compute both segments in parallel: driver→pickup and pickup→destination.
           const [seg1, seg2] = await Promise.all([
-            routePromise(origin, pickupLocation as string),
-            destination ? routePromise(pickupLocation as string, destination) : Promise.resolve(null),
+            routePromise(origin, pickupTarget as google.maps.LatLngLiteral | string),
+            destination ? routePromise(pickupTarget as google.maps.LatLngLiteral | string, destination) : Promise.resolve(null),
           ]);
           if (cancelled) return;
           setToPickup(seg1);
@@ -269,7 +276,7 @@ export function useDriverLiveLocation({
     return () => {
       cancelled = true;
     };
-  }, [location, destination, pickupLocation, phase]);
+  }, [location, destination, pickupLocation, pickupLatLng, phase]);
 
   // Primary ETA (next segment) for backward compatibility
   const eta = toPickup?.eta ?? toDestination?.eta ?? null;

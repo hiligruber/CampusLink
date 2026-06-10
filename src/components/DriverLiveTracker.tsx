@@ -11,6 +11,8 @@ interface Props {
   height?: string;
   phase?: "scheduled" | "en_route" | "picked_up" | "in_progress" | "completed";
   pickupLocation?: string | null;
+  pickupLat?: number | null;
+  pickupLng?: number | null;
   driverName?: string;
 }
 
@@ -22,6 +24,8 @@ export default function DriverLiveTracker({
   height = "260px",
   phase = "scheduled",
   pickupLocation,
+  pickupLat,
+  pickupLng,
   driverName,
 }: Props) {
   const { t } = useLang();
@@ -34,7 +38,7 @@ export default function DriverLiveTracker({
     toPickup,
     toDestination,
     routeError,
-  } = useDriverLiveLocation({ rideId, destination, pickupLocation, phase });
+  } = useDriverLiveLocation({ rideId, destination, pickupLocation, pickupLat, pickupLng, phase });
 
   if (loading) {
     return (
@@ -270,6 +274,8 @@ export default function DriverLiveTracker({
         rideId={rideId}
         destination={destination}
         pickupLocation={pickupLocation}
+        pickupLat={pickupLat}
+        pickupLng={pickupLng}
         phase={phase}
         driverName={driverName}
       />
