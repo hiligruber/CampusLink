@@ -156,18 +156,7 @@ export default function DriverLiveTracker({
                 polylineOptions: {
                   strokeColor: "hsl(var(--accent))",
                   strokeWeight: 5,
-                  strokeOpacity: toPickup?.directions ? 0 : 0.7,
-                  ...(toPickup?.directions
-                    ? {
-                        icons: [
-                          {
-                            icon: { path: "M 0,-1 0,1", strokeOpacity: 1, scale: 3 },
-                            offset: "0",
-                            repeat: "14px",
-                          },
-                        ],
-                      }
-                    : {}),
+                  strokeOpacity: 0.72,
                 },
               }}
             />

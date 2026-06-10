@@ -250,19 +250,10 @@ export function useDriverLiveLocation({
           ]);
           if (cancelled) return;
           setToPickup(seg1);
-          // If seg1 succeeded, use seg2 as-is (may be null if no destination).
-          // If seg1 FAILED, fall back to a single driver→destination route so the
-          // passenger still sees the driver moving toward them on the map.
+          setToDestination(seg2);
           if (seg1) {
-            setToDestination(seg2);
             setRouteError(false);
-          } else if (destination) {
-            const fallback = await routePromise(origin, destination);
-            if (cancelled) return;
-            setToDestination(fallback);
-            setRouteError(!fallback);
           } else {
-            setToDestination(null);
             setRouteError(true);
           }
         } else if (destination) {

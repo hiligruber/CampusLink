@@ -199,10 +199,7 @@ export default function LiveTrackingSheet({
                       polylineOptions: {
                         strokeColor: "hsl(var(--accent))",
                         strokeWeight: 6,
-                        strokeOpacity: 0.7,
-                        ...(toPickup?.directions
-                          ? { icons: [{ icon: { path: "M 0,-1 0,1", strokeOpacity: 1, scale: 3 }, offset: "0", repeat: "14px" }], strokeOpacity: 0 }
-                          : {}),
+                        strokeOpacity: 0.72,
                       },
                     }}
                   />
