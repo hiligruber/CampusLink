@@ -22,9 +22,10 @@ interface Props {
   rideId: string;
   driverId: string;
   phase: RidePhase;
+  onCompleted?: () => void;
 }
 
-export default function DriverLocationSharer({ rideId, driverId, phase }: Props) {
+export default function DriverLocationSharer({ rideId, driverId, phase, onCompleted }: Props) {
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const { status, lastFix, retry, captureOnceAndUpsert } = useLocationSharing();
@@ -46,6 +47,7 @@ export default function DriverLocationSharer({ rideId, driverId, phase }: Props)
       }
       queryClient.invalidateQueries({ queryKey: ["rides"] });
       toast.success(successMsg);
+      if (next === "completed") onCompleted?.();
     } catch (e: any) {
       toast.error(e?.message || "פעולה נכשלה");
     } finally {
