@@ -209,11 +209,11 @@ const dict = {
   awaiting_first_fix: { EN: "Driver is on the way — waiting for first GPS fix", HE: "הנהג בדרך — מחכים לפיקס GPS ראשון" },
   connecting_driver: { EN: "Connecting to driver location…", HE: "מתחבר למיקום הנהג…" },
   driver_not_started: { EN: "Driver has not started yet", HE: "הנהג עדיין לא יצא לדרך" },
-  driver_will_update: { EN: "Once the driver taps \"On the way\" the location will update here in real time", HE: "ברגע שהנהג ילחץ \"בדרך אליך\" המיקום יעודכן כאן בזמן אמת" },
+  driver_will_update: { EN: 'Once the driver taps "Share Live Location" the map will update here in real time', HE: 'ברגע שהנהג ילחץ "שתף מיקום חי" המפה תעודכן כאן בזמן אמת' },
   ended: { EN: "Ended", HE: "הסתיימה" },
   aria_expand_map: { EN: "Expand tracking map", HE: "הרחב מפת מעקב" },
   tap_to_expand: { EN: "Tap to expand", HE: "הקש להרחבה" },
-  on_the_way_dot: { EN: "On the way · {place}", HE: "הנהג בדרך אליך · {place}" },
+  on_the_way_dot: { EN: "En route · {place}", HE: "בדרך · {place}" },
 
   // Driver controls
   gps_active: { EN: "GPS active", HE: "GPS פעיל" },
