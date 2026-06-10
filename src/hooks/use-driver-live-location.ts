@@ -190,10 +190,13 @@ export function useDriverLiveLocation({
     };
   }, [rideId, enabled]);
 
-  // Reset throttle when phase changes
+  // Reset route state/throttle when the active ride leg changes.
   useEffect(() => {
     lastEtaCalcRef.current = 0;
-  }, [phase]);
+    setToPickup(null);
+    setToDestination(null);
+    setRouteError(false);
+  }, [rideId, destination, pickupLocation, pickupLat, pickupLng, phase]);
 
   // Geocode pickup & destination
   useEffect(() => {
@@ -233,7 +236,10 @@ export function useDriverLiveLocation({
     (async () => {
       try {
         const origin = { lat: location.lat, lng: location.lng };
-        const pickupTarget = pickupLatLng ?? (pickupLocation && pickupLocation.trim().length > 0 ? pickupLocation : null);
+        const pickupCoords = typeof pickupLat === "number" && typeof pickupLng === "number"
+          ? { lat: pickupLat, lng: pickupLng }
+          : null;
+        const pickupTarget = pickupCoords ?? (pickupLocation && pickupLocation.trim().length > 0 ? pickupLocation : null);
         const hasPickup = phase === "en_route" && !!pickupTarget;
 
         if (hasPickup) {
@@ -276,7 +282,7 @@ export function useDriverLiveLocation({
     return () => {
       cancelled = true;
     };
-  }, [location, destination, pickupLocation, pickupLatLng, phase]);
+  }, [location, destination, pickupLocation, pickupLat, pickupLng, phase]);
 
   // Primary ETA (next segment) for backward compatibility
   const eta = toPickup?.eta ?? toDestination?.eta ?? null;
