@@ -6,6 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import AppHeader from "@/components/AppHeader";
 import BottomNav from "@/components/BottomNav";
 import DriverLocationSharer from "@/components/DriverLocationSharer";
+import DriverStopsWaze from "@/components/DriverStopsWaze";
 import LiveTrackingSheet from "@/components/LiveTrackingSheet";
 import RideChat from "@/components/RideChat";
 import RideRatingDialog from "@/components/RideRatingDialog";
