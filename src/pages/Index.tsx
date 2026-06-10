@@ -5,10 +5,12 @@ import RideCard from "@/components/RideCard";
 import AppHeader from "@/components/AppHeader";
 import BottomNav from "@/components/BottomNav";
 import { Input } from "@/components/ui/input";
-import { Loader2, Search, Sparkles } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Loader2, Search, Sparkles, Plus, MapPin } from "lucide-react";
 import { useLang } from "@/contexts/LanguageContext";
 import { supabase } from "@/integrations/supabase/client";
 import { motion } from "framer-motion";
+import { useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
 
 const Index = () => {
