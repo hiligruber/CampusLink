@@ -14,8 +14,13 @@ import { Loader2, CheckCircle2, XCircle, Mail, Building2, ShieldCheck, UserPlus,
 import { toast } from "sonner";
 
 const Admin = () => {
+  const { user } = useAuth();
   const { isAdmin, loading } = useVerificationStatus();
   const qc = useQueryClient();
+  const [rejectingId, setRejectingId] = useState<string | null>(null);
+  const [reason, setReason] = useState("");
+  const [newAdminEmail, setNewAdminEmail] = useState("");
+  const [addingAdmin, setAddingAdmin] = useState(false);
   const [rejectingId, setRejectingId] = useState<string | null>(null);
   const [reason, setReason] = useState("");
 
