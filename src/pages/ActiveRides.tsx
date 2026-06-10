@@ -194,9 +194,23 @@ const ActiveRides = () => {
     },
   });
 
+  // Scroll focused ride (from notification deep link) into view
+  useEffect(() => {
+    if (!focusRideId || !items.length) return;
+    const el = document.getElementById(`ride-${focusRideId}`);
+    if (el) {
+      el.scrollIntoView({ behavior: "smooth", block: "center" });
+      const timer = setTimeout(() => {
+        setSearchParams({}, { replace: true });
+      }, 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [focusRideId, items, setSearchParams]);
+
   // Rating dialog opens only after the driver explicitly completes the ride
   // (via DriverLocationSharer onComplete) or when the user clicks the rate
   // button on a completed ride card. No automatic popup on screen entry.
+
 
   return (
     <div className="min-h-screen pb-24">
