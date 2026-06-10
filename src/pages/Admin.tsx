@@ -60,6 +60,76 @@ const Admin = () => {
     qc.invalidateQueries({ queryKey: ["pending-verifications"] });
   };
 
+  const { data: admins = [], isLoading: adminsLoading } = useQuery({
+    queryKey: ["admins"],
+    queryFn: async () => {
+      const { data: roles, error } = await supabase
+        .from("user_roles")
+        .select("user_id")
+        .eq("role", "admin");
+      if (error) throw error;
+      const ids = (roles ?? []).map((r) => r.user_id);
+      if (ids.length === 0) return [] as Array<{ user_id: string; full_name: string | null; email: string | null }>;
+      const { data: profs } = await supabase
+        .from("profiles")
+        .select("user_id, full_name, email")
+        .in("user_id", ids);
+      return (profs ?? []) as Array<{ user_id: string; full_name: string | null; email: string | null }>;
+    },
+    enabled: !!isAdmin,
+  });
+
+  const addAdmin = async () => {
+    const email = newAdminEmail.trim().toLowerCase();
+    if (!email) return;
+    setAddingAdmin(true);
+    try {
+      const { data: prof, error: pErr } = await supabase
+        .from("profiles")
+        .select("user_id, email")
+        .ilike("email", email)
+        .maybeSingle();
+      if (pErr) throw pErr;
+      if (!prof) {
+        toast.error("לא נמצא משתמש עם המייל הזה");
+        return;
+      }
+      const { error } = await supabase
+        .from("user_roles")
+        .insert({ user_id: prof.user_id, role: "admin" });
+      if (error) {
+        if (String(error.message).includes("duplicate")) {
+          toast.message("המשתמש כבר מנהל");
+        } else {
+          throw error;
+        }
+      } else {
+        toast.success("המשתמש מונה למנהל");
+      }
+      setNewAdminEmail("");
+      qc.invalidateQueries({ queryKey: ["admins"] });
+    } catch (e: any) {
+      toast.error(e?.message || "פעולה נכשלה");
+    } finally {
+      setAddingAdmin(false);
+    }
+  };
+
+  const removeAdmin = async (userId: string) => {
+    if (userId === user?.id) {
+      toast.error("לא ניתן להסיר את עצמך");
+      return;
+    }
+    const { error } = await supabase
+      .from("user_roles")
+      .delete()
+      .eq("user_id", userId)
+      .eq("role", "admin");
+    if (error) return toast.error(error.message);
+    toast.success("הרשאת המנהל הוסרה");
+    qc.invalidateQueries({ queryKey: ["admins"] });
+  };
+
   if (loading) return <div className="min-h-screen flex items-center justify-center"><Loader2 className="w-6 h-6 animate-spin text-primary" /></div>;
   if (!isAdmin) return <Navigate to="/" replace />;
 
