@@ -26,12 +26,20 @@ const Profile = () => {
         .from("profiles")
         .select("*")
         .eq("user_id", user!.id)
-        .single();
-      if (error) throw error;
+        .maybeSingle();
+      if (error) {
+        console.error("[Profile] failed to load profile", error);
+        throw error;
+      }
       return data;
     },
     enabled: !!user,
   });
+
+  const avatarSrc =
+    profile?.avatar_url || (user?.user_metadata as any)?.avatar_url || null;
+  const displayName =
+    profile?.full_name || (user?.user_metadata as any)?.full_name || "Student";
 
   const handleCalendarSync = () => {
     window.open("https://calendar.google.com", "_blank");
