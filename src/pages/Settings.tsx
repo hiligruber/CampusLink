@@ -2,7 +2,7 @@ import AppHeader from "@/components/AppHeader";
 import BottomNav from "@/components/BottomNav";
 import { useTheme } from "@/contexts/ThemeContext";
 import { useLang } from "@/contexts/LanguageContext";
-import { Sun, Moon, Monitor, Globe } from "lucide-react";
+import { Sun, Moon, Globe } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const Settings = () => {
