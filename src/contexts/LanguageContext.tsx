@@ -27,7 +27,7 @@ const dict = {
   home_tagline: { EN: "All your rides here.", HE: "כל הנסיעות שלך במקום אחד." },
   active_rides: { EN: "active rides", HE: "נסיעות פעילות" },
   no_rides_title: { EN: "No rides yet", HE: "עוד אין נסיעות" },
-  no_rides_desc: { EN: "Be the first to post a ride to campus", HE: "היי הראשון/ה לפרסם נסיעה לקמפוס" },
+  no_rides_desc: { EN: "Publish the first trip!", HE: "פרסם את הנסיעה הראשונה" },
   search_placeholder: { EN: "Search by origin or destination...", HE: "חיפוש לפי מוצא או יעד..." },
   no_match_title: { EN: "No matching rides found", HE: "לא נמצאו נסיעות תואמות" },
   no_match_desc: { EN: "Try different search terms", HE: "נסה/י לחפש מילים אחרות" },
