@@ -2,6 +2,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import { useLang } from "@/contexts/LanguageContext";
 import { useVerificationStatus } from "@/hooks/use-verification";
 import { Navigate } from "react-router-dom";
 import AppHeader from "@/components/AppHeader";
@@ -16,6 +17,7 @@ import AdminSupportSection from "@/components/AdminSupportSection";
 
 const Admin = () => {
   const { user } = useAuth();
+  const { t, dir } = useLang();
   const { isAdmin, loading } = useVerificationStatus();
   const qc = useQueryClient();
   const [rejectingId, setRejectingId] = useState<string | null>(null);

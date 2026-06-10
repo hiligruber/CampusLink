@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
+import { useLang } from "@/contexts/LanguageContext";
 import { supabase } from "@/integrations/supabase/client";
 import AppHeader from "@/components/AppHeader";
 import AvatarImage from "@/components/AvatarImage";
@@ -16,6 +17,7 @@ import { useQueryClient } from "@tanstack/react-query";
 
 const EditProfile = () => {
   const { user } = useAuth();
+  const { t } = useLang();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const fileRef = useRef<HTMLInputElement>(null);
