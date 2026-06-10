@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import { useLang } from "@/contexts/LanguageContext";
 import { useLocationSharing } from "@/contexts/LocationSharingContext";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
