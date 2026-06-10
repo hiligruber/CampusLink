@@ -51,7 +51,7 @@ export default function DriverLocationSharer({ rideId, driverId, phase, onComple
       toast.success(successMsg);
       if (next === "completed") onCompleted?.();
     } catch (e: any) {
-      toast.error(e?.message || "פעולה נכשלה");
+      toast.error(e?.message || t("generic_error"));
     } finally {
       setBusy(false);
     }
