@@ -135,27 +135,34 @@ const Profile = () => {
             </div>
           )}
 
-          <RideHistory />
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-            <Button variant="outline" className="justify-start gap-2 h-12 rounded-2xl" onClick={() => navigate("/profile/edit")}>
-              <UserCog className="w-4 h-4 text-primary" /> {t("edit_profile")}
-            </Button>
-            <Button variant="outline" className="justify-start gap-2 h-12 rounded-2xl" onClick={() => navigate("/settings")}>
-              <SettingsIcon className="w-4 h-4 text-primary" /> {t("settings_title")}
-            </Button>
-            {isAdmin && (
-              <Button variant="outline" className="justify-start gap-2 h-12 rounded-2xl" onClick={() => navigate("/admin")}>
-                <ShieldCheck className="w-4 h-4 text-primary" /> {t("admin_panel")}
+          <div className="glass-card rounded-3xl p-5">
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-sm font-bold uppercase tracking-wider text-muted-foreground">
+                {t("quick_actions") || "Quick actions"}
+              </h3>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              <Button className="justify-start gap-2 h-12 rounded-2xl sm:col-span-2" onClick={() => navigate("/profile/edit")}>
+                <UserCog className="w-4 h-4" /> {t("edit_profile")}
               </Button>
-            )}
-            <Button variant="outline" className="justify-start gap-2 h-12 rounded-2xl" onClick={handleCalendarSync}>
-              <Calendar className="w-4 h-4 text-primary" /> Google Calendar
-            </Button>
-            <Button variant="outline" className="justify-start gap-2 h-12 rounded-2xl text-destructive sm:col-span-2" onClick={handleSignOut}>
-              <LogOut className="w-4 h-4" /> {t("sign_out")}
-            </Button>
+              <Button variant="outline" className="justify-start gap-2 h-12 rounded-2xl" onClick={() => navigate("/settings")}>
+                <SettingsIcon className="w-4 h-4 text-primary" /> {t("settings_title")}
+              </Button>
+              <Button variant="outline" className="justify-start gap-2 h-12 rounded-2xl" onClick={handleCalendarSync}>
+                <Calendar className="w-4 h-4 text-primary" /> Google Calendar
+              </Button>
+              {isAdmin && (
+                <Button variant="outline" className="justify-start gap-2 h-12 rounded-2xl sm:col-span-2" onClick={() => navigate("/admin")}>
+                  <ShieldCheck className="w-4 h-4 text-primary" /> {t("admin_panel")}
+                </Button>
+              )}
+              <Button variant="outline" className="justify-start gap-2 h-12 rounded-2xl text-destructive sm:col-span-2" onClick={handleSignOut}>
+                <LogOut className="w-4 h-4" /> {t("sign_out")}
+              </Button>
+            </div>
           </div>
+
+          <RideHistory />
         </div>
       </motion.main>
       <BottomNav />
