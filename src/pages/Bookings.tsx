@@ -40,7 +40,7 @@ interface BookingWithDetails {
 }
 
 const statusLabel = (s: string) =>
-  s === "accepted" ? "אושר" : s === "rejected" ? "נדחה" : s === "cancelled" ? "בוטל" : "ממתין";
+  s === "accepted" ? "status_accepted" : s === "rejected" ? "status_rejected" : s === "cancelled" ? "status_cancelled" : "status_pending";
 
 const statusClass = (s: string) =>
   s === "accepted"
@@ -140,9 +140,9 @@ const Bookings = () => {
       if (error) throw error;
       queryClient.invalidateQueries({ queryKey: ["bookings"] });
       queryClient.invalidateQueries({ queryKey: ["rides"] });
-      toast.success(action === "accepted" ? "הבקשה אושרה" : "הבקשה נדחתה");
+      toast.success(action === "accepted" ? t("toast_request_accepted") : t("toast_request_rejected"));
     } catch (e: any) {
-      toast.error(e?.message || "פעולה נכשלה");
+      toast.error(e?.message || t("generic_error"));
     } finally {
       setActing(null);
     }
@@ -192,8 +192,8 @@ const Bookings = () => {
 
 
   return (
-    <div className="min-h-screen bg-background pb-24" dir="rtl">
-      <AppHeader title="הבקשות שלי" />
+    <div className="min-h-screen bg-background pb-24" dir={dir}>
+      <AppHeader title={t("bookings_title")} />
       <motion.main
         initial={{ opacity: 0, y: 16 }}
         animate={{ opacity: 1, y: 0 }}
@@ -203,7 +203,7 @@ const Bookings = () => {
         <Tabs defaultValue={trackRideId ? "outgoing" : "incoming"} className="w-full">
           <TabsList className="grid grid-cols-2 w-full mb-4">
             <TabsTrigger value="incoming">
-              בקשות שקיבלתי
+              {t("tab_received")}
               {incoming && incoming.filter((b) => b.status === "pending").length > 0 && (
                 <span className="ml-1 mr-1 inline-flex items-center justify-center text-[10px] font-bold rounded-full bg-destructive text-destructive-foreground w-5 h-5">
                   {incoming.filter((b) => b.status === "pending").length}
@@ -235,7 +235,7 @@ const Bookings = () => {
                         </div>
                       )}
                       <div>
-                        <p className="text-sm font-semibold">{b.passenger?.full_name || "סטודנט"}</p>
+                        <p className="text-sm font-semibold">{b.passenger?.full_name || t("student_fallback")}</p>
                       </div>
                     </div>
                     <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${statusClass(b.status)}`}>
@@ -281,7 +281,7 @@ const Bookings = () => {
                         rideId={b.ride_id}
                         otherId={b.passenger_id}
                         name={b.passenger.full_name || "נוסע"}
-                        label="שלח הודעה לנוסע"
+                        label={t("aria_msg_passenger")}
                       />
                     </div>
                   )}
@@ -297,7 +297,7 @@ const Bookings = () => {
               </div>
             ) : !outgoing || outgoing.length === 0 ? (
               <p className="text-center text-sm text-muted-foreground py-10">
-                עוד לא ביקשת להצטרף לנסיעות.
+                {t("bookings_empty_mine")}
               </p>
             ) : (
               outgoing.map((b) => {
@@ -306,7 +306,7 @@ const Bookings = () => {
                 return (
                   <div key={b.id} className="bg-card border border-border rounded-2xl p-4 shadow-sm space-y-3">
                     <div className="flex items-center justify-between">
-                      <p className="text-sm font-semibold">{b.ride?.driver_name || "נהג"}</p>
+                      <p className="text-sm font-semibold">{b.ride?.driver_name || t("driver_short")}</p>
                       <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${statusClass(b.status)}`}>
                         {statusLabel(b.status)}
                       </span>
@@ -324,8 +324,8 @@ const Bookings = () => {
                         <ChatButton
                           rideId={b.ride_id}
                           otherId={b.ride.driver_id}
-                          name={b.ride.driver_name || "נהג"}
-                          label="הודעה לנהג"
+                          name={b.ride.driver_name || t("driver_short")}
+                          label={t("aria_msg_driver")}
                         />
                       </>
                     )}
