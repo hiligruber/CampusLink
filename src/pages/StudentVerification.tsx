@@ -182,7 +182,9 @@ const StudentVerification = () => {
   // ── Pending confirmation screen ───────────────────────────────
   if (status === "pending_review") {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center px-4" dir="rtl">
+      <div className="min-h-screen bg-background relative overflow-hidden flex items-center justify-center px-4" dir="rtl">
+        <div className="absolute -top-32 -left-32 w-96 h-96 rounded-full bg-indigo-500/20 blur-3xl pointer-events-none" />
+        <div className="absolute -bottom-32 -right-32 w-96 h-96 rounded-full bg-violet-500/20 blur-3xl pointer-events-none" />
         <motion.div
           initial={{ opacity: 0, y: 16, scale: 0.97 }}
           animate={{ opacity: 1, y: 0, scale: 1 }}
