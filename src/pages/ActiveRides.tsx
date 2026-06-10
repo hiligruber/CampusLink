@@ -232,8 +232,15 @@ const ActiveRides = () => {
             const otherUserId = it.role === "passenger" ? it.driverId : it.passengerId;
             const otherUserName = it.role === "passenger" ? it.driverName : it.passengerName ?? t("passenger_short");
             const isCompleted = it.phase === "completed";
+            const isFocused = focusRideId === it.rideId;
             return (
-              <div key={it.rideId + it.role} className="glass-card rounded-3xl overflow-hidden">
+              <div
+                key={it.rideId + it.role}
+                id={`ride-${it.rideId}`}
+                className={`glass-card rounded-3xl overflow-hidden transition-all ${
+                  isFocused ? "ring-2 ring-primary shadow-pop scale-[1.01]" : ""
+                }`}
+              >
                 <div className="p-5 space-y-3">
                   <div className="flex items-center justify-between gap-2">
                     <div className="flex items-center gap-2">
