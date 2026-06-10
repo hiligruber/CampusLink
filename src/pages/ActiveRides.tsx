@@ -390,11 +390,19 @@ const ActiveRides = () => {
       {ratingTarget && (
         <RideRatingDialog
           open={!!ratingTarget}
-          onOpenChange={(o) => !o && setRatingTarget(null)}
+          onOpenChange={(o) => {
+            if (!o) {
+              const key = `${ratingTarget.rideId}:${ratingTarget.rateeId}`;
+              setHandledRatings((prev) => new Set(prev).add(key));
+              setRatingTarget(null);
+            }
+          }}
           rideId={ratingTarget.rideId}
           rateeId={ratingTarget.rateeId}
           rateeName={ratingTarget.rateeName}
           onDone={() => {
+            const key = `${ratingTarget.rideId}:${ratingTarget.rateeId}`;
+            setHandledRatings((prev) => new Set(prev).add(key));
             setRatingTarget(null);
             queryClient.invalidateQueries({ queryKey: ["my-ratings"] });
           }}
