@@ -214,6 +214,11 @@ const dict = {
   aria_expand_map: { EN: "Expand tracking map", HE: "הרחב מפת מעקב" },
   tap_to_expand: { EN: "Tap to expand", HE: "הקש להרחבה" },
   on_the_way_dot: { EN: "En route · {place}", HE: "בדרך · {place}" },
+  driver_on_way_to_pickup: { EN: "Driver is on the way to your pickup point", HE: "הנהג/ת בדרך לנקודת האיסוף שלך" },
+  eta_to_pickup: { EN: "To pickup", HE: "לאיסוף" },
+  eta_to_destination: { EN: "To destination", HE: "ליעד" },
+  route_error: { EN: "Couldn't calculate route. Retrying…", HE: "לא ניתן לחשב מסלול. ננסה שוב…" },
+  total_journey: { EN: "Total", HE: "סה״כ" },
 
   // Driver controls
   gps_active: { EN: "GPS active", HE: "GPS פעיל" },
