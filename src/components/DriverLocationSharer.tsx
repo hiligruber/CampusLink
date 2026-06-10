@@ -22,9 +22,10 @@ interface Props {
   rideId: string;
   driverId: string;
   phase: RidePhase;
+  onCompleted?: () => void;
 }
 
-export default function DriverLocationSharer({ rideId, driverId, phase }: Props) {
+export default function DriverLocationSharer({ rideId, driverId, phase, onCompleted }: Props) {
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const { status, lastFix, retry, captureOnceAndUpsert } = useLocationSharing();
@@ -46,6 +47,7 @@ export default function DriverLocationSharer({ rideId, driverId, phase }: Props)
       }
       queryClient.invalidateQueries({ queryKey: ["rides"] });
       toast.success(successMsg);
+      if (next === "completed") onCompleted?.();
     } catch (e: any) {
       toast.error(e?.message || "פעולה נכשלה");
     } finally {
@@ -153,7 +155,7 @@ export default function DriverLocationSharer({ rideId, driverId, phase }: Props)
             className="gap-1.5 rounded-xl text-xs font-bold h-9 border-primary/40 text-primary hover:bg-primary/10"
           >
             <CheckCircle2 className="w-3.5 h-3.5" />
-            סיים נסיעה
+            הורדתי את הנוסעים
           </Button>
         )}
       </div>
