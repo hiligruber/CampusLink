@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
+import { useLang } from "@/contexts/LanguageContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import AppHeader from "@/components/AppHeader";
@@ -51,6 +52,7 @@ const statusClass = (s: string) =>
 
 const Bookings = () => {
   const { user } = useAuth();
+  const { t, dir } = useLang();
   const queryClient = useQueryClient();
   const [acting, setActing] = useState<string | null>(null);
   const [searchParams] = useSearchParams();

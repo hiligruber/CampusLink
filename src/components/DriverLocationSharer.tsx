@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import { useLang } from "@/contexts/LanguageContext";
 import { useLocationSharing } from "@/contexts/LocationSharingContext";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -27,6 +28,7 @@ interface Props {
 
 export default function DriverLocationSharer({ rideId, driverId, phase, onCompleted }: Props) {
   const { user } = useAuth();
+  const { t } = useLang();
   const queryClient = useQueryClient();
   const { status, lastFix, retry, captureOnceAndUpsert } = useLocationSharing();
   const [busy, setBusy] = useState(false);
@@ -49,7 +51,7 @@ export default function DriverLocationSharer({ rideId, driverId, phase, onComple
       toast.success(successMsg);
       if (next === "completed") onCompleted?.();
     } catch (e: any) {
-      toast.error(e?.message || "פעולה נכשלה");
+      toast.error(e?.message || t("generic_error"));
     } finally {
       setBusy(false);
     }
@@ -63,22 +65,23 @@ export default function DriverLocationSharer({ rideId, driverId, phase, onComple
       setPendingDialog(true);
       return;
     }
-    await doAdvance("en_route", "הנוסעים יודעים שאתה בדרך");
+    await doAdvance("en_route", t("toast_passengers_notified"));
   };
 
   const continueWithoutLocation = async () => {
     setPendingDialog(false);
-    await doAdvance("en_route", "התחלת — אך המיקום לא משותף");
+    await doAdvance("en_route", t("toast_started_no_loc"));
   };
 
   const renderStatusChip = () => {
     if (!sharingActive) return null;
     if (status === "active" && lastFix) {
       const secAgo = Math.floor((Date.now() - lastFix) / 1000);
+      const timeLabel = secAgo < 60 ? `${secAgo}s` : "<1m";
       return (
         <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-1 rounded-full bg-emerald-500/15 text-emerald-700 dark:text-emerald-400">
           <MapPin className="w-3 h-3" />
-          GPS פעיל · {secAgo < 60 ? `${secAgo}ש'` : "<1ד'"}
+          {t("gps_active")} · {timeLabel}
         </span>
       );
     }
@@ -86,7 +89,7 @@ export default function DriverLocationSharer({ rideId, driverId, phase, onComple
       return (
         <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-1 rounded-full bg-amber-500/15 text-amber-700 dark:text-amber-400">
           <Loader2 className="w-3 h-3 animate-spin" />
-          מאתר GPS…
+          {t("gps_locating")}
         </span>
       );
     }
@@ -98,7 +101,7 @@ export default function DriverLocationSharer({ rideId, driverId, phase, onComple
           className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-1 rounded-full bg-destructive/10 text-destructive hover:bg-destructive/20 transition"
         >
           <MapPinOff className="w-3 h-3" />
-          {status === "unavailable" ? "GPS לא נתמך" : "אין מיקום · נסה שוב"}
+          {status === "unavailable" ? t("gps_unsupported") : t("gps_no_fix")}
         </button>
       );
     }
@@ -118,44 +121,44 @@ export default function DriverLocationSharer({ rideId, driverId, phase, onComple
             className="gap-1.5 rounded-xl text-xs font-bold h-9 bg-gradient-to-r from-primary to-accent border-0"
           >
             {busy ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Car className="w-3.5 h-3.5" />}
-            בדרך אליך
+            {t("btn_on_the_way")}
           </Button>
         )}
 
         {phase === "en_route" && (
           <Button
-            onClick={() => doAdvance("picked_up", "מצויין — הנוסעים אצלך")}
+            onClick={() => doAdvance("picked_up", t("toast_passengers_with_you"))}
             disabled={busy}
             size="sm"
             className="gap-1.5 rounded-xl text-xs font-bold h-9 bg-gradient-to-r from-primary to-accent border-0"
           >
             <Users className="w-3.5 h-3.5" />
-            אספתי את הנוסעים
+            {t("btn_picked_up")}
           </Button>
         )}
 
         {phase === "picked_up" && (
           <Button
-            onClick={() => doAdvance("in_progress", "הנסיעה התחילה")}
+            onClick={() => doAdvance("in_progress", t("toast_ride_started"))}
             disabled={busy}
             size="sm"
             className="gap-1.5 rounded-xl text-xs font-bold h-9 bg-gradient-to-r from-primary to-accent border-0"
           >
             <NavIcon className="w-3.5 h-3.5" />
-            התחל נסיעה
+            {t("btn_start_ride")}
           </Button>
         )}
 
         {phase === "in_progress" && (
           <Button
-            onClick={() => doAdvance("completed", "הנסיעה הסתיימה")}
+            onClick={() => doAdvance("completed", t("toast_ride_finished"))}
             disabled={busy}
             size="sm"
             variant="outline"
             className="gap-1.5 rounded-xl text-xs font-bold h-9 border-primary/40 text-primary hover:bg-primary/10"
           >
             <CheckCircle2 className="w-3.5 h-3.5" />
-            הורדתי את הנוסעים
+            {t("btn_drop_off")}
           </Button>
         )}
       </div>
@@ -163,16 +166,13 @@ export default function DriverLocationSharer({ rideId, driverId, phase, onComple
       <AlertDialog open={pendingDialog} onOpenChange={setPendingDialog}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>לא הצלחנו לקרוא את המיקום שלך</AlertDialogTitle>
-            <AlertDialogDescription>
-              ייתכן שדחית את ההרשאה למיקום או שאין GPS זמין. אם תמשיך בלי מיקום, הנוסעים לא יראו אותך על המפה.
-              מומלץ לאשר גישה למיקום בדפדפן ולנסות שוב.
-            </AlertDialogDescription>
+            <AlertDialogTitle>{t("loc_error_title")}</AlertDialogTitle>
+            <AlertDialogDescription>{t("loc_error_desc")}</AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel onClick={continueWithoutLocation}>המשך בלי מיקום</AlertDialogCancel>
+            <AlertDialogCancel onClick={continueWithoutLocation}>{t("loc_continue_without")}</AlertDialogCancel>
             <AlertDialogAction onClick={() => { setPendingDialog(false); startRide(); }}>
-              נסה שוב
+              {t("retry")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

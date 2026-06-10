@@ -130,7 +130,7 @@ const dict = {
 
   // Phases
   phase_scheduled: { EN: "Scheduled", HE: "מתוכננת" },
-  phase_en_route: { EN: "On the way", HE: "בדרך אליך" },
+  phase_en_route: { EN: "En route", HE: "בדרך" },
   phase_picked_up: { EN: "Picked up", HE: "אספו את הנוסעים" },
   phase_in_progress: { EN: "In progress", HE: "בנסיעה" },
   phase_completed: { EN: "Completed", HE: "הסתיימה" },
@@ -180,7 +180,7 @@ const dict = {
   toast_request_rejected: { EN: "Request rejected", HE: "הבקשה נדחתה" },
 
   // Live tracking / driver phases
-  phase_driver_on_way: { EN: "Driver is on the way", HE: "הנהג בדרך אליך" },
+  phase_driver_on_way: { EN: "Driver is en route", HE: "הנהג בדרך" },
   phase_picked_passengers: { EN: "Picked up passengers", HE: "אספת את הנוסעים" },
   phase_to_destination: { EN: "On the way to destination", HE: "בדרך ליעד" },
   phase_ride_finished: { EN: "Ride finished", HE: "הנסיעה הסתיימה" },
@@ -209,22 +209,22 @@ const dict = {
   awaiting_first_fix: { EN: "Driver is on the way — waiting for first GPS fix", HE: "הנהג בדרך — מחכים לפיקס GPS ראשון" },
   connecting_driver: { EN: "Connecting to driver location…", HE: "מתחבר למיקום הנהג…" },
   driver_not_started: { EN: "Driver has not started yet", HE: "הנהג עדיין לא יצא לדרך" },
-  driver_will_update: { EN: "Once the driver taps \"On the way\" the location will update here in real time", HE: "ברגע שהנהג ילחץ \"בדרך אליך\" המיקום יעודכן כאן בזמן אמת" },
+  driver_will_update: { EN: 'Once the driver taps "Share Live Location" the map will update here in real time', HE: 'ברגע שהנהג ילחץ "שתף מיקום חי" המפה תעודכן כאן בזמן אמת' },
   ended: { EN: "Ended", HE: "הסתיימה" },
   aria_expand_map: { EN: "Expand tracking map", HE: "הרחב מפת מעקב" },
   tap_to_expand: { EN: "Tap to expand", HE: "הקש להרחבה" },
-  on_the_way_dot: { EN: "On the way · {place}", HE: "הנהג בדרך אליך · {place}" },
+  on_the_way_dot: { EN: "En route · {place}", HE: "בדרך · {place}" },
 
   // Driver controls
   gps_active: { EN: "GPS active", HE: "GPS פעיל" },
   gps_locating: { EN: "Locating GPS…", HE: "מאתר GPS…" },
   gps_unsupported: { EN: "GPS not supported", HE: "GPS לא נתמך" },
   gps_no_fix: { EN: "No location · try again", HE: "אין מיקום · נסה שוב" },
-  btn_on_the_way: { EN: "On the way", HE: "בדרך אליך" },
+  btn_on_the_way: { EN: "Share Live Location", HE: "שתף מיקום חי" },
   btn_picked_up: { EN: "Picked up passengers", HE: "אספתי את הנוסעים" },
   btn_start_ride: { EN: "Start ride", HE: "התחל נסיעה" },
   btn_drop_off: { EN: "Dropped off passengers", HE: "הורדתי את הנוסעים" },
-  toast_passengers_notified: { EN: "Passengers know you're on the way", HE: "הנוסעים יודעים שאתה בדרך" },
+  toast_passengers_notified: { EN: "Passengers can now track your location", HE: "הנוסעים יכולים עכשיו לעקוב אחרי המיקום שלך" },
   toast_started_no_loc: { EN: "Started — but location not shared", HE: "התחלת — אך המיקום לא משותף" },
   toast_passengers_with_you: { EN: "Great — passengers are with you", HE: "מצויין — הנוסעים אצלך" },
   toast_ride_started: { EN: "Ride started", HE: "הנסיעה התחילה" },
