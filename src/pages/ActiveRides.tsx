@@ -187,38 +187,9 @@ const ActiveRides = () => {
     },
   });
 
-  // Find unrated completed rides where current user participated -> auto-trigger rating
-  const completedRides = useMemo(
-    () => items.filter((i) => i.phase === "completed"),
-    [items]
-  );
-
-  const { data: myRatings = [] } = useQuery({
-    queryKey: ["my-ratings", user?.id, completedRides.map((r) => r.rideId).join(",")],
-    enabled: !!user && completedRides.length > 0,
-    queryFn: async () => {
-      const { data } = await supabase
-        .from("ride_ratings")
-        .select("ride_id, ratee_id")
-        .eq("rater_id", user!.id)
-        .in("ride_id", completedRides.map((r) => r.rideId));
-      return data ?? [];
-    },
-  });
-
-  useEffect(() => {
-    if (!user || ratingTarget || completedRides.length === 0) return;
-    const ratedSet = new Set(myRatings.map((r: any) => `${r.ride_id}:${r.ratee_id}`));
-    for (const c of completedRides) {
-      const rateeId = c.role === "passenger" ? c.driverId : c.passengerId;
-      const rateeName = c.role === "passenger" ? c.driverName : c.passengerName;
-      if (!rateeId || !rateeName) continue;
-      const key = `${c.rideId}:${rateeId}`;
-      if (ratedSet.has(key) || handledRatings.has(key)) continue;
-      setRatingTarget({ rideId: c.rideId, rateeId, rateeName });
-      break;
-    }
-  }, [user, completedRides, myRatings, ratingTarget, handledRatings]);
+  // Rating dialog opens only after the driver explicitly completes the ride
+  // (via DriverLocationSharer onComplete) or when the user clicks the rate
+  // button on a completed ride card. No automatic popup on screen entry.
 
   return (
     <div className="min-h-screen pb-24">
