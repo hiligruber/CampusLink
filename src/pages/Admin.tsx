@@ -1,14 +1,16 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
 import { useVerificationStatus } from "@/hooks/use-verification";
 import { Navigate } from "react-router-dom";
 import AppHeader from "@/components/AppHeader";
 import BottomNav from "@/components/BottomNav";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { Loader2, CheckCircle2, XCircle, Mail, Building2 } from "lucide-react";
+import { Loader2, CheckCircle2, XCircle, Mail, Building2, ShieldCheck, UserPlus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
 const Admin = () => {
