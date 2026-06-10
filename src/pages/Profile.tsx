@@ -76,15 +76,15 @@ const Profile = () => {
               <div className="avatar-ring inline-block">
                 <div className="w-28 h-28 rounded-full bg-card overflow-hidden border-2 border-card">
                   <AvatarImage
-                    src={profile?.avatar_url}
-                    name={profile?.full_name}
-                    alt={profile?.full_name || "profile"}
+                    src={avatarSrc}
+                    name={displayName}
+                    alt={displayName}
                     className="w-full h-full text-3xl"
                   />
                 </div>
               </div>
               <h2 className="text-2xl font-extrabold tracking-tight mt-4">
-                {profile?.full_name || "Student"}
+                {displayName}
               </h2>
               <div className="mt-3 space-y-1.5">
                 <p className="text-sm text-muted-foreground flex items-center justify-center gap-1.5">
