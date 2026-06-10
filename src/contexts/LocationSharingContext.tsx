@@ -114,12 +114,16 @@ export function LocationSharingProvider({ children }: { children: ReactNode }) {
           watchIdRef.current = null;
         }
       },
-      { enableHighAccuracy: true, maximumAge: 2000, timeout: 15000 }
+      { enableHighAccuracy: true, maximumAge: 10000, timeout: 30000 },
     );
   }, [upsertAll]);
 
-  // Manage watcher — only auto-start if permission is ALREADY granted.
-  // This prevents the browser permission prompt from firing on every refresh.
+  // Manage watcher — start the live watcher whenever the driver has an
+  // active ride (en_route / picked_up / in_progress). watchPosition itself
+  // will trigger the browser permission prompt once if needed; if the user
+  // already accepted the one-shot prompt from captureOnceAndUpsert, the
+  // watcher reuses that permission and streams updates without re-prompting.
+  // We only short-circuit when permission is explicitly "denied".
   useEffect(() => {
     const shouldWatch = activeRides.length > 0;
     if (!shouldWatch) {
@@ -138,24 +142,24 @@ export function LocationSharingProvider({ children }: { children: ReactNode }) {
     }
 
     let cancelled = false;
+    let permResult: any = null;
+
     const maybeStart = async () => {
       try {
         if ("permissions" in navigator && (navigator as any).permissions?.query) {
-          const result = await (navigator as any).permissions.query({ name: "geolocation" });
+          permResult = await (navigator as any).permissions.query({ name: "geolocation" });
           if (cancelled) return;
-          if (result.state === "granted") {
-            startWatcher();
-          } else if (result.state === "denied") {
+          if (permResult.state === "denied") {
             setStatus("denied");
             setError("גישה למיקום נדחתה");
-          } else {
-            // "prompt" — wait for explicit user action (captureOnceAndUpsert / retry)
-            setStatus("idle");
+            return;
           }
-          // React to live changes (user grants/denies in browser settings)
-          result.onchange = () => {
-            if (result.state === "granted") startWatcher();
-            else if (result.state === "denied") {
+          // "granted" OR "prompt" — start the watcher. If permission is
+          // "prompt", watchPosition itself triggers the browser prompt.
+          startWatcher();
+          permResult.onchange = () => {
+            if (permResult.state === "granted") startWatcher();
+            else if (permResult.state === "denied") {
               if (watchIdRef.current !== null) {
                 navigator.geolocation.clearWatch(watchIdRef.current);
                 watchIdRef.current = null;
@@ -164,7 +168,6 @@ export function LocationSharingProvider({ children }: { children: ReactNode }) {
             }
           };
         } else {
-          // No Permissions API — fall back to starting watcher (legacy browsers)
           startWatcher();
         }
       } catch {
@@ -175,6 +178,7 @@ export function LocationSharingProvider({ children }: { children: ReactNode }) {
 
     return () => {
       cancelled = true;
+      if (permResult) permResult.onchange = null;
       if (watchIdRef.current !== null) {
         navigator.geolocation.clearWatch(watchIdRef.current);
         watchIdRef.current = null;
@@ -196,41 +200,60 @@ export function LocationSharingProvider({ children }: { children: ReactNode }) {
       setStatus("unavailable");
       return false;
     }
-    return new Promise((resolve) => {
-      navigator.geolocation.getCurrentPosition(
-        async (pos) => {
-          const { latitude, longitude, heading } = pos.coords;
-          const { error: upErr } = await supabase.from("driver_locations").upsert(
-            {
-              ride_id: rideId,
-              driver_id: user.id,
-              lat: latitude,
-              lng: longitude,
-              heading: heading ?? null,
-              updated_at: new Date().toISOString(),
-            },
-            { onConflict: "ride_id" }
-          );
-          if (!upErr) {
-            setLastFix(Date.now());
-            setStatus("active");
-          }
-          resolve(!upErr);
-        },
-        (err) => {
-          if (err.code === err.PERMISSION_DENIED) {
-            setStatus("denied");
-            setError("גישה למיקום נדחתה");
-          } else {
-            setStatus("error");
-            setError(err.message);
-          }
-          resolve(false);
-        },
-        { enableHighAccuracy: true, timeout: 8000, maximumAge: 0 }
-      );
-    });
-  }, [user]);
+
+    const tryGetPosition = (opts: PositionOptions): Promise<GeolocationPosition | GeolocationPositionError> =>
+      new Promise((resolve) => {
+        navigator.geolocation.getCurrentPosition(
+          (pos) => resolve(pos),
+          (err) => resolve(err as unknown as GeolocationPositionError),
+          opts,
+        );
+      });
+
+    // First try: fast, high-accuracy fix.
+    let result = await tryGetPosition({ enableHighAccuracy: true, timeout: 10000, maximumAge: 30000 });
+    // Fallback: relax accuracy & accept older cached fixes (helps desktops without GPS / weak signal).
+    if (!("coords" in result)) {
+      const err = result as GeolocationPositionError;
+      if (err.code === err.PERMISSION_DENIED) {
+        setStatus("denied");
+        setError("גישה למיקום נדחתה");
+        return false;
+      }
+      result = await tryGetPosition({ enableHighAccuracy: false, timeout: 15000, maximumAge: 120000 });
+    }
+    if (!("coords" in result)) {
+      const err = result as GeolocationPositionError;
+      setStatus("error");
+      setError(err.message || "Location unavailable");
+      return false;
+    }
+
+    const { latitude, longitude, heading } = result.coords;
+    const { error: upErr } = await supabase.from("driver_locations").upsert(
+      {
+        ride_id: rideId,
+        driver_id: user.id,
+        lat: latitude,
+        lng: longitude,
+        heading: heading ?? null,
+        updated_at: new Date().toISOString(),
+      },
+      { onConflict: "ride_id" },
+    );
+    if (upErr) {
+      setStatus("error");
+      setError(upErr.message);
+      return false;
+    }
+    setLastFix(Date.now());
+    setStatus("active");
+    // Permission has just been granted via the prompt — start the live
+    // watcher immediately so passengers see continuous updates instead of
+    // a single frozen pin.
+    startWatcher();
+    return true;
+  }, [user, startWatcher]);
 
   return (
     <LocationSharingContext.Provider
