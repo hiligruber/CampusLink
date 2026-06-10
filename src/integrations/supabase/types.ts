@@ -312,6 +312,71 @@ export type Database = {
         }
         Relationships: []
       }
+      support_messages: {
+        Row: {
+          body: string
+          created_at: string
+          id: string
+          is_admin: boolean
+          sender_id: string
+          ticket_id: string
+        }
+        Insert: {
+          body: string
+          created_at?: string
+          id?: string
+          is_admin?: boolean
+          sender_id: string
+          ticket_id: string
+        }
+        Update: {
+          body?: string
+          created_at?: string
+          id?: string
+          is_admin?: boolean
+          sender_id?: string
+          ticket_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "support_messages_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "support_tickets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      support_tickets: {
+        Row: {
+          category: Database["public"]["Enums"]["support_category"]
+          created_at: string
+          id: string
+          status: Database["public"]["Enums"]["support_status"]
+          subject: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          category?: Database["public"]["Enums"]["support_category"]
+          created_at?: string
+          id?: string
+          status?: Database["public"]["Enums"]["support_status"]
+          subject: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          category?: Database["public"]["Enums"]["support_category"]
+          created_at?: string
+          id?: string
+          status?: Database["public"]["Enums"]["support_status"]
+          subject?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string
@@ -412,6 +477,13 @@ export type Database = {
     }
     Enums: {
       app_role: "admin" | "user"
+      support_category:
+        | "technical"
+        | "report_user"
+        | "account"
+        | "appeal"
+        | "other"
+      support_status: "open" | "in_progress" | "resolved"
       verification_status:
         | "pending_submission"
         | "pending_review"
@@ -545,6 +617,14 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "user"],
+      support_category: [
+        "technical",
+        "report_user",
+        "account",
+        "appeal",
+        "other",
+      ],
+      support_status: ["open", "in_progress", "resolved"],
       verification_status: [
         "pending_submission",
         "pending_review",
