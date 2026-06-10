@@ -77,10 +77,11 @@ export default function DriverLocationSharer({ rideId, driverId, phase, onComple
     if (!sharingActive) return null;
     if (status === "active" && lastFix) {
       const secAgo = Math.floor((Date.now() - lastFix) / 1000);
+      const timeLabel = secAgo < 60 ? `${secAgo}s` : "<1m";
       return (
         <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-1 rounded-full bg-emerald-500/15 text-emerald-700 dark:text-emerald-400">
           <MapPin className="w-3 h-3" />
-          GPS פעיל · {secAgo < 60 ? `${secAgo}ש'` : "<1ד'"}
+          {t("gps_active")} · {timeLabel}
         </span>
       );
     }
@@ -88,7 +89,7 @@ export default function DriverLocationSharer({ rideId, driverId, phase, onComple
       return (
         <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-1 rounded-full bg-amber-500/15 text-amber-700 dark:text-amber-400">
           <Loader2 className="w-3 h-3 animate-spin" />
-          מאתר GPS…
+          {t("gps_locating")}
         </span>
       );
     }
@@ -100,7 +101,7 @@ export default function DriverLocationSharer({ rideId, driverId, phase, onComple
           className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-1 rounded-full bg-destructive/10 text-destructive hover:bg-destructive/20 transition"
         >
           <MapPinOff className="w-3 h-3" />
-          {status === "unavailable" ? "GPS לא נתמך" : "אין מיקום · נסה שוב"}
+          {status === "unavailable" ? t("gps_unsupported") : t("gps_no_fix")}
         </button>
       );
     }
