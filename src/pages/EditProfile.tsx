@@ -62,9 +62,12 @@ const EditProfile = () => {
         .upload(path, file, { contentType: file.type, cacheControl: "3600" });
       if (upErr) throw upErr;
       const { data: pub } = supabase.storage.from("avatars").getPublicUrl(path);
+      const publicUrl = pub.publicUrl;
       // Persist immediately so it shows everywhere even before "Save"
-      await supabase.from("profiles").update({ avatar_url: pub.publicUrl }).eq("user_id", user.id);
-      setAvatarUrl(pub.publicUrl);
+      await supabase.from("profiles").update({ avatar_url: publicUrl }).eq("user_id", user.id);
+      // Keep auth metadata in sync (some surfaces read from session)
+      await supabase.auth.updateUser({ data: { avatar_url: publicUrl } });
+      setAvatarUrl(publicUrl);
       queryClient.invalidateQueries({ queryKey: ["header-profile"] });
       queryClient.invalidateQueries({ queryKey: ["profile"] });
       toast.success("התמונה הועלתה");
