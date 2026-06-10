@@ -140,7 +140,24 @@ const ActiveRides = () => {
 
       const items: ActiveRideItem[] = [];
 
+      // A ride belongs on the Activity page only if it is upcoming or live.
+      // Past rides (scheduled time has passed and not currently live) and
+      // completed rides are filtered out — they live under "Past Rides" in
+      // the user's profile.
+      const LIVE_PHASES: RidePhase[] = ["en_route", "picked_up", "in_progress"];
+      const isRelevant = (r: any) => {
+        const phase = (r.ride_phase ?? "scheduled") as RidePhase;
+        if (phase === "completed") return false;
+        if (LIVE_PHASES.includes(phase)) return true;
+        // scheduled — keep only if departure time is still in the future
+        // (with a small 15-minute grace window so a just-passed slot doesn't
+        // vanish before the driver hits "I'm on my way").
+        const dep = new Date(r.departure_time).getTime();
+        return dep > Date.now() - 15 * 60 * 1000;
+      };
+
       for (const r of myRides ?? []) {
+        if (!isRelevant(r)) continue;
         const driverProf = profiles?.find((p: any) => p.user_id === r.driver_id);
         const firstPassenger = (ridePassengers ?? []).find((b: any) => b.ride_id === r.id);
         const passProf = firstPassenger
@@ -165,6 +182,7 @@ const ActiveRides = () => {
       }
 
       for (const r of passengerRides ?? []) {
+        if (!isRelevant(r)) continue;
         const driverProf = profiles?.find((p: any) => p.user_id === r.driver_id);
         const myB = (myBookings ?? []).find((b) => b.ride_id === r.id);
         items.push({
@@ -185,10 +203,8 @@ const ActiveRides = () => {
       items.sort((a, b) => {
         const r = phaseRank[a.phase] - phaseRank[b.phase];
         if (r !== 0) return r;
-        // Completed: most recent first; others: soonest first
-        const ta = new Date(a.departureTime).getTime();
-        const tb = new Date(b.departureTime).getTime();
-        return a.phase === "completed" ? tb - ta : ta - tb;
+        // Soonest first
+        return new Date(a.departureTime).getTime() - new Date(b.departureTime).getTime();
       });
       return items;
     },
