@@ -5,7 +5,7 @@ import { Label } from "@/components/ui/label";
 import AppHeader from "@/components/AppHeader";
 import BottomNav from "@/components/BottomNav";
 import { toast } from "sonner";
-import { MapPin, Calendar, Clock, Users } from "lucide-react";
+import { MapPin, Calendar, Clock, Users, LocateFixed, Loader2 } from "lucide-react";
 import { motion } from "framer-motion";
 import { useAuth } from "@/contexts/AuthContext";
 import { useQueryClient } from "@tanstack/react-query";
@@ -26,6 +26,7 @@ const PostRide = () => {
   const [seats, setSeats] = useState("3");
   const [notes, setNotes] = useState("");
   const [loading, setLoading] = useState(false);
+  const [locatingOrigin, setLocatingOrigin] = useState(false);
   const [driverName, setDriverName] = useState("Student");
 
   useEffect(() => {
@@ -39,6 +40,37 @@ const PostRide = () => {
         if (data?.full_name) setDriverName(data.full_name);
       });
   }, [user]);
+
+  const useCurrentLocationAsOrigin = () => {
+    if (!("geolocation" in navigator)) {
+      toast.error(t("loc_browser_unsupported"));
+      return;
+    }
+    setLocatingOrigin(true);
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        const latLng = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+        if (typeof google !== "undefined" && google.maps?.Geocoder) {
+          const geocoder = new google.maps.Geocoder();
+          geocoder.geocode({ location: latLng }, (results, status) => {
+            const address = status === "OK" && results?.[0]?.formatted_address
+              ? results[0].formatted_address
+              : `${latLng.lat.toFixed(6)}, ${latLng.lng.toFixed(6)}`;
+            setOrigin(address);
+            setLocatingOrigin(false);
+          });
+        } else {
+          setOrigin(`${latLng.lat.toFixed(6)}, ${latLng.lng.toFixed(6)}`);
+          setLocatingOrigin(false);
+        }
+      },
+      (err) => {
+        toast.error(err.code === err.PERMISSION_DENIED ? t("loc_permission_denied") : t("loc_error_title"));
+        setLocatingOrigin(false);
+      },
+      { enableHighAccuracy: true, timeout: 12000, maximumAge: 60000 },
+    );
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -92,6 +124,17 @@ const PostRide = () => {
                 <Label htmlFor="origin" className="flex items-center gap-1.5 text-sm font-medium">
                   <MapPin className="w-3.5 h-3.5 text-primary" /> {t("origin")}
                 </Label>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={useCurrentLocationAsOrigin}
+                  disabled={locatingOrigin}
+                  className="w-full justify-center gap-1.5 rounded-xl text-xs font-bold"
+                >
+                  {locatingOrigin ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <LocateFixed className="w-3.5 h-3.5" />}
+                  {t("use_current_location")}
+                </Button>
                 <PlacesAutocomplete id="origin" placeholder="" value={origin} onChange={setOrigin} />
               </div>
               <div className="space-y-2">

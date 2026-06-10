@@ -15,7 +15,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Car, Navigation as NavIcon, CheckCircle2, Users, Loader2, MapPinOff, MapPin } from "lucide-react";
+import { Car, CheckCircle2, Users, Loader2, MapPinOff, MapPin } from "lucide-react";
 import { setRidePhase, type RidePhase } from "@/lib/rides-api";
 import { useQueryClient } from "@tanstack/react-query";
 
