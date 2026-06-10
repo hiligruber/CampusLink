@@ -15,7 +15,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Car, Navigation as NavIcon, CheckCircle2, Users, Loader2, MapPinOff, MapPin } from "lucide-react";
+import { Car, CheckCircle2, Users, Loader2, MapPinOff, MapPin } from "lucide-react";
 import { setRidePhase, type RidePhase } from "@/lib/rides-api";
 import { useQueryClient } from "@tanstack/react-query";
 
@@ -139,13 +139,14 @@ export default function DriverLocationSharer({ rideId, driverId, phase, onComple
 
         {phase === "picked_up" && (
           <Button
-            onClick={() => doAdvance("in_progress", t("toast_ride_started"))}
+            onClick={() => doAdvance("completed", t("toast_ride_finished"))}
             disabled={busy}
             size="sm"
-            className="gap-1.5 rounded-xl text-xs font-bold h-9 bg-gradient-to-r from-primary to-accent border-0"
+            variant="outline"
+            className="gap-1.5 rounded-xl text-xs font-bold h-9 border-primary/40 text-primary hover:bg-primary/10"
           >
-            <NavIcon className="w-3.5 h-3.5" />
-            {t("btn_start_ride")}
+            <CheckCircle2 className="w-3.5 h-3.5" />
+            {t("btn_drop_off")}
           </Button>
         )}
 

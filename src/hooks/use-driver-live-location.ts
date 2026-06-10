@@ -31,6 +31,8 @@ interface Options {
   rideId: string;
   destination: string;
   pickupLocation?: string | null;
+  pickupLat?: number | null;
+  pickupLng?: number | null;
   phase?: "scheduled" | "en_route" | "picked_up" | "in_progress" | "completed";
   enabled?: boolean;
 }
@@ -92,6 +94,8 @@ export function useDriverLiveLocation({
   rideId,
   destination,
   pickupLocation,
+  pickupLat,
+  pickupLng,
   phase = "scheduled",
   enabled = true,
 }: Options) {
@@ -186,15 +190,20 @@ export function useDriverLiveLocation({
     };
   }, [rideId, enabled]);
 
-  // Reset throttle when phase changes
+  // Reset route state/throttle when the active ride leg changes.
   useEffect(() => {
     lastEtaCalcRef.current = 0;
-  }, [phase]);
+    setToPickup(null);
+    setToDestination(null);
+    setRouteError(false);
+  }, [rideId, destination, pickupLocation, pickupLat, pickupLng, phase]);
 
   // Geocode pickup & destination
   useEffect(() => {
     let active = true;
-    if (pickupLocation) {
+    if (typeof pickupLat === "number" && typeof pickupLng === "number") {
+      setPickupLatLng({ lat: pickupLat, lng: pickupLng });
+    } else if (pickupLocation) {
       geocodeOnce(pickupLocation).then((ll) => active && setPickupLatLng(ll));
     } else {
       setPickupLatLng(null);
@@ -202,7 +211,7 @@ export function useDriverLiveLocation({
     return () => {
       active = false;
     };
-  }, [pickupLocation]);
+  }, [pickupLocation, pickupLat, pickupLng]);
 
   useEffect(() => {
     let active = true;
@@ -227,29 +236,24 @@ export function useDriverLiveLocation({
     (async () => {
       try {
         const origin = { lat: location.lat, lng: location.lng };
-        const hasPickup = phase === "en_route" && pickupLocation && pickupLocation.trim().length > 0;
+        const pickupCoords = typeof pickupLat === "number" && typeof pickupLng === "number"
+          ? { lat: pickupLat, lng: pickupLng }
+          : null;
+        const pickupTarget = pickupCoords ?? (pickupLocation && pickupLocation.trim().length > 0 ? pickupLocation : null);
+        const hasPickup = phase === "en_route" && !!pickupTarget;
 
         if (hasPickup) {
           // Compute both segments in parallel: driver→pickup and pickup→destination.
           const [seg1, seg2] = await Promise.all([
-            routePromise(origin, pickupLocation as string),
-            destination ? routePromise(pickupLocation as string, destination) : Promise.resolve(null),
+            routePromise(origin, pickupTarget as google.maps.LatLngLiteral | string),
+            destination ? routePromise(pickupTarget as google.maps.LatLngLiteral | string, destination) : Promise.resolve(null),
           ]);
           if (cancelled) return;
           setToPickup(seg1);
-          // If seg1 succeeded, use seg2 as-is (may be null if no destination).
-          // If seg1 FAILED, fall back to a single driver→destination route so the
-          // passenger still sees the driver moving toward them on the map.
+          setToDestination(seg2);
           if (seg1) {
-            setToDestination(seg2);
             setRouteError(false);
-          } else if (destination) {
-            const fallback = await routePromise(origin, destination);
-            if (cancelled) return;
-            setToDestination(fallback);
-            setRouteError(!fallback);
           } else {
-            setToDestination(null);
             setRouteError(true);
           }
         } else if (destination) {
@@ -269,7 +273,7 @@ export function useDriverLiveLocation({
     return () => {
       cancelled = true;
     };
-  }, [location, destination, pickupLocation, phase]);
+  }, [location, destination, pickupLocation, pickupLat, pickupLng, phase]);
 
   // Primary ETA (next segment) for backward compatibility
   const eta = toPickup?.eta ?? toDestination?.eta ?? null;

@@ -22,6 +22,8 @@ interface BookingWithDetails {
   passenger_id: string;
   ride_id: string;
   pickup_location?: string | null;
+  pickup_lat?: number | null;
+  pickup_lng?: number | null;
   ride: {
     id: string;
     origin: string;
@@ -87,7 +89,7 @@ const Bookings = () => {
       if (rideIds.length === 0) return [];
       const { data: bookings, error } = await supabase
         .from("bookings")
-        .select("id, status, created_at, passenger_id, ride_id, pickup_location")
+        .select("id, status, created_at, passenger_id, ride_id, pickup_location, pickup_lat, pickup_lng")
         .in("ride_id", rideIds)
         .order("created_at", { ascending: false });
       if (error) throw error;
@@ -116,7 +118,7 @@ const Bookings = () => {
     queryFn: async (): Promise<BookingWithDetails[]> => {
       const { data: bookings, error } = await supabase
         .from("bookings")
-        .select("id, status, created_at, passenger_id, ride_id, pickup_location")
+        .select("id, status, created_at, passenger_id, ride_id, pickup_location, pickup_lat, pickup_lng")
         .eq("passenger_id", user!.id)
         .order("created_at", { ascending: false });
       if (error) throw error;
@@ -321,6 +323,8 @@ const Bookings = () => {
                           destination={b.ride.destination}
                           phase={(b.ride.ride_phase ?? "scheduled") as any}
                           pickupLocation={b.pickup_location}
+                          pickupLat={b.pickup_lat}
+                          pickupLng={b.pickup_lng}
                           driverName={b.ride.driver_name}
                         />
                         <ChatButton

@@ -75,6 +75,7 @@ const dict = {
   notes_opt: { EN: "Notes (optional)", HE: "הערות (לא חובה)" },
   posting: { EN: "Posting...", HE: "מפרסם..." },
   post_ride: { EN: "Post Ride", HE: "פרסם נסיעה" },
+  use_current_location: { EN: "Use my current location", HE: "השתמש במיקום הנוכחי שלי" },
 
   // Activity
   activity_title: { EN: "Activity", HE: "פעילות" },
@@ -209,7 +210,7 @@ const dict = {
   awaiting_first_fix: { EN: "Driver is on the way — waiting for first GPS fix", HE: "הנהג בדרך — מחכים לפיקס GPS ראשון" },
   connecting_driver: { EN: "Connecting to driver location…", HE: "מתחבר למיקום הנהג…" },
   driver_not_started: { EN: "Driver has not started yet", HE: "הנהג עדיין לא יצא לדרך" },
-  driver_will_update: { EN: 'Once the driver taps "Share Live Location" the map will update here in real time', HE: 'ברגע שהנהג ילחץ "שתף מיקום חי" המפה תעודכן כאן בזמן אמת' },
+  driver_will_update: { EN: 'Once the driver taps "I\'m on my way" the map will update here in real time', HE: 'ברגע שהנהג ילחץ "אני בדרך" המפה תעודכן כאן בזמן אמת' },
   ended: { EN: "Ended", HE: "הסתיימה" },
   aria_expand_map: { EN: "Expand tracking map", HE: "הרחב מפת מעקב" },
   tap_to_expand: { EN: "Tap to expand", HE: "הקש להרחבה" },

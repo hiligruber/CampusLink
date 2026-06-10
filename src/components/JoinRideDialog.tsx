@@ -21,7 +21,7 @@ interface Props {
   rideDestination: string;
   driverName: string;
   submitting?: boolean;
-  onConfirm: (pickupLocation: string) => void;
+  onConfirm: (pickupLocation: string, pickupCoords?: { lat: number | null; lng: number | null }) => void;
 }
 
 export default function JoinRideDialog({
@@ -34,12 +34,13 @@ export default function JoinRideDialog({
   onConfirm,
 }: Props) {
   const [pickup, setPickup] = useState<string>(rideOrigin);
+  const [pickupCoords, setPickupCoords] = useState<{ lat: number | null; lng: number | null } | undefined>();
   const { t, dir } = useLang();
 
 
   const handleConfirm = () => {
     const final = (pickup || rideOrigin).trim();
-    onConfirm(final);
+    onConfirm(final, pickupCoords);
   };
 
   return (
@@ -60,7 +61,11 @@ export default function JoinRideDialog({
             </Label>
             <PlacesAutocomplete
               value={pickup}
-              onChange={setPickup}
+              onChange={(value) => {
+                setPickup(value);
+                setPickupCoords(undefined);
+              }}
+              onPlaceSelect={(place) => setPickupCoords({ lat: place.lat, lng: place.lng })}
               placeholder={t("join_pickup_ph")}
             />
           </div>

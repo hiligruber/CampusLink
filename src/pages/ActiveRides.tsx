@@ -40,6 +40,8 @@ interface ActiveRideItem {
   passengerName?: string;
   passengerAvatar?: string | null;
   pickupLocation?: string | null;
+  pickupLat?: number | null;
+  pickupLng?: number | null;
   bookingId?: string;
 }
 
@@ -105,7 +107,7 @@ const ActiveRides = () => {
 
       const { data: myBookings } = await supabase
         .from("bookings")
-        .select("id, ride_id, pickup_location, status")
+        .select("id, ride_id, pickup_location, pickup_lat, pickup_lng, status")
         .eq("passenger_id", user!.id)
         .eq("status", "accepted");
 
@@ -128,7 +130,7 @@ const ActiveRides = () => {
       const { data: ridePassengers } = myRideIds.length
         ? await supabase
             .from("bookings")
-            .select("ride_id, passenger_id, pickup_location, id")
+            .select("ride_id, passenger_id, pickup_location, pickup_lat, pickup_lng, id")
             .in("ride_id", myRideIds)
             .eq("status", "accepted")
         : { data: [] as any[] };
@@ -177,6 +179,8 @@ const ActiveRides = () => {
           passengerName: passProf?.full_name,
           passengerAvatar: passProf?.avatar_url ?? null,
           pickupLocation: firstPassenger?.pickup_location,
+          pickupLat: firstPassenger?.pickup_lat,
+          pickupLng: firstPassenger?.pickup_lng,
           bookingId: firstPassenger?.id,
         });
       }
@@ -196,6 +200,8 @@ const ActiveRides = () => {
           driverName: r.driver_name || driverProf?.full_name || (lang === "EN" ? "Driver" : "נהג"),
           driverAvatar: driverProf?.avatar_url ?? null,
           pickupLocation: myB?.pickup_location,
+          pickupLat: myB?.pickup_lat,
+          pickupLng: myB?.pickup_lng,
           bookingId: myB?.id,
         });
       }
@@ -406,6 +412,8 @@ const ActiveRides = () => {
           rideId={trackingRide.rideId}
           destination={trackingRide.destination}
           pickupLocation={trackingRide.pickupLocation ?? undefined}
+          pickupLat={trackingRide.pickupLat}
+          pickupLng={trackingRide.pickupLng}
           phase={trackingRide.phase}
           driverName={trackingRide.driverName}
         />

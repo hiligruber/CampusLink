@@ -78,12 +78,19 @@ export async function cancelRide(rideId: string) {
   if (error) throw error;
 }
 
-export async function joinRide(rideId: string, passengerId: string, pickupLocation?: string) {
+export async function joinRide(
+  rideId: string,
+  passengerId: string,
+  pickupLocation?: string,
+  pickupCoords?: { lat: number | null; lng: number | null },
+) {
   const { error } = await supabase.from("bookings").insert({
     ride_id: rideId,
     passenger_id: passengerId,
     status: "pending",
     pickup_location: pickupLocation ?? null,
+    pickup_lat: pickupCoords?.lat ?? null,
+    pickup_lng: pickupCoords?.lng ?? null,
   } as any);
   if (error) throw error;
 }
