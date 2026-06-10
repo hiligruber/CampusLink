@@ -104,7 +104,7 @@ export default function RideChat({ open, onOpenChange, rideId, otherUserId, othe
       if (error) throw error;
       setText("");
     } catch (e: any) {
-      toast.error(e?.message || "שליחה נכשלה");
+      toast.error(e?.message || t("chat_send_failed"));
     } finally {
       setSending(false);
     }
@@ -112,9 +112,9 @@ export default function RideChat({ open, onOpenChange, rideId, otherUserId, othe
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md p-0 gap-0 overflow-hidden" dir="rtl">
+      <DialogContent className="max-w-md p-0 gap-0 overflow-hidden" dir={dir}>
         <DialogHeader className="px-4 py-3 border-b border-border">
-          <DialogTitle className="text-base">צ'אט עם {otherUserName}</DialogTitle>
+          <DialogTitle className="text-base">{t("chat_with", { name: otherUserName })}</DialogTitle>
         </DialogHeader>
 
         <div ref={scrollRef} className="h-[55vh] overflow-y-auto px-4 py-3 space-y-2 bg-secondary/20">
@@ -124,7 +124,7 @@ export default function RideChat({ open, onOpenChange, rideId, otherUserId, othe
             </div>
           ) : messages.length === 0 ? (
             <p className="text-center text-xs text-muted-foreground pt-10">
-              עדיין אין הודעות. שלחו את הראשונה ✨
+              {t("chat_empty")}
             </p>
           ) : (
             messages.map((m) => {
@@ -140,7 +140,7 @@ export default function RideChat({ open, onOpenChange, rideId, otherUserId, othe
                   >
                     <p className="whitespace-pre-wrap break-words">{m.body}</p>
                     <p className={`text-[10px] mt-0.5 ${mine ? "text-primary-foreground/70" : "text-muted-foreground"}`}>
-                      {new Date(m.created_at).toLocaleTimeString("he-IL", { hour: "2-digit", minute: "2-digit" })}
+                      {new Date(m.created_at).toLocaleTimeString(lang === "EN" ? "en-US" : "he-IL", { hour: "2-digit", minute: "2-digit" })}
                     </p>
                   </div>
                 </div>
@@ -172,7 +172,7 @@ export default function RideChat({ open, onOpenChange, rideId, otherUserId, othe
             <Input
               value={text}
               onChange={(e) => setText(e.target.value)}
-              placeholder="כתוב הודעה…"
+              placeholder={t("chat_placeholder")}
               disabled={sending}
               className="flex-1"
             />
