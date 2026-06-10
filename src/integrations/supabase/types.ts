@@ -139,6 +139,7 @@ export type Database = {
           total_ratings: number
           updated_at: string
           user_id: string
+          username: string | null
           verification_status: Database["public"]["Enums"]["verification_status"]
           verified_at: string | null
         }
@@ -159,6 +160,7 @@ export type Database = {
           total_ratings?: number
           updated_at?: string
           user_id: string
+          username?: string | null
           verification_status?: Database["public"]["Enums"]["verification_status"]
           verified_at?: string | null
         }
@@ -179,6 +181,7 @@ export type Database = {
           total_ratings?: number
           updated_at?: string
           user_id?: string
+          username?: string | null
           verification_status?: Database["public"]["Enums"]["verification_status"]
           verified_at?: string | null
         }
@@ -354,6 +357,7 @@ export type Database = {
           total_ratings: number
           updated_at: string
           user_id: string
+          username: string | null
           verification_status: Database["public"]["Enums"]["verification_status"]
           verified_at: string | null
         }
@@ -383,6 +387,7 @@ export type Database = {
           total_ratings: number
           updated_at: string
           user_id: string
+          username: string | null
           verification_status: Database["public"]["Enums"]["verification_status"]
           verified_at: string | null
         }[]
