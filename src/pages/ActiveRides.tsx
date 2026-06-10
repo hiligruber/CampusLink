@@ -183,7 +183,10 @@ const ActiveRides = () => {
       items.sort((a, b) => {
         const r = phaseRank[a.phase] - phaseRank[b.phase];
         if (r !== 0) return r;
-        return new Date(a.departureTime).getTime() - new Date(b.departureTime).getTime();
+        // Completed: most recent first; others: soonest first
+        const ta = new Date(a.departureTime).getTime();
+        const tb = new Date(b.departureTime).getTime();
+        return a.phase === "completed" ? tb - ta : ta - tb;
       });
       return items;
     },
