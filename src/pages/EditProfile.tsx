@@ -50,7 +50,7 @@ const EditProfile = () => {
     const file = e.target.files?.[0];
     if (!file || !user) return;
     if (file.size > 5 * 1024 * 1024) {
-      toast.error("התמונה גדולה מדי (מקסימום 5MB)");
+      toast.error(t("toast_photo_too_big"));
       return;
     }
     setUploading(true);
@@ -70,10 +70,10 @@ const EditProfile = () => {
       setAvatarUrl(publicUrl);
       queryClient.invalidateQueries({ queryKey: ["header-profile"] });
       queryClient.invalidateQueries({ queryKey: ["profile"] });
-      toast.success("התמונה הועלתה");
+      toast.success(t("toast_photo_uploaded"));
     } catch (err: any) {
       console.error("avatar upload failed", err);
-      toast.error(err?.message || "העלאה נכשלה");
+      toast.error(err?.message || t("toast_upload_failed"));
     } finally {
       setUploading(false);
     }
@@ -94,10 +94,10 @@ const EditProfile = () => {
         .eq("user_id", user.id);
       if (error) throw error;
       queryClient.invalidateQueries({ queryKey: ["profile"] });
-      toast.success("הפרופיל עודכן");
+      toast.success(t("toast_profile_updated"));
       navigate("/profile");
     } catch (err: any) {
-      toast.error(err?.message || "שמירה נכשלה");
+      toast.error(err?.message || t("toast_save_failed"));
     } finally {
       setSaving(false);
     }
@@ -115,7 +115,7 @@ const EditProfile = () => {
 
   return (
     <div className="min-h-screen bg-background pb-20">
-      <AppHeader title="עריכת פרופיל" />
+      <AppHeader title={t("edit_profile_title")} />
       <motion.main
         initial={{ opacity: 0, y: 16 }}
         animate={{ opacity: 1, y: 0 }}
@@ -141,7 +141,7 @@ const EditProfile = () => {
               onClick={() => fileRef.current?.click()}
               disabled={uploading}
               className="absolute bottom-0 right-0 w-8 h-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center shadow-lg hover:bg-primary/90 transition disabled:opacity-50"
-              aria-label="החלף תמונה"
+              aria-label={t("aria_change_photo")}
             >
               {uploading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Camera className="w-4 h-4" />}
             </button>
@@ -153,7 +153,7 @@ const EditProfile = () => {
               onChange={handleAvatarChange}
             />
           </div>
-          <p className="text-xs text-muted-foreground mt-3">לחץ על המצלמה להחלפת תמונה</p>
+          <p className="text-xs text-muted-foreground mt-3">{t("change_photo_hint")}</p>
         </div>
 
         <div className="space-y-4 bg-card rounded-2xl border border-border p-5 shadow-sm">
@@ -163,7 +163,7 @@ const EditProfile = () => {
               id="fullName"
               value={fullName}
               onChange={(e) => setFullName(e.target.value)}
-              placeholder="השם שלך"
+              placeholder={t("full_name_ph")}
             />
           </div>
 
@@ -173,7 +173,7 @@ const EditProfile = () => {
               id="hobbies"
               value={hobbies}
               onChange={(e) => setHobbies(e.target.value)}
-              placeholder="ספורט, סדרות, טכנולוגיה..."
+              placeholder={t("hobbies_ph")}
               rows={3}
             />
           </div>
@@ -184,7 +184,7 @@ const EditProfile = () => {
               id="music"
               value={music}
               onChange={(e) => setMusic(e.target.value)}
-              placeholder="פופ ישראלי, פודקאסטים, אוהב לדבר / שקט..."
+              placeholder={t("music_ph")}
               rows={3}
             />
           </div>
@@ -193,7 +193,7 @@ const EditProfile = () => {
         <div className="flex gap-2">
           <Button variant="outline" className="flex-1 h-12 rounded-xl gap-2" onClick={() => navigate("/profile")}>
             <ArrowRight className="w-4 h-4" />
-            חזרה
+            {t("back")}
           </Button>
           <Button className="flex-1 h-12 rounded-xl" onClick={handleSave} disabled={saving}>
             {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : "שמור"}

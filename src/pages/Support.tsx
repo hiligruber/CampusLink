@@ -4,6 +4,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useVerificationStatus } from "@/hooks/use-verification";
+import { useLang } from "@/contexts/LanguageContext";
 import AppHeader from "@/components/AppHeader";
 import BottomNav from "@/components/BottomNav";
 import { Button } from "@/components/ui/button";
@@ -14,19 +15,8 @@ import { Loader2, Plus, ChevronRight, LifeBuoy, Send, ArrowRight, LogOut } from 
 import { toast } from "sonner";
 import { motion } from "framer-motion";
 
-const CATEGORY_LABEL: Record<string, string> = {
-  technical: "בעיה טכנית",
-  report_user: "דיווח על משתמש",
-  account: "בעיית חשבון",
-  appeal: "ערעור על חסימה",
-  other: "אחר",
-};
-
-const STATUS_LABEL: Record<string, string> = {
-  open: "פתוח",
-  in_progress: "בטיפול",
-  resolved: "נסגר",
-};
+const CAT_KEYS = ["technical", "report_user", "account", "appeal", "other"] as const;
+const STATUS_KEYS = ["open", "in_progress", "resolved"] as const;
 
 const STATUS_STYLE: Record<string, string> = {
   open: "bg-amber-500/15 text-amber-600 dark:text-amber-400",
@@ -37,9 +27,13 @@ const STATUS_STYLE: Record<string, string> = {
 const Support = () => {
   const { user, signOut } = useAuth();
   const { isVerified, isAdmin } = useVerificationStatus();
+  const { t, lang, dir } = useLang();
   const navigate = useNavigate();
   const qc = useQueryClient();
   const restricted = !isVerified && !isAdmin;
+
+  const catLabel = (k: string) => t(`cat_${k}` as any);
+  const statusLabel = (k: string) => t(`st_${k}` as any);
 
   const [view, setView] = useState<"list" | "new" | "thread">("list");
   const [activeId, setActiveId] = useState<string | null>(null);
@@ -91,12 +85,12 @@ const Support = () => {
         .from("support_messages")
         .insert({ ticket_id: ticket.id, sender_id: user.id, body: body.trim(), is_admin: false });
       if (mErr) throw mErr;
-      toast.success("הבקשה נשלחה בהצלחה");
+      toast.success(t("toast_ticket_sent"));
       setSubject(""); setBody("");
       qc.invalidateQueries({ queryKey: ["my-tickets"] });
       setView("list");
     } catch (e: any) {
-      toast.error(e.message || "שגיאה בשליחה");
+      toast.error(e.message || t("toast_ticket_failed"));
     } finally {
       setSending(false);
     }
@@ -119,17 +113,18 @@ const Support = () => {
     }
   };
 
-  const activeTicket = tickets.find((t) => t.id === activeId);
+  const activeTicket = tickets.find((tk) => tk.id === activeId);
+  const locale = lang === "EN" ? "en-US" : "he-IL";
 
   return (
-    <div className="min-h-screen bg-background relative overflow-hidden pb-24" dir="rtl">
+    <div className="min-h-screen bg-background relative overflow-hidden pb-24" dir={dir}>
       {restricted && (
         <>
           <div className="absolute -top-32 -left-32 w-96 h-96 rounded-full bg-primary/20 blur-3xl pointer-events-none" />
           <div className="absolute -bottom-32 -right-32 w-96 h-96 rounded-full bg-accent/20 blur-3xl pointer-events-none" />
         </>
       )}
-      {!restricted && <AppHeader subtitle="תמיכה" />}
+      {!restricted && <AppHeader subtitle={t("support_title")} />}
 
       <motion.main
         initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
@@ -140,20 +135,18 @@ const Support = () => {
             <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-primary to-accent mx-auto flex items-center justify-center">
               <LifeBuoy className="w-7 h-7 text-white" />
             </div>
-            <h1 className="text-2xl font-bold">תמיכה וערעורים</h1>
-            <p className="text-sm text-muted-foreground">
-              אתה יכול לפנות לצוות התמיכה או להגיש ערעור על חסימה.
-            </p>
+            <h1 className="text-2xl font-bold">{t("support_appeals_heading")}</h1>
+            <p className="text-sm text-muted-foreground">{t("support_appeals_desc")}</p>
           </div>
         )}
 
         {view === "list" && (
           <>
             <div className="flex items-center justify-between">
-              <h2 className="text-lg font-bold">הפניות שלי</h2>
+              <h2 className="text-lg font-bold">{t("my_tickets")}</h2>
               <Button size="sm" className="rounded-full gap-1 bg-gradient-to-r from-primary to-accent"
                 onClick={() => setView("new")}>
-                <Plus className="w-4 h-4" /> פנייה חדשה
+                <Plus className="w-4 h-4" /> {t("new_ticket")}
               </Button>
             </div>
 
@@ -161,26 +154,26 @@ const Support = () => {
               <div className="flex justify-center py-12"><Loader2 className="w-5 h-5 animate-spin text-primary" /></div>
             ) : tickets.length === 0 ? (
               <div className="text-center text-sm text-muted-foreground bg-card rounded-2xl border border-border p-8">
-                עוד לא פתחת פניות. לחץ "פנייה חדשה" כדי להתחיל.
+                {t("no_tickets_yet")}
               </div>
             ) : (
               <div className="space-y-2">
-                {tickets.map((t) => (
-                  <button key={t.id}
-                    onClick={() => { setActiveId(t.id); setView("thread"); }}
-                    className="w-full text-right bg-card rounded-2xl border border-border p-4 hover:border-primary/40 transition">
+                {tickets.map((tk) => (
+                  <button key={tk.id}
+                    onClick={() => { setActiveId(tk.id); setView("thread"); }}
+                    className="w-full text-start bg-card rounded-2xl border border-border p-4 hover:border-primary/40 transition">
                     <div className="flex items-start justify-between gap-2">
                       <div className="min-w-0">
-                        <p className="font-semibold truncate">{t.subject}</p>
-                        <p className="text-xs text-muted-foreground mt-1">{CATEGORY_LABEL[t.category]}</p>
+                        <p className="font-semibold truncate">{tk.subject}</p>
+                        <p className="text-xs text-muted-foreground mt-1">{catLabel(tk.category)}</p>
                       </div>
-                      <span className={`text-[11px] font-bold rounded-full px-2.5 py-1 ${STATUS_STYLE[t.status]}`}>
-                        {STATUS_LABEL[t.status]}
+                      <span className={`text-[11px] font-bold rounded-full px-2.5 py-1 ${STATUS_STYLE[tk.status]}`}>
+                        {statusLabel(tk.status)}
                       </span>
                     </div>
                     <div className="flex items-center justify-between mt-2">
                       <span className="text-[11px] text-muted-foreground">
-                        {new Date(t.updated_at).toLocaleString("he-IL")}
+                        {new Date(tk.updated_at).toLocaleString(locale)}
                       </span>
                       <ChevronRight className="w-4 h-4 text-muted-foreground rtl:rotate-180" />
                     </div>
@@ -195,34 +188,34 @@ const Support = () => {
           <div className="bg-card rounded-2xl border border-border p-5 space-y-4">
             <div className="flex items-center gap-2">
               <button onClick={() => setView("list")} className="text-sm text-muted-foreground hover:text-foreground">
-                <ArrowRight className="w-4 h-4 inline" /> חזרה
+                <ArrowRight className="w-4 h-4 inline" /> {t("back")}
               </button>
             </div>
-            <h2 className="text-lg font-bold">פנייה חדשה</h2>
+            <h2 className="text-lg font-bold">{t("new_ticket")}</h2>
             <div className="space-y-2">
-              <label className="text-xs font-semibold">קטגוריה</label>
+              <label className="text-xs font-semibold">{t("category")}</label>
               <Select value={category} onValueChange={setCategory}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  {Object.entries(CATEGORY_LABEL).map(([k, v]) => (
-                    <SelectItem key={k} value={k}>{v}</SelectItem>
+                  {CAT_KEYS.map((k) => (
+                    <SelectItem key={k} value={k}>{catLabel(k)}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
             <div className="space-y-2">
-              <label className="text-xs font-semibold">נושא</label>
+              <label className="text-xs font-semibold">{t("subject")}</label>
               <Input value={subject} onChange={(e) => setSubject(e.target.value)} maxLength={120}
-                placeholder="תיאור קצר" />
+                placeholder={t("short_description_ph")} />
             </div>
             <div className="space-y-2">
-              <label className="text-xs font-semibold">הודעה</label>
+              <label className="text-xs font-semibold">{t("message")}</label>
               <Textarea value={body} onChange={(e) => setBody(e.target.value)} rows={6} maxLength={2000}
-                placeholder="ספר לנו מה קרה..." />
+                placeholder={t("tell_us_ph")} />
             </div>
             <Button onClick={submit} disabled={sending || !subject.trim() || !body.trim()}
               className="w-full rounded-full bg-gradient-to-r from-primary to-accent">
-              {sending ? <Loader2 className="w-4 h-4 animate-spin" /> : "שלח פנייה"}
+              {sending ? <Loader2 className="w-4 h-4 animate-spin" /> : t("send_ticket")}
             </Button>
           </div>
         )}
@@ -231,16 +224,16 @@ const Support = () => {
           <div className="space-y-3">
             <button onClick={() => { setView("list"); setActiveId(null); }}
               className="text-sm text-muted-foreground hover:text-foreground">
-              <ArrowRight className="w-4 h-4 inline" /> חזרה
+              <ArrowRight className="w-4 h-4 inline" /> {t("back")}
             </button>
             <div className="bg-card rounded-2xl border border-border p-4">
               <div className="flex items-start justify-between gap-2">
                 <div>
                   <h2 className="font-bold">{activeTicket.subject}</h2>
-                  <p className="text-xs text-muted-foreground mt-0.5">{CATEGORY_LABEL[activeTicket.category]}</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">{catLabel(activeTicket.category)}</p>
                 </div>
                 <span className={`text-[11px] font-bold rounded-full px-2.5 py-1 ${STATUS_STYLE[activeTicket.status]}`}>
-                  {STATUS_LABEL[activeTicket.status]}
+                  {statusLabel(activeTicket.status)}
                 </span>
               </div>
             </div>
@@ -254,7 +247,7 @@ const Support = () => {
                   }`}>
                     <p className="whitespace-pre-wrap">{m.body}</p>
                     <p className={`text-[10px] mt-1 ${m.is_admin ? "text-muted-foreground" : "text-white/70"}`}>
-                      {m.is_admin ? "תמיכה" : "אתה"} · {new Date(m.created_at).toLocaleString("he-IL")}
+                      {m.is_admin ? t("sender_support") : t("sender_you")} · {new Date(m.created_at).toLocaleString(locale)}
                     </p>
                   </div>
                 </div>
@@ -262,7 +255,7 @@ const Support = () => {
             </div>
             {activeTicket.status !== "resolved" && (
               <div className="flex gap-2 sticky bottom-20 bg-background/80 backdrop-blur p-2 rounded-2xl">
-                <Input value={reply} onChange={(e) => setReply(e.target.value)} placeholder="כתוב הודעה..." />
+                <Input value={reply} onChange={(e) => setReply(e.target.value)} placeholder={t("chat_placeholder")} />
                 <Button onClick={sendReply} disabled={sending || !reply.trim()} size="icon"
                   className="rounded-full bg-gradient-to-r from-primary to-accent shrink-0">
                   <Send className="w-4 h-4" />
@@ -275,10 +268,10 @@ const Support = () => {
         {restricted && view === "list" && (
           <div className="pt-4 flex flex-col gap-2">
             <Button variant="outline" onClick={signOut} className="rounded-full">
-              <LogOut className="w-4 h-4 ml-2" /> התנתק
+              <LogOut className="w-4 h-4 ml-2" /> {t("sign_out")}
             </Button>
             <Button variant="ghost" onClick={() => navigate("/verify")} className="text-xs">
-              חזרה למסך האימות
+              {t("back_to_verify")}
             </Button>
           </div>
         )}

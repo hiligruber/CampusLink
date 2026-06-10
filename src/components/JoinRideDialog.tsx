@@ -11,6 +11,8 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import PlacesAutocomplete from "@/components/PlacesAutocomplete";
 import { MapPin, Info } from "lucide-react";
+import { useLang } from "@/contexts/LanguageContext";
+
 
 interface Props {
   open: boolean;
@@ -32,6 +34,8 @@ export default function JoinRideDialog({
   onConfirm,
 }: Props) {
   const [pickup, setPickup] = useState<string>(rideOrigin);
+  const { t, dir } = useLang();
+
 
   const handleConfirm = () => {
     const final = (pickup || rideOrigin).trim();
@@ -40,10 +44,10 @@ export default function JoinRideDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="rounded-3xl max-w-md" dir="rtl">
+      <DialogContent className="rounded-3xl max-w-md" dir={dir}>
         <DialogHeader>
-          <DialogTitle className="text-right">בקשה להצטרף לנסיעה</DialogTitle>
-          <DialogDescription className="text-right">
+          <DialogTitle className="text-start">{t("join_title")}</DialogTitle>
+          <DialogDescription className="text-start">
             {rideOrigin} ← {rideDestination} · {driverName}
           </DialogDescription>
         </DialogHeader>
@@ -52,20 +56,18 @@ export default function JoinRideDialog({
           <div>
             <Label className="text-xs font-bold mb-1.5 flex items-center gap-1">
               <MapPin className="w-3.5 h-3.5 text-primary" />
-              נקודת איסוף
+              {t("join_pickup_label")}
             </Label>
             <PlacesAutocomplete
               value={pickup}
               onChange={setPickup}
-              placeholder="באיזו כתובת לאסוף אותך?"
+              placeholder={t("join_pickup_ph")}
             />
           </div>
 
           <div className="flex items-start gap-2 text-[11px] text-muted-foreground bg-secondary/40 rounded-xl p-2.5">
             <Info className="w-3.5 h-3.5 shrink-0 mt-0.5 text-primary" />
-            <span>
-              ודאו שנקודת האיסוף קרובה למסלול של הנהג ({rideOrigin}). הנהג רואה את הנקודה לפני שהוא מאשר.
-            </span>
+            <span>{t("join_pickup_hint")}</span>
           </div>
         </div>
 
@@ -76,14 +78,14 @@ export default function JoinRideDialog({
             onClick={() => onOpenChange(false)}
             disabled={submitting}
           >
-            ביטול
+            {t("cancel")}
           </Button>
           <Button
             className="rounded-xl bg-gradient-to-r from-primary to-accent border-0"
             onClick={handleConfirm}
             disabled={submitting || !pickup.trim()}
           >
-            שלח בקשה
+            {t("join_send")}
           </Button>
         </DialogFooter>
       </DialogContent>
