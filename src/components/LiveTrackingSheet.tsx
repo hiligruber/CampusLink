@@ -72,6 +72,7 @@ export default function LiveTrackingSheet({
 
   const mapRef = useRef<google.maps.Map | null>(null);
   const [followDriver, setFollowDriver] = useState(true);
+  const [collapsed, setCollapsed] = useState(false);
   const fittedRef = useRef(false);
 
   // Lock body scroll while open
