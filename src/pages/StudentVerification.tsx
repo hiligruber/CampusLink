@@ -204,6 +204,12 @@ const StudentVerification = () => {
           <Button variant="outline" onClick={signOut} className="w-full rounded-full">
             <LogOut className="w-4 h-4 ml-2" /> התנתק
           </Button>
+          <button
+            onClick={() => navigate("/support")}
+            className="w-full text-xs text-muted-foreground hover:text-foreground underline"
+          >
+            צור קשר עם התמיכה
+          </button>
         </motion.div>
       </div>
     );
@@ -435,6 +441,12 @@ const StudentVerification = () => {
           className="w-full text-xs text-muted-foreground hover:text-foreground flex items-center justify-center gap-1"
         >
           <LogOut className="w-3 h-3" /> התנתק
+        </button>
+        <button
+          onClick={() => navigate("/support")}
+          className="w-full text-xs text-muted-foreground hover:text-foreground underline"
+        >
+          צור קשר עם התמיכה / ערעור על חסימה
         </button>
       </motion.main>
     </div>
