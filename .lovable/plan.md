@@ -1,54 +1,71 @@
-# תיקונים: פרופיל + מפה חיה
+# Profile & Admin Improvements
 
-## 1. תמונת פרופיל עם סימן שאלה
-ב‑`src/pages/Profile.tsx` וב‑`src/pages/EditProfile.tsx` התמונה מוצגת דרך `<img src={avatar_url}>` בלי טיפול בשגיאת טעינה. אם ה‑URL שמור ב‑DB אבל הקובץ נמחק/לא נגיש – הדפדפן מציג אייקון שבור (סימן שאלה).
+## 1. Fix profile picture not rendering
 
-**תיקון:**
-- להוסיף `state` מקומי `imgFailed` ולהאזין ל‑`onError` על ה‑`<img>`.
-- במקרה כשל – להחליף לתצוגת ראשי תיבות (אותו עיצוב שכבר קיים כשאין תמונה).
-- אותו דבר ב‑`EditProfile.tsx`.
-- בנוסף, גם ב‑`AppHeader.tsx` (אם משתמש באותה תמונה) נוסיף את אותו fallback כדי להיות עקביים.
+**Diagnosis** — DB and storage are healthy: `avatar_url` is a full public URL, the `avatars` bucket is public, and the file returns HTTP 200. The screenshot also shows the name as "Student" instead of "Hili Gruber", which means the profile query itself is returning no data on that screen — the avatar is just a symptom of the whole profile not loading.
 
-## 2. שגיאת "ERROR" בלחיצה על "הקש להרחבה"
-ב‑`src/components/DriverLiveTracker.tsx` כפתור ההרחבה הוא `<button>` שעוטף `<GoogleMap>`. ה‑Google Maps יוצר בתוכו אלמנטים אינטראקטיביים (כולל `<button>` פנימיים), מה שיוצר nesting לא חוקי ושגיאת hydration/runtime של React – משם מגיע ה‑"ERROR".
+**Fixes:**
+- `src/pages/Profile.tsx`: switch from `.single()` to `.maybeSingle()` so a missing/blocked row doesn't throw silently. Log query errors. If the row exists but `avatar_url` is empty, fall back to `user.user_metadata.avatar_url` (Google sign‑in photo).
+- `src/components/AvatarImage.tsx`:
+  - Drop the forced `?v=1` cache‑buster (it's only useful right after an upload, and on already‑cached URLs it can interact badly with the SW cache). Keep cache‑busting only when an explicit `version` prop is passed.
+  - Remove `referrerPolicy="no-referrer"` for Supabase URLs (only needed for Google avatars) — keep it conditional.
+  - `onError`: log the failing URL to the console so future regressions are visible.
+- `src/components/AppHeader.tsx` (header avatar) and any other surface that renders a user picture (`RideCard`, `InboxDropdown`, `RideChat`) — verify they all go through `<AvatarImage>` with the same `profiles.avatar_url`. Replace any leftover hardcoded placeholder with `<AvatarImage>`.
+- On `EditProfile` save, also mirror `avatar_url` into `auth.updateUser({ data: { avatar_url } })` so the header (which sometimes reads from session) stays in sync.
 
-**תיקון:**
-- להמיר את הכפתור החיצוני ל‑`<div role="button" tabIndex={0} onClick onKeyDown>` עם אותו עיצוב.
-- לוודא שה‑`LiveTrackingSheet` מתרנדר מחוץ ל‑hierarchy של הכפתור (כבר `fixed inset-0 z-[100]`, תקין).
-- וידוא שאין שגיאות בקונסול אחרי הפתיחה.
+## 2. Reorganize Profile actions
 
-## 3. נקודת איסוף ויעד על המפה
-כיום הקו מצויר אבל אין marker בנקודת האיסוף וגם לא תמיד ביעד הסופי. גם נוסע וגם נהג רואים רק את ה"רכב" ואת הקו.
+In `src/pages/Profile.tsx`, move the action grid (Edit Profile / Settings / Admin / Calendar / Sign Out) **above** `<RideHistory />` in the right column, and give it a clearer card:
 
-**תיקון ב‑`src/hooks/use-driver-live-location.ts`:**
-- להוסיף שני state חדשים: `pickupLatLng` ו‑`destinationLatLng`.
-- בטעינה ראשונית/כשמשתנים `pickupLocation`/`destination` – להריץ `google.maps.Geocoder` פעם אחת לכל אחד מהם ולשמור את הקואורדינטות.
-- להחזיר אותם בנוסף ל‑`location`, `eta`, `directions`.
+```text
+┌─ Profile card (avatar, name, rating) ─┐  ┌─ Hobbies / Music ──────────────┐
+│                                       │  ├─ Quick Actions  (NEW position) ┤
+│                                       │  │  [Edit] [Settings]             │
+│                                       │  │  [Admin?] [Calendar]           │
+│                                       │  │  [Sign Out]                    │
+│                                       │  ├─ Past Trips (RideHistory) ─────┤
+└───────────────────────────────────────┘  └────────────────────────────────┘
+```
 
-**תיקון ב‑`src/components/DriverLiveTracker.tsx` (תצוגת preview):**
-- להוסיף שני `<Marker>` חדשים:
-  - איסוף – ריבוע ירוק/אינדיגו עם כיתוב "איסוף" (SVG inline).
-  - יעד – סיכת מפה ורודה (אותו `destinationIcon` כמו בגיליון).
-- להציג אותם רק כש‑`pickupLatLng` / `destinationLatLng` קיימים.
-- כך גם כשרק קו מסלול מוצג – מבינים איפה הוא מתחיל ונגמר.
+- Wrap the buttons in a titled `glass-card` ("Quick actions" / "פעולות מהירות") so they read as a primary section, not a footer.
+- Make "Edit Profile" the visually prominent button (filled `default` variant), the rest outline.
 
-**תיקון ב‑`src/components/LiveTrackingSheet.tsx`:**
-- להחליף את המרקר היחיד שמתבסס על `directions.routes[0].legs[0].end_location` בשני מרקרים מפורשים מתוך הקואורדינטות המוחזרות מה‑hook:
-  - תמיד מרקר איסוף (כאשר יש `pickupLocation` והנסיעה עוד לא ב‑`in_progress`).
-  - תמיד מרקר יעד.
-- `fitBounds` יורחב לכלול גם את שני המרקרים בנוסף למיקום הנהג ולמסלול.
+## 3. Admin management in Admin Panel
 
-## פרטים טכניים
-- שימוש ב‑Geocoder של Google שכבר טעון דרך `GoogleMapsProvider` – אין צורך בקריאות edge function.
-- ה‑Geocoder ירוץ פעם אחת לכל ערך טקסטואלי (cache פנימי ב‑ref) כדי לא להיכנס ל‑rate limit.
-- אם ה‑Geocoder נכשל – פשוט לא מציגים מרקר; הקו עדיין יצויר.
-- כל הצבעים יישארו מתוך design tokens (primary/accent).
-- אין שינוי ב‑DB, אין שינוי ב‑RLS, אין שינוי ב‑edge functions.
+In `src/pages/Admin.tsx`, add an **"Admin management"** section below the pending‑verifications list:
 
-## קבצים שיתעדכנו
-- `src/pages/Profile.tsx`
-- `src/pages/EditProfile.tsx`
-- `src/components/AppHeader.tsx` (אם רלוונטי)
-- `src/components/DriverLiveTracker.tsx`
-- `src/components/LiveTrackingSheet.tsx`
-- `src/hooks/use-driver-live-location.ts`
+- List current admins: `SELECT user_id, profiles.full_name, profiles.email FROM user_roles JOIN profiles USING(user_id) WHERE role='admin'`.
+- For each admin: show name + email + a "Remove admin" button (disabled for the current user so admins can't lock themselves out).
+- "Add admin" form: email input → look up `profiles` by email → `insert into user_roles (user_id, role) values (..., 'admin')` (the existing unique constraint on `(user_id, role)` prevents duplicates).
+- Show a clear error if the email isn't a registered/verified student.
+
+### RLS
+`user_roles` currently allows only self‑select. To enable admin management we add two policies in a single migration:
+
+```sql
+-- admins can read every roles row
+create policy "Admins can view all roles"
+  on public.user_roles for select to authenticated
+  using (public.has_role(auth.uid(), 'admin'));
+
+-- admins can grant / revoke roles
+create policy "Admins can insert roles"
+  on public.user_roles for insert to authenticated
+  with check (public.has_role(auth.uid(), 'admin'));
+
+create policy "Admins can delete roles"
+  on public.user_roles for delete to authenticated
+  using (public.has_role(auth.uid(), 'admin'));
+```
+
+(No new tables, so no GRANT changes are needed.)
+
+## Files touched
+- `src/pages/Profile.tsx` — reorder + fallback avatar
+- `src/components/AvatarImage.tsx` — remove forced cache‑bust, conditional referrer, error logging
+- `src/pages/EditProfile.tsx` — mirror avatar into auth metadata
+- `src/pages/Admin.tsx` — new "Admin management" section
+- New migration — admin RLS policies on `user_roles`
+
+## Out of scope
+No visual redesign of the rest of the app, no changes to the rating system, navigation, or theming.
