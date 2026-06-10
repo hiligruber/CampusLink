@@ -112,6 +112,7 @@ export default function InboxDropdown() {
               ))
             )}
           </div>
+          </div>
         </DropdownMenuContent>
       </DropdownMenu>
 
