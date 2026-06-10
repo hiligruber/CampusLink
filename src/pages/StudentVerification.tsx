@@ -188,7 +188,7 @@ const StudentVerification = () => {
           animate={{ opacity: 1, y: 0, scale: 1 }}
           className="w-full max-w-md bg-card rounded-3xl border border-border p-8 text-center space-y-5 shadow-lg"
         >
-          <div className="w-16 h-16 rounded-full bg-gradient-to-br from-indigo-500 to-pink-500 mx-auto flex items-center justify-center">
+          <div className="w-16 h-16 rounded-full bg-gradient-to-br from-indigo-600 to-violet-600 mx-auto flex items-center justify-center">
             <Clock className="w-8 h-8 text-white" />
           </div>
           <h2 className="text-2xl font-bold">בקשת ההצטרפות שלך ממתינה לאישור מנהל</h2>
@@ -229,14 +229,14 @@ const StudentVerification = () => {
             <div
               key={i}
               className={`h-1.5 flex-1 rounded-full transition-colors ${
-                i < step ? "bg-gradient-to-r from-indigo-500 to-pink-500" : "bg-muted"
+                i < step ? "bg-gradient-to-r from-indigo-600 to-violet-600" : "bg-muted"
               }`}
             />
           ))}
         </div>
 
         <div className="text-center space-y-2">
-          <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-indigo-500 to-pink-500 mx-auto flex items-center justify-center">
+          <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-indigo-600 to-violet-600 mx-auto flex items-center justify-center">
             <StepIcon className="w-7 h-7 text-white" />
           </div>
           <h1 className="text-2xl font-bold">{stepMeta.title}</h1>
@@ -318,7 +318,7 @@ const StudentVerification = () => {
                           onClick={() => toggle(interests, setInterests, tag)}
                           className={`px-3 py-1.5 rounded-full text-sm border transition-all ${
                             on
-                              ? "bg-gradient-to-r from-indigo-500 to-pink-500 text-white border-transparent shadow-sm scale-105"
+                              ? "bg-gradient-to-r from-indigo-600 to-violet-600 text-white border-transparent shadow-sm scale-105"
                               : "bg-muted/40 border-border hover:bg-muted"
                           }`}
                         >
@@ -343,7 +343,7 @@ const StudentVerification = () => {
                           onClick={() => toggle(music, setMusic, tag)}
                           className={`px-3 py-1.5 rounded-full text-sm border transition-all ${
                             on
-                              ? "bg-gradient-to-r from-indigo-500 to-pink-500 text-white border-transparent shadow-sm scale-105"
+                              ? "bg-gradient-to-r from-indigo-600 to-violet-600 text-white border-transparent shadow-sm scale-105"
                               : "bg-muted/40 border-border hover:bg-muted"
                           }`}
                         >
@@ -407,7 +407,7 @@ const StudentVerification = () => {
             <Button
               onClick={() => setStep((s) => s + 1)}
               disabled={!canNext()}
-              className="rounded-full flex-1 bg-gradient-to-r from-indigo-500 to-pink-500 hover:opacity-95"
+              className="rounded-full flex-1 bg-gradient-to-r from-indigo-600 to-violet-600 hover:opacity-95"
             >
               המשך <ChevronLeft className="w-4 h-4 mr-1" />
             </Button>
@@ -415,7 +415,7 @@ const StudentVerification = () => {
             <Button
               onClick={handleSubmit}
               disabled={!canNext() || submitting}
-              className="rounded-full flex-1 bg-gradient-to-r from-indigo-500 to-pink-500 hover:opacity-95"
+              className="rounded-full flex-1 bg-gradient-to-r from-indigo-600 to-violet-600 hover:opacity-95"
             >
               {submitting ? (
                 <Loader2 className="w-4 h-4 animate-spin" />
