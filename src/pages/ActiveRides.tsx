@@ -60,6 +60,7 @@ const ActiveRides = () => {
   const [chat, setChat] = useState<{ rideId: string; userId: string; name: string } | null>(null);
   const [trackingRide, setTrackingRide] = useState<ActiveRideItem | null>(null);
   const [ratingTarget, setRatingTarget] = useState<{ rideId: string; rateeId: string; rateeName: string } | null>(null);
+  const [handledRatings, setHandledRatings] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     if (!user) return;
