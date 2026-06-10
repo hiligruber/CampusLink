@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Send, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import { useLang } from "@/contexts/LanguageContext";
 import { toast } from "sonner";
 
 interface Message {
@@ -25,10 +26,10 @@ interface Props {
   otherUserName: string;
 }
 
-const PRESETS = ["אני בכניסה", "הגעתי", "מאחר ב-2 דק׳", "איפה אתה?", "תודה!"];
-
 export default function RideChat({ open, onOpenChange, rideId, otherUserId, otherUserName }: Props) {
   const { user } = useAuth();
+  const { t, lang, dir } = useLang();
+  const PRESETS = [t("chat_preset_1"), t("chat_preset_2"), t("chat_preset_3"), t("chat_preset_4"), t("chat_preset_5")];
   const [messages, setMessages] = useState<Message[]>([]);
   const [text, setText] = useState("");
   const [sending, setSending] = useState(false);
