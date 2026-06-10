@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -43,10 +43,12 @@ interface ActiveRideItem {
   bookingId?: string;
 }
 
+// Lower rank = higher priority (top of list).
+// Live phases first, then upcoming, then completed.
 const phaseRank: Record<RidePhase, number> = {
-  en_route: 0,
+  in_progress: 0,
   picked_up: 1,
-  in_progress: 2,
+  en_route: 2,
   scheduled: 3,
   completed: 4,
 };
@@ -56,6 +58,8 @@ const ActiveRides = () => {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { t, lang } = useLang();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const focusRideId = searchParams.get("ride");
 
   const [chat, setChat] = useState<{ rideId: string; userId: string; name: string } | null>(null);
   const [trackingRide, setTrackingRide] = useState<ActiveRideItem | null>(null);
@@ -181,15 +185,32 @@ const ActiveRides = () => {
       items.sort((a, b) => {
         const r = phaseRank[a.phase] - phaseRank[b.phase];
         if (r !== 0) return r;
-        return new Date(a.departureTime).getTime() - new Date(b.departureTime).getTime();
+        // Completed: most recent first; others: soonest first
+        const ta = new Date(a.departureTime).getTime();
+        const tb = new Date(b.departureTime).getTime();
+        return a.phase === "completed" ? tb - ta : ta - tb;
       });
       return items;
     },
   });
 
+  // Scroll focused ride (from notification deep link) into view
+  useEffect(() => {
+    if (!focusRideId || !items.length) return;
+    const el = document.getElementById(`ride-${focusRideId}`);
+    if (el) {
+      el.scrollIntoView({ behavior: "smooth", block: "center" });
+      const timer = setTimeout(() => {
+        setSearchParams({}, { replace: true });
+      }, 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [focusRideId, items, setSearchParams]);
+
   // Rating dialog opens only after the driver explicitly completes the ride
   // (via DriverLocationSharer onComplete) or when the user clicks the rate
   // button on a completed ride card. No automatic popup on screen entry.
+
 
   return (
     <div className="min-h-screen pb-24">
@@ -225,8 +246,15 @@ const ActiveRides = () => {
             const otherUserId = it.role === "passenger" ? it.driverId : it.passengerId;
             const otherUserName = it.role === "passenger" ? it.driverName : it.passengerName ?? t("passenger_short");
             const isCompleted = it.phase === "completed";
+            const isFocused = focusRideId === it.rideId;
             return (
-              <div key={it.rideId + it.role} className="glass-card rounded-3xl overflow-hidden">
+              <div
+                key={it.rideId + it.role}
+                id={`ride-${it.rideId}`}
+                className={`glass-card rounded-3xl overflow-hidden transition-all ${
+                  isFocused ? "ring-2 ring-primary shadow-pop scale-[1.01]" : ""
+                }`}
+              >
                 <div className="p-5 space-y-3">
                   <div className="flex items-center justify-between gap-2">
                     <div className="flex items-center gap-2">
