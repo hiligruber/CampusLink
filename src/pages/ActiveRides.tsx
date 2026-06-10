@@ -213,11 +213,12 @@ const ActiveRides = () => {
       const rateeId = c.role === "passenger" ? c.driverId : c.passengerId;
       const rateeName = c.role === "passenger" ? c.driverName : c.passengerName;
       if (!rateeId || !rateeName) continue;
-      if (ratedSet.has(`${c.rideId}:${rateeId}`)) continue;
+      const key = `${c.rideId}:${rateeId}`;
+      if (ratedSet.has(key) || handledRatings.has(key)) continue;
       setRatingTarget({ rideId: c.rideId, rateeId, rateeName });
       break;
     }
-  }, [user, completedRides, myRatings, ratingTarget]);
+  }, [user, completedRides, myRatings, ratingTarget, handledRatings]);
 
   return (
     <div className="min-h-screen pb-24">
