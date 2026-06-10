@@ -1,11 +1,10 @@
 import { useEffect, useRef, useState } from "react";
 import { GoogleMap, Marker, DirectionsRenderer } from "@react-google-maps/api";
 import { useDriverLiveLocation } from "@/hooks/use-driver-live-location";
-import { Button } from "@/components/ui/button";
-import { X, Navigation, Clock, MapPin, Locate, ExternalLink, Loader2 } from "lucide-react";
+import { useLang } from "@/contexts/LanguageContext";
+import { X, Clock, MapPin, Locate, Loader2, AlertTriangle, Navigation } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
-import { getExternalMapHrefFromTarget, openExternalUrl } from "@/lib/external-navigation";
 
 interface Props {
   open: boolean;
@@ -62,20 +61,22 @@ export default function LiveTrackingSheet({
   phase = "scheduled",
   driverName,
 }: Props) {
-  const { location, eta, directions, loading, pickupLatLng, destinationLatLng } = useDriverLiveLocation({
-    rideId,
-    destination,
-    pickupLocation,
-    phase,
-    enabled: open,
-  });
+  const { t, dir } = useLang();
+  const {
+    location,
+    loading,
+    pickupLatLng,
+    destinationLatLng,
+    toPickup,
+    toDestination,
+    routeError,
+  } = useDriverLiveLocation({ rideId, destination, pickupLocation, phase, enabled: open });
 
   const mapRef = useRef<google.maps.Map | null>(null);
   const [followDriver, setFollowDriver] = useState(true);
   const [collapsed, setCollapsed] = useState(false);
   const fittedRef = useRef(false);
 
-  // Lock body scroll while open
   useEffect(() => {
     if (!open) return;
     const prev = document.body.style.overflow;
@@ -85,7 +86,6 @@ export default function LiveTrackingSheet({
     };
   }, [open]);
 
-  // Esc to close
   useEffect(() => {
     if (!open) return;
     const onKey = (e: KeyboardEvent) => e.key === "Escape" && onOpenChange(false);
@@ -93,12 +93,13 @@ export default function LiveTrackingSheet({
     return () => window.removeEventListener("keydown", onKey);
   }, [open, onOpenChange]);
 
-  // Fit bounds once we have directions; afterwards just pan if followDriver
   useEffect(() => {
     if (!mapRef.current || !location) return;
-    if (directions && !fittedRef.current) {
+    const anyRoute = toPickup?.directions || toDestination?.directions;
+    if (anyRoute && !fittedRef.current) {
       const bounds = new google.maps.LatLngBounds();
-      directions.routes[0]?.overview_path.forEach((p) => bounds.extend(p));
+      toPickup?.directions.routes[0]?.overview_path.forEach((p) => bounds.extend(p));
+      toDestination?.directions.routes[0]?.overview_path.forEach((p) => bounds.extend(p));
       bounds.extend({ lat: location.lat, lng: location.lng });
       if (pickupLatLng) bounds.extend(pickupLatLng);
       if (destinationLatLng) bounds.extend(destinationLatLng);
@@ -109,31 +110,28 @@ export default function LiveTrackingSheet({
     if (followDriver) {
       mapRef.current.panTo({ lat: location.lat, lng: location.lng });
     }
-  }, [location, directions, followDriver, pickupLatLng, destinationLatLng]);
+  }, [location, toPickup, toDestination, followDriver, pickupLatLng, destinationLatLng]);
 
-  // Reset fit when sheet reopens
   useEffect(() => {
     if (!open) fittedRef.current = false;
   }, [open]);
 
   const phaseLabel =
     phase === "en_route"
-      ? "הנהג בדרך אליך"
+      ? t("driver_on_way_to_pickup")
       : phase === "picked_up"
-      ? "אספת את הנוסעים"
+      ? t("phase_picked_passengers")
       : phase === "in_progress"
-      ? "בדרך ליעד"
+      ? t("phase_to_destination")
       : phase === "completed"
-      ? "הנסיעה הסתיימה"
-      : "ממתין ליציאה";
-
-  const navTarget = phase === "en_route" && pickupLocation ? pickupLocation : destination;
-  const wazeUrl = `https://waze.com/ul?q=${encodeURIComponent(navTarget)}&navigate=yes`;
-  const gmapsUrl = `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(navTarget)}`;
+      ? t("phase_ride_finished")
+      : t("phase_awaiting_start");
 
   const updatedSecAgo = location
     ? Math.floor((Date.now() - new Date(location.updated_at).getTime()) / 1000)
     : null;
+
+  const showWaitingForRoute = location && !toPickup && !toDestination && !routeError;
 
   return (
     <AnimatePresence>
@@ -146,20 +144,10 @@ export default function LiveTrackingSheet({
           className="fixed inset-0 z-[100] bg-background"
           role="dialog"
           aria-modal="true"
-          aria-label="מעקב חי אחרי הנהג"
+          aria-label={t("live_aria_track")}
+          dir={dir}
         >
-          {/* Map fills the screen */}
-          <div
-            className="absolute inset-0"
-            onClickCapture={(event) => {
-              const href = getExternalMapHrefFromTarget(event.target);
-              if (!href) return;
-
-              event.preventDefault();
-              event.stopPropagation();
-              openExternalUrl(href);
-            }}
-          >
+          <div className="absolute inset-0">
             {location ? (
               <GoogleMap
                 mapContainerStyle={{ width: "100%", height: "100%" }}
@@ -173,7 +161,8 @@ export default function LiveTrackingSheet({
                   disableDefaultUI: true,
                   zoomControl: true,
                   zoomControlOptions: {
-                    position: typeof google !== "undefined" ? google.maps.ControlPosition.LEFT_CENTER : undefined,
+                    position:
+                      typeof google !== "undefined" ? google.maps.ControlPosition.LEFT_CENTER : undefined,
                   },
                   gestureHandling: "greedy",
                   clickableIcons: false,
@@ -183,11 +172,12 @@ export default function LiveTrackingSheet({
                   ],
                 }}
               >
-                {directions && (
+                {toPickup?.directions && (
                   <DirectionsRenderer
-                    directions={directions}
+                    directions={toPickup.directions}
                     options={{
                       suppressMarkers: true,
+                      preserveViewport: true,
                       polylineOptions: {
                         strokeColor: "hsl(var(--primary))",
                         strokeWeight: 6,
@@ -196,19 +186,40 @@ export default function LiveTrackingSheet({
                     }}
                   />
                 )}
-                <Marker position={{ lat: location.lat, lng: location.lng }} icon={carIcon(location.heading)} title="הנהג" />
+                {toDestination?.directions && (
+                  <DirectionsRenderer
+                    directions={toDestination.directions}
+                    options={{
+                      suppressMarkers: true,
+                      preserveViewport: true,
+                      polylineOptions: {
+                        strokeColor: "hsl(var(--accent))",
+                        strokeWeight: 6,
+                        strokeOpacity: 0.7,
+                        ...(toPickup?.directions
+                          ? { icons: [{ icon: { path: "M 0,-1 0,1", strokeOpacity: 1, scale: 3 }, offset: "0", repeat: "14px" }], strokeOpacity: 0 }
+                          : {}),
+                      },
+                    }}
+                  />
+                )}
+                <Marker
+                  position={{ lat: location.lat, lng: location.lng }}
+                  icon={carIcon(location.heading)}
+                  title={t("live_marker_driver")}
+                />
                 {pickupLatLng && phase !== "in_progress" && phase !== "completed" && (
                   <Marker
                     position={pickupLatLng}
                     icon={pinIcon("#10b981", "A")}
-                    title={`איסוף: ${pickupLocation ?? ""}`}
+                    title={`${t("live_marker_pickup")}: ${pickupLocation ?? ""}`}
                   />
                 )}
                 {destinationLatLng && (
                   <Marker
                     position={destinationLatLng}
                     icon={pinIcon("#ec4899", "B")}
-                    title={`יעד: ${destination}`}
+                    title={`${t("live_marker_destination")}: ${destination}`}
                   />
                 )}
               </GoogleMap>
@@ -217,73 +228,69 @@ export default function LiveTrackingSheet({
                 {loading ? (
                   <>
                     <Loader2 className="w-8 h-8 text-primary animate-spin" />
-                    <p className="text-sm text-muted-foreground">טוען מיקום נהג…</p>
+                    <p className="text-sm text-muted-foreground">{t("live_loading_driver")}</p>
                   </>
                 ) : (
                   <>
                     <Navigation className="w-10 h-10 text-muted-foreground/40" />
-                    <p className="text-sm font-semibold">אין עדיין מיקום של הנהג</p>
-                    <p className="text-xs text-muted-foreground">ברגע שהנהג ייצא לדרך זה יופיע כאן</p>
+                    <p className="text-sm font-semibold">{t("live_no_location_title")}</p>
+                    <p className="text-xs text-muted-foreground">{t("live_no_location_desc")}</p>
                   </>
                 )}
               </div>
             )}
           </div>
 
-          {/* Close button */}
           <button
             onClick={() => onOpenChange(false)}
-            aria-label="סגור מפה"
-            className="absolute top-4 right-4 z-10 w-11 h-11 rounded-full bg-background/95 backdrop-blur shadow-lg flex items-center justify-center hover:scale-105 transition border border-border"
+            aria-label={t("live_aria_close")}
+            className="absolute top-4 end-4 z-10 w-11 h-11 rounded-full bg-background/95 backdrop-blur shadow-lg flex items-center justify-center hover:scale-105 transition border border-border"
           >
             <X className="w-5 h-5" />
           </button>
 
-          {/* Recenter button (only when user dragged away) */}
           {location && !followDriver && (
             <button
               onClick={() => {
                 setFollowDriver(true);
-                if (mapRef.current && location) mapRef.current.panTo({ lat: location.lat, lng: location.lng });
+                if (mapRef.current) mapRef.current.panTo({ lat: location.lat, lng: location.lng });
               }}
-              aria-label="מרכז על הנהג"
-              className="absolute bottom-[260px] left-4 z-10 w-12 h-12 rounded-full bg-primary text-primary-foreground shadow-xl flex items-center justify-center hover:scale-105 transition"
+              aria-label={t("live_aria_center")}
+              className="absolute bottom-[260px] start-4 z-10 w-12 h-12 rounded-full bg-primary text-primary-foreground shadow-xl flex items-center justify-center hover:scale-105 transition"
             >
               <Locate className="w-5 h-5" />
             </button>
           )}
 
-          {/* Bottom info sheet — collapsible so the map gets room */}
           <motion.div
             initial={{ y: 100 }}
             animate={{ y: 0 }}
             transition={{ type: "spring", damping: 25, stiffness: 220 }}
-            className="absolute bottom-0 inset-x-0 z-10 bg-background/95 backdrop-blur-xl rounded-t-3xl shadow-2xl border-t border-border max-h-[45vh] overflow-y-auto"
+            className="absolute bottom-0 inset-x-0 z-10 bg-background/95 backdrop-blur-xl rounded-t-3xl shadow-2xl border-t border-border max-h-[50vh] overflow-y-auto"
           >
-            {/* Drag handle / tap to toggle */}
             <button
               type="button"
               onClick={() => setCollapsed((c) => !c)}
-              aria-label={collapsed ? "הרחב פרטים" : "כווץ פרטים"}
+              aria-label={collapsed ? t("live_aria_expand") : t("live_aria_collapse")}
               className="w-full flex justify-center pt-2.5 pb-1.5 cursor-pointer"
             >
               <span className="w-12 h-1.5 rounded-full bg-muted-foreground/40" />
             </button>
 
-            {/* Always-visible compact status row */}
             <div className="px-5 pb-3 flex items-center justify-between gap-3">
               <div className="flex items-center gap-2 min-w-0">
-                <span className={cn(
-                  "w-2.5 h-2.5 rounded-full shrink-0",
-                  location ? "bg-emerald-500 animate-pulse" : "bg-muted-foreground/40"
-                )} />
+                <span
+                  className={cn(
+                    "w-2.5 h-2.5 rounded-full shrink-0",
+                    location ? "bg-emerald-500 animate-pulse" : "bg-muted-foreground/40",
+                  )}
+                />
                 <span className="text-sm font-bold truncate">{phaseLabel}</span>
               </div>
-              {eta && (
+              {(toPickup?.eta || toDestination?.eta) && (
                 <span className="inline-flex items-center gap-1 text-xs font-bold px-2.5 py-1 rounded-full bg-primary/10 text-primary shrink-0">
                   <Clock className="w-3 h-3" />
-                  {eta.duration}
-                  {eta.distance ? <span className="text-muted-foreground font-semibold">· {eta.distance}</span> : null}
+                  {(toPickup?.eta ?? toDestination?.eta)!.duration}
                 </span>
               )}
             </div>
@@ -300,73 +307,76 @@ export default function LiveTrackingSheet({
                 >
                   <div className="px-5 pb-6 space-y-4">
                     {updatedSecAgo !== null && (
-                      <p className="text-[11px] text-muted-foreground text-right">
-                        עודכן {updatedSecAgo < 60 ? `לפני ${updatedSecAgo}ש'` : "לפני כדקה"}
+                      <p className="text-[11px] text-muted-foreground text-end">
+                        {t("live_updated_ago")}{" "}
+                        {updatedSecAgo < 60
+                          ? t("live_seconds_ago", { s: String(updatedSecAgo) })
+                          : t("live_about_minute_ago")}
                       </p>
                     )}
 
-                    {/* Big ETA */}
-                    {eta ? (
-                      <div className="flex items-end gap-4 bg-gradient-to-br from-primary/10 to-accent/10 rounded-2xl p-4">
-                        <div>
-                          <p className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
-                            {phase === "en_route" ? "מגיע אליך בעוד" : "ETA"}
-                          </p>
-                          <p className="text-3xl font-black bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent leading-tight">
-                            {eta.duration}
-                          </p>
-                        </div>
-                        <div className="mr-auto text-right">
-                          <p className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">מרחק</p>
-                          <p className="text-lg font-bold">{eta.distance}</p>
-                        </div>
-                      </div>
-                    ) : (
-                      <div className="bg-secondary/60 rounded-2xl p-4 flex items-center gap-2 text-sm text-muted-foreground">
-                        <Loader2 className="w-4 h-4 animate-spin" />
-                        מחשב זמן הגעה…
+                    {routeError && (
+                      <div className="bg-destructive/10 text-destructive rounded-2xl p-3 flex items-center gap-2 text-sm">
+                        <AlertTriangle className="w-4 h-4" />
+                        {t("route_error")}
                       </div>
                     )}
 
-                    {/* Route line */}
-                    <div className="space-y-2">
-                      {pickupLocation && phase !== "in_progress" && (
-                        <div className="flex items-center gap-3 text-sm">
-                          <span className="w-2.5 h-2.5 rounded-sm bg-primary shrink-0" />
-                          <span className="font-semibold truncate">{pickupLocation}</span>
-                          <span className="text-[10px] text-muted-foreground mr-auto">איסוף</span>
-                        </div>
-                      )}
-                      <div className="flex items-center gap-3 text-sm">
-                        <span className="w-2.5 h-2.5 rounded-sm bg-accent shrink-0" />
-                        <span className="font-semibold truncate">{destination}</span>
-                        <span className="text-[10px] text-muted-foreground mr-auto">יעד</span>
+                    {showWaitingForRoute && !routeError && (
+                      <div className="bg-secondary/60 rounded-2xl p-4 flex items-center gap-2 text-sm text-muted-foreground">
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        {t("computing_eta")}
                       </div>
-                    </div>
+                    )}
 
-                    {/* Actions */}
-                    <div className="grid grid-cols-2 gap-2">
-                      <Button
-                        variant="outline"
-                        className="rounded-xl h-11 font-bold gap-1.5"
-                        onClick={() => openExternalUrl(wazeUrl)}
-                      >
-                        <Navigation className="w-4 h-4" />
-                        פתח ב‑Waze
-                      </Button>
-                      <Button
-                        className="rounded-xl h-11 font-bold gap-1.5 bg-gradient-to-r from-primary to-accent border-0"
-                        onClick={() => openExternalUrl(gmapsUrl)}
-                      >
-                        <ExternalLink className="w-4 h-4" />
-                        Google Maps
-                      </Button>
-                    </div>
+                    {/* Two segments breakdown */}
+                    {(toPickup?.eta || toDestination?.eta) && (
+                      <div className="grid grid-cols-1 gap-2">
+                        {toPickup?.eta && (
+                          <div className="flex items-center gap-3 bg-primary/10 rounded-2xl p-3">
+                            <span className="w-2.5 h-2.5 rounded-sm bg-primary shrink-0" />
+                            <div className="min-w-0 flex-1">
+                              <p className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
+                                {t("eta_to_pickup")}
+                              </p>
+                              <p className="text-sm font-semibold truncate">{pickupLocation}</p>
+                            </div>
+                            <div className="text-end shrink-0">
+                              <p className="text-lg font-black text-primary leading-tight">
+                                {toPickup.eta.duration}
+                              </p>
+                              <p className="text-[11px] text-muted-foreground font-semibold">
+                                {toPickup.eta.distance}
+                              </p>
+                            </div>
+                          </div>
+                        )}
+                        {toDestination?.eta && (
+                          <div className="flex items-center gap-3 bg-accent/10 rounded-2xl p-3">
+                            <span className="w-2.5 h-2.5 rounded-sm bg-accent shrink-0" />
+                            <div className="min-w-0 flex-1">
+                              <p className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
+                                {t("eta_to_destination")}
+                              </p>
+                              <p className="text-sm font-semibold truncate">{destination}</p>
+                            </div>
+                            <div className="text-end shrink-0">
+                              <p className="text-lg font-black text-accent-foreground leading-tight">
+                                {toDestination.eta.duration}
+                              </p>
+                              <p className="text-[11px] text-muted-foreground font-semibold">
+                                {toDestination.eta.distance}
+                              </p>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    )}
 
                     {driverName && (
                       <p className="text-center text-xs text-muted-foreground pt-1">
-                        <MapPin className="w-3 h-3 inline -mt-0.5 ml-1" />
-                        מעקב חי אחרי <span className="font-bold text-foreground">{driverName}</span>
+                        <MapPin className="w-3 h-3 inline -mt-0.5 me-1" />
+                        {t("live_track_of", { name: driverName })}
                       </p>
                     )}
                   </div>

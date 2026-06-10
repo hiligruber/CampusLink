@@ -22,6 +22,11 @@ export interface LatLng {
   lng: number;
 }
 
+export interface RouteSegment {
+  directions: google.maps.DirectionsResult;
+  eta: EtaInfo;
+}
+
 interface Options {
   rideId: string;
   destination: string;
@@ -51,9 +56,37 @@ async function geocodeOnce(address: string): Promise<LatLng | null> {
   });
 }
 
+function routePromise(
+  origin: google.maps.LatLngLiteral | string,
+  destination: google.maps.LatLngLiteral | string,
+): Promise<RouteSegment | null> {
+  return new Promise((resolve) => {
+    if (typeof google === "undefined") return resolve(null);
+    const service = new google.maps.DirectionsService();
+    service.route(
+      { origin, destination, travelMode: google.maps.TravelMode.DRIVING },
+      (result, status) => {
+        if (status !== "OK" || !result) return resolve(null);
+        const leg = result.routes[0]?.legs[0];
+        if (!leg) return resolve(null);
+        resolve({
+          directions: result,
+          eta: {
+            duration: leg.duration?.text ?? "",
+            distance: leg.distance?.text ?? "",
+            durationSec: leg.duration?.value ?? 0,
+            distanceMeters: leg.distance?.value ?? 0,
+          },
+        });
+      },
+    );
+  });
+}
+
 /**
- * Subscribes to driver_locations for a ride and computes a throttled ETA
- * using the Google Directions service. Shared between map preview & fullscreen sheet.
+ * Subscribes to driver_locations for a ride and computes route segments.
+ * - When en_route: TWO segments (driver → pickup, pickup → destination).
+ * - When picked_up/in_progress: ONE segment (driver → destination).
  */
 export function useDriverLiveLocation({
   rideId,
@@ -63,32 +96,31 @@ export function useDriverLiveLocation({
   enabled = true,
 }: Options) {
   const [location, setLocation] = useState<LiveLocation | null>(null);
-  const [eta, setEta] = useState<EtaInfo | null>(null);
-  const [directions, setDirections] = useState<google.maps.DirectionsResult | null>(null);
   const [loading, setLoading] = useState(true);
   const [pickupLatLng, setPickupLatLng] = useState<LatLng | null>(null);
   const [destinationLatLng, setDestinationLatLng] = useState<LatLng | null>(null);
+  const [toPickup, setToPickup] = useState<RouteSegment | null>(null);
+  const [toDestination, setToDestination] = useState<RouteSegment | null>(null);
+  const [routeError, setRouteError] = useState(false);
   const lastEtaCalcRef = useRef(0);
 
-  // שימוש ב-ref כדי להחזיק את הערוץ בצורה בטוחה בין רינדורים
   const channelRef = useRef<RealtimeChannel | null>(null);
-
-  // מזהה ייחודי קבוע לכל מופע (Instance) של ה-Hook כדי למנוע התנגשויות ב-Cache של Supabase
   const hookInstanceId = useRef(Math.random().toString(36).substring(7));
 
-  // 1. הבאת המיקום הראשוני (Fetch Initial Data)
+  // 1. Fetch initial driver location
   useEffect(() => {
     if (!enabled || !rideId) return;
-
     let active = true;
     setLoading(true);
 
-    const fetchInitialLocation = async () => {
+    (async () => {
       try {
-        const { data, error } = await supabase.from("driver_locations").select("*").eq("ride_id", rideId).maybeSingle();
-
+        const { data, error } = await supabase
+          .from("driver_locations")
+          .select("*")
+          .eq("ride_id", rideId)
+          .maybeSingle();
         if (error) throw error;
-
         if (active) {
           setLocation((data as LiveLocation) ?? null);
           setLoading(false);
@@ -97,16 +129,14 @@ export function useDriverLiveLocation({
         console.error("Error fetching initial driver location:", err);
         if (active) setLoading(false);
       }
-    };
-
-    fetchInitialLocation();
+    })();
 
     return () => {
       active = false;
     };
   }, [rideId, enabled]);
 
-  // 2. ניהול ה-Realtime בצורה חסינת-קריסות לחלוטין (בעזרת שם ערוץ דינמי וייחודי)
+  // 2. Realtime subscription
   useEffect(() => {
     if (!enabled || !rideId) {
       if (channelRef.current) {
@@ -115,18 +145,14 @@ export function useDriverLiveLocation({
       }
       return;
     }
-
-    // הגנה אגרסיבית: ניקוי ערוץ קודם במידה והיה קיים ב-Ref
     if (channelRef.current) {
       supabase.removeChannel(channelRef.current);
       channelRef.current = null;
     }
 
-    // שם ערוץ ייחודי לחלוטין שמונע מ-Supabase למחזר ערוצים קיימים שכבר עברו subscribe
     const channelName = `driver-loc-${rideId}-${hookInstanceId.current}`;
     const channel = supabase.channel(channelName);
 
-    // הגדרת המאזין (מובטח במאה אחוז שקורה לפני ה-subscribe)
     channel.on(
       "postgres_changes",
       {
@@ -138,19 +164,17 @@ export function useDriverLiveLocation({
       (payload) => {
         if (payload.eventType === "DELETE") {
           setLocation(null);
-          setEta(null);
-          setDirections(null);
+          setToPickup(null);
+          setToDestination(null);
         } else {
           setLocation(payload.new as LiveLocation);
         }
       },
     );
 
-    // שמירה ב-Ref וביצוע הרישום
     channelRef.current = channel;
     channel.subscribe();
 
-    // פונקציית ניקוי רשמית של ה-Effect
     return () => {
       if (channelRef.current) {
         const activeChannel = channelRef.current;
@@ -167,13 +191,11 @@ export function useDriverLiveLocation({
     lastEtaCalcRef.current = 0;
   }, [phase]);
 
-  // Geocode pickup
+  // Geocode pickup & destination
   useEffect(() => {
     let active = true;
     if (pickupLocation) {
-      geocodeOnce(pickupLocation).then((ll) => {
-        if (active) setPickupLatLng(ll);
-      });
+      geocodeOnce(pickupLocation).then((ll) => active && setPickupLatLng(ll));
     } else {
       setPickupLatLng(null);
     }
@@ -182,51 +204,69 @@ export function useDriverLiveLocation({
     };
   }, [pickupLocation]);
 
-  // Geocode destination
   useEffect(() => {
     let active = true;
     if (destination) {
-      geocodeOnce(destination).then((ll) => {
-        if (active) setDestinationLatLng(ll);
-      });
+      geocodeOnce(destination).then((ll) => active && setDestinationLatLng(ll));
     }
     return () => {
       active = false;
     };
   }, [destination]);
 
-  // ETA Calculation
+  // Compute route segments
   useEffect(() => {
     if (!location || typeof google === "undefined") return;
-    const target = phase === "en_route" && pickupLocation ? pickupLocation : destination;
-    if (!target) return;
+    if (phase === "completed") return;
+
     const now = Date.now();
-    if (now - lastEtaCalcRef.current < 15000) return;
+    if (now - lastEtaCalcRef.current < 8000) return;
     lastEtaCalcRef.current = now;
 
-    const service = new google.maps.DirectionsService();
-    service.route(
-      {
-        origin: { lat: location.lat, lng: location.lng },
-        destination: target,
-        travelMode: google.maps.TravelMode.DRIVING,
-      },
-      (result, status) => {
-        if (status === "OK" && result) {
-          setDirections(result);
-          const leg = result.routes[0]?.legs[0];
-          if (leg) {
-            setEta({
-              duration: leg.duration?.text ?? "",
-              distance: leg.distance?.text ?? "",
-              durationSec: leg.duration?.value ?? 0,
-              distanceMeters: leg.distance?.value ?? 0,
-            });
-          }
+    let cancelled = false;
+    (async () => {
+      try {
+        const origin = { lat: location.lat, lng: location.lng };
+        if (phase === "en_route" && pickupLocation) {
+          const [seg1, seg2] = await Promise.all([
+            routePromise(origin, pickupLocation),
+            destination ? routePromise(pickupLocation, destination) : Promise.resolve(null),
+          ]);
+          if (cancelled) return;
+          setToPickup(seg1);
+          setToDestination(seg2);
+          setRouteError(!seg1);
+        } else if (destination) {
+          const seg = await routePromise(origin, destination);
+          if (cancelled) return;
+          setToPickup(null);
+          setToDestination(seg);
+          setRouteError(!seg);
         }
-      },
-    );
+      } catch (err) {
+        console.error("Route calculation error:", err);
+        if (!cancelled) setRouteError(true);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
   }, [location, destination, pickupLocation, phase]);
 
-  return { location, eta, directions, loading, pickupLatLng, destinationLatLng };
+  // Primary ETA (next segment) for backward compatibility
+  const eta = toPickup?.eta ?? toDestination?.eta ?? null;
+  const directions = toPickup?.directions ?? toDestination?.directions ?? null;
+
+  return {
+    location,
+    loading,
+    pickupLatLng,
+    destinationLatLng,
+    toPickup,
+    toDestination,
+    eta,
+    directions,
+    routeError,
+  };
 }
