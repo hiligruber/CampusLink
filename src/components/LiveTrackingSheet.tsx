@@ -253,96 +253,126 @@ export default function LiveTrackingSheet({
             </button>
           )}
 
-          {/* Bottom info sheet */}
+          {/* Bottom info sheet — collapsible so the map gets room */}
           <motion.div
             initial={{ y: 100 }}
             animate={{ y: 0 }}
             transition={{ type: "spring", damping: 25, stiffness: 220 }}
-            className="absolute bottom-0 inset-x-0 z-10 bg-background/95 backdrop-blur-xl rounded-t-3xl shadow-2xl border-t border-border"
+            className="absolute bottom-0 inset-x-0 z-10 bg-background/95 backdrop-blur-xl rounded-t-3xl shadow-2xl border-t border-border max-h-[45vh] overflow-y-auto"
           >
-            <div className="mx-auto w-12 h-1.5 rounded-full bg-muted-foreground/30 mt-2.5 mb-3" />
-            <div className="px-5 pb-6 space-y-4">
-              {/* Status row */}
-              <div className="flex items-center justify-between gap-3">
-                <div className="flex items-center gap-2">
-                  <span className={cn(
-                    "w-2.5 h-2.5 rounded-full",
-                    location ? "bg-emerald-500 animate-pulse" : "bg-muted-foreground/40"
-                  )} />
-                  <span className="text-sm font-bold">{phaseLabel}</span>
-                </div>
-                {updatedSecAgo !== null && (
-                  <span className="text-[11px] text-muted-foreground">
-                    עודכן {updatedSecAgo < 60 ? `לפני ${updatedSecAgo}ש'` : "לפני כדקה"}
-                  </span>
-                )}
+            {/* Drag handle / tap to toggle */}
+            <button
+              type="button"
+              onClick={() => setCollapsed((c) => !c)}
+              aria-label={collapsed ? "הרחב פרטים" : "כווץ פרטים"}
+              className="w-full flex justify-center pt-2.5 pb-1.5 cursor-pointer"
+            >
+              <span className="w-12 h-1.5 rounded-full bg-muted-foreground/40" />
+            </button>
+
+            {/* Always-visible compact status row */}
+            <div className="px-5 pb-3 flex items-center justify-between gap-3">
+              <div className="flex items-center gap-2 min-w-0">
+                <span className={cn(
+                  "w-2.5 h-2.5 rounded-full shrink-0",
+                  location ? "bg-emerald-500 animate-pulse" : "bg-muted-foreground/40"
+                )} />
+                <span className="text-sm font-bold truncate">{phaseLabel}</span>
               </div>
-
-              {/* Big ETA */}
-              {eta ? (
-                <div className="flex items-end gap-4 bg-gradient-to-br from-primary/10 to-accent/10 rounded-2xl p-4">
-                  <div>
-                    <p className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
-                      {phase === "en_route" ? "מגיע אליך בעוד" : "ETA"}
-                    </p>
-                    <p className="text-3xl font-black bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent leading-tight">
-                      {eta.duration}
-                    </p>
-                  </div>
-                  <div className="mr-auto text-right">
-                    <p className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">מרחק</p>
-                    <p className="text-lg font-bold">{eta.distance}</p>
-                  </div>
-                </div>
-              ) : (
-                <div className="bg-secondary/60 rounded-2xl p-4 flex items-center gap-2 text-sm text-muted-foreground">
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                  מחשב זמן הגעה…
-                </div>
-              )}
-
-              {/* Route line */}
-              <div className="space-y-2">
-                {pickupLocation && phase !== "in_progress" && (
-                  <div className="flex items-center gap-3 text-sm">
-                    <span className="w-2.5 h-2.5 rounded-sm bg-primary shrink-0" />
-                    <span className="font-semibold truncate">{pickupLocation}</span>
-                    <span className="text-[10px] text-muted-foreground mr-auto">איסוף</span>
-                  </div>
-                )}
-                <div className="flex items-center gap-3 text-sm">
-                  <span className="w-2.5 h-2.5 rounded-sm bg-accent shrink-0" />
-                  <span className="font-semibold truncate">{destination}</span>
-                  <span className="text-[10px] text-muted-foreground mr-auto">יעד</span>
-                </div>
-              </div>
-
-              {/* Actions */}
-              <div className="grid grid-cols-2 gap-2">
-                <Button
-                  variant="outline"
-                  className="rounded-xl h-11 font-bold gap-1.5"
-                  onClick={() => openExternalUrl(wazeUrl)}
-                >
-                  <Navigation className="w-4 h-4" />
-                  פתח ב‑Waze
-                </Button>
-                <Button
-                  className="rounded-xl h-11 font-bold gap-1.5 bg-gradient-to-r from-primary to-accent border-0"
-                  onClick={() => openExternalUrl(gmapsUrl)}
-                >
-                  <ExternalLink className="w-4 h-4" />
-                  Google Maps
-                </Button>
-              </div>
-
-              {driverName && (
-                <p className="text-center text-xs text-muted-foreground pt-1">
-                  <MapPin className="w-3 h-3 inline -mt-0.5 ml-1" />
-                  מעקב חי אחרי <span className="font-bold text-foreground">{driverName}</span>
-                </p>
+              {eta && (
+                <span className="inline-flex items-center gap-1 text-xs font-bold px-2.5 py-1 rounded-full bg-primary/10 text-primary shrink-0">
+                  <Clock className="w-3 h-3" />
+                  {eta.duration}
+                  {eta.distance ? <span className="text-muted-foreground font-semibold">· {eta.distance}</span> : null}
+                </span>
               )}
             </div>
+
+            <AnimatePresence initial={false}>
+              {!collapsed && (
+                <motion.div
+                  key="details"
+                  initial={{ height: 0, opacity: 0 }}
+                  animate={{ height: "auto", opacity: 1 }}
+                  exit={{ height: 0, opacity: 0 }}
+                  transition={{ duration: 0.2 }}
+                  className="overflow-hidden"
+                >
+                  <div className="px-5 pb-6 space-y-4">
+                    {updatedSecAgo !== null && (
+                      <p className="text-[11px] text-muted-foreground text-right">
+                        עודכן {updatedSecAgo < 60 ? `לפני ${updatedSecAgo}ש'` : "לפני כדקה"}
+                      </p>
+                    )}
+
+                    {/* Big ETA */}
+                    {eta ? (
+                      <div className="flex items-end gap-4 bg-gradient-to-br from-primary/10 to-accent/10 rounded-2xl p-4">
+                        <div>
+                          <p className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
+                            {phase === "en_route" ? "מגיע אליך בעוד" : "ETA"}
+                          </p>
+                          <p className="text-3xl font-black bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent leading-tight">
+                            {eta.duration}
+                          </p>
+                        </div>
+                        <div className="mr-auto text-right">
+                          <p className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">מרחק</p>
+                          <p className="text-lg font-bold">{eta.distance}</p>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="bg-secondary/60 rounded-2xl p-4 flex items-center gap-2 text-sm text-muted-foreground">
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        מחשב זמן הגעה…
+                      </div>
+                    )}
+
+                    {/* Route line */}
+                    <div className="space-y-2">
+                      {pickupLocation && phase !== "in_progress" && (
+                        <div className="flex items-center gap-3 text-sm">
+                          <span className="w-2.5 h-2.5 rounded-sm bg-primary shrink-0" />
+                          <span className="font-semibold truncate">{pickupLocation}</span>
+                          <span className="text-[10px] text-muted-foreground mr-auto">איסוף</span>
+                        </div>
+                      )}
+                      <div className="flex items-center gap-3 text-sm">
+                        <span className="w-2.5 h-2.5 rounded-sm bg-accent shrink-0" />
+                        <span className="font-semibold truncate">{destination}</span>
+                        <span className="text-[10px] text-muted-foreground mr-auto">יעד</span>
+                      </div>
+                    </div>
+
+                    {/* Actions */}
+                    <div className="grid grid-cols-2 gap-2">
+                      <Button
+                        variant="outline"
+                        className="rounded-xl h-11 font-bold gap-1.5"
+                        onClick={() => openExternalUrl(wazeUrl)}
+                      >
+                        <Navigation className="w-4 h-4" />
+                        פתח ב‑Waze
+                      </Button>
+                      <Button
+                        className="rounded-xl h-11 font-bold gap-1.5 bg-gradient-to-r from-primary to-accent border-0"
+                        onClick={() => openExternalUrl(gmapsUrl)}
+                      >
+                        <ExternalLink className="w-4 h-4" />
+                        Google Maps
+                      </Button>
+                    </div>
+
+                    {driverName && (
+                      <p className="text-center text-xs text-muted-foreground pt-1">
+                        <MapPin className="w-3 h-3 inline -mt-0.5 ml-1" />
+                        מעקב חי אחרי <span className="font-bold text-foreground">{driverName}</span>
+                      </p>
+                    )}
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
           </motion.div>
         </motion.div>
       )}
