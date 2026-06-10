@@ -47,9 +47,9 @@ export default function InboxDropdown() {
         <DropdownMenuContent
           align="end"
           sideOffset={10}
-          dir={dir}
           className="w-[360px] p-0 rounded-2xl border-border shadow-card overflow-hidden"
         >
+          <div dir={dir}>
           <div className="px-4 py-3 border-b border-border bg-secondary/40">
             <h3 className="font-bold text-base">{t("inbox_messages")}</h3>
             <p className="text-[11px] text-muted-foreground">{t("inbox_grouped")}</p>
