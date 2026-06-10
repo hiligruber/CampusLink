@@ -28,6 +28,7 @@ interface Props {
 
 export default function DriverLocationSharer({ rideId, driverId, phase, onCompleted }: Props) {
   const { user } = useAuth();
+  const { t } = useLang();
   const queryClient = useQueryClient();
   const { status, lastFix, retry, captureOnceAndUpsert } = useLocationSharing();
   const [busy, setBusy] = useState(false);
