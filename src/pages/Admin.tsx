@@ -156,7 +156,7 @@ const Admin = () => {
                 <p className="text-xs text-muted-foreground flex items-center gap-1"><Building2 className="w-3 h-3" />{p.institution}</p>
               </div>
               {p.student_id_url && (
-                <Button variant="outline" size="sm" onClick={() => getSignedUrl(p.student_id_url!)} className="w-full">
+                <Button variant="outline" size="sm" onClick={() => openImageViewer(p.student_id_url!)} className="w-full">
                   {t("admin_view_id")}
                 </Button>
               )}
