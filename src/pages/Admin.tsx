@@ -11,7 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { Loader2, CheckCircle2, XCircle, Mail, Building2, ShieldCheck, UserPlus, Trash2 } from "lucide-react";
+import { Loader2, CheckCircle2, XCircle, Mail, Building2, ShieldCheck, UserPlus, Trash2, ZoomIn, ZoomOut } from "lucide-react";
 import { toast } from "sonner";
 import AdminSupportSection from "@/components/AdminSupportSection";
 
@@ -24,6 +24,8 @@ const Admin = () => {
   const [reason, setReason] = useState("");
   const [newAdminEmail, setNewAdminEmail] = useState("");
   const [addingAdmin, setAddingAdmin] = useState(false);
+  const [viewingImageUrl, setViewingImageUrl] = useState<string | null>(null);
+  const [zoom, setZoom] = useState(1);
 
   const { data: pending, isLoading } = useQuery({
     queryKey: ["pending-verifications"],
@@ -35,9 +37,12 @@ const Admin = () => {
     enabled: isAdmin,
   });
 
-  const getSignedUrl = async (path: string) => {
+  const openImageViewer = async (path: string) => {
     const { data } = await supabase.storage.from("student-ids").createSignedUrl(path, 300);
-    if (data?.signedUrl) window.open(data.signedUrl, "_blank");
+    if (data?.signedUrl) {
+      setViewingImageUrl(data.signedUrl);
+      setZoom(1);
+    }
   };
 
   const approve = async (userId: string) => {
@@ -151,7 +156,7 @@ const Admin = () => {
                 <p className="text-xs text-muted-foreground flex items-center gap-1"><Building2 className="w-3 h-3" />{p.institution}</p>
               </div>
               {p.student_id_url && (
-                <Button variant="outline" size="sm" onClick={() => getSignedUrl(p.student_id_url!)} className="w-full">
+                <Button variant="outline" size="sm" onClick={() => openImageViewer(p.student_id_url!)} className="w-full">
                   {t("admin_view_id")}
                 </Button>
               )}
@@ -233,6 +238,38 @@ const Admin = () => {
             <Button variant="outline" onClick={() => setRejectingId(null)}>{t("cancel")}</Button>
             <Button variant="destructive" onClick={reject} disabled={!reason.trim()}>{t("reject_request")}</Button>
           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={!!viewingImageUrl} onOpenChange={(o) => !o && setViewingImageUrl(null)}>
+        <DialogContent dir={dir} className="max-w-3xl p-0 overflow-hidden">
+          <DialogHeader className="px-6 pt-6 pb-2">
+            <DialogTitle>{t("admin_view_id")}</DialogTitle>
+          </DialogHeader>
+          <div className="flex flex-col items-center gap-3 px-6 pb-6">
+            <div className="w-full overflow-auto rounded-xl border border-border bg-black/5 flex items-center justify-center" style={{ maxHeight: "70vh" }}>
+              {viewingImageUrl && (
+                <img
+                  src={viewingImageUrl}
+                  alt="Student ID"
+                  className="max-w-none transition-transform duration-200 ease-out"
+                  style={{ transform: `scale(${zoom})`, transformOrigin: "center center" }}
+                />
+              )}
+            </div>
+            <div className="flex items-center gap-2">
+              <Button size="sm" variant="outline" onClick={() => setZoom((z) => Math.max(0.5, z - 0.25))}>
+                <ZoomOut className="w-4 h-4" />
+              </Button>
+              <span className="text-xs text-muted-foreground min-w-[3ch] text-center">{Math.round(zoom * 100)}%</span>
+              <Button size="sm" variant="outline" onClick={() => setZoom((z) => Math.min(3, z + 0.25))}>
+                <ZoomIn className="w-4 h-4" />
+              </Button>
+              <Button size="sm" variant="ghost" onClick={() => setZoom(1)} className="text-xs">
+                100%
+              </Button>
+            </div>
+          </div>
         </DialogContent>
       </Dialog>
     </div>
