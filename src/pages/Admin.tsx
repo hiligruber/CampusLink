@@ -37,9 +37,12 @@ const Admin = () => {
     enabled: isAdmin,
   });
 
-  const getSignedUrl = async (path: string) => {
+  const openImageViewer = async (path: string) => {
     const { data } = await supabase.storage.from("student-ids").createSignedUrl(path, 300);
-    if (data?.signedUrl) window.open(data.signedUrl, "_blank");
+    if (data?.signedUrl) {
+      setViewingImageUrl(data.signedUrl);
+      setZoom(1);
+    }
   };
 
   const approve = async (userId: string) => {
