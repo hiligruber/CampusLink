@@ -240,6 +240,38 @@ const Admin = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <Dialog open={!!viewingImageUrl} onOpenChange={(o) => !o && setViewingImageUrl(null)}>
+        <DialogContent dir={dir} className="max-w-3xl p-0 overflow-hidden">
+          <DialogHeader className="px-6 pt-6 pb-2">
+            <DialogTitle>{t("admin_view_id")}</DialogTitle>
+          </DialogHeader>
+          <div className="flex flex-col items-center gap-3 px-6 pb-6">
+            <div className="w-full overflow-auto rounded-xl border border-border bg-black/5 flex items-center justify-center" style={{ maxHeight: "70vh" }}>
+              {viewingImageUrl && (
+                <img
+                  src={viewingImageUrl}
+                  alt="Student ID"
+                  className="max-w-none transition-transform duration-200 ease-out"
+                  style={{ transform: `scale(${zoom})`, transformOrigin: "center center" }}
+                />
+              )}
+            </div>
+            <div className="flex items-center gap-2">
+              <Button size="sm" variant="outline" onClick={() => setZoom((z) => Math.max(0.5, z - 0.25))}>
+                <ZoomOut className="w-4 h-4" />
+              </Button>
+              <span className="text-xs text-muted-foreground min-w-[3ch] text-center">{Math.round(zoom * 100)}%</span>
+              <Button size="sm" variant="outline" onClick={() => setZoom((z) => Math.min(3, z + 0.25))}>
+                <ZoomIn className="w-4 h-4" />
+              </Button>
+              <Button size="sm" variant="ghost" onClick={() => setZoom(1)}>
+                {t("reset")}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
