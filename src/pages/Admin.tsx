@@ -24,6 +24,8 @@ const Admin = () => {
   const [reason, setReason] = useState("");
   const [newAdminEmail, setNewAdminEmail] = useState("");
   const [addingAdmin, setAddingAdmin] = useState(false);
+  const [viewingImageUrl, setViewingImageUrl] = useState<string | null>(null);
+  const [zoom, setZoom] = useState(1);
 
   const { data: pending, isLoading } = useQuery({
     queryKey: ["pending-verifications"],
