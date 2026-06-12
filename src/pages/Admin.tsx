@@ -265,8 +265,8 @@ const Admin = () => {
               <Button size="sm" variant="outline" onClick={() => setZoom((z) => Math.min(3, z + 0.25))}>
                 <ZoomIn className="w-4 h-4" />
               </Button>
-              <Button size="sm" variant="ghost" onClick={() => setZoom(1)}>
-                {t("reset")}
+              <Button size="sm" variant="ghost" onClick={() => setZoom(1)} className="text-xs">
+                100%
               </Button>
             </div>
           </div>
