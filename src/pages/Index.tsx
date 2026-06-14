@@ -17,6 +17,8 @@ import { cn } from "@/lib/utils";
 const Index = () => {
   const { t } = useLang();
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const queryClient = useQueryClient();
   const [query, setQuery] = useState("");
   const [dateFilter, setDateFilter] = useState("");
   const [showEnded, setShowEnded] = useState(false);
@@ -25,6 +27,37 @@ const Index = () => {
     queryKey: ["rides"],
     queryFn: fetchRides,
   });
+
+  const { data: myBookings = [] } = useQuery({
+    queryKey: ["my-bookings", user?.id],
+    queryFn: () => fetchMyBookings(user!.id),
+    enabled: !!user,
+  });
+
+  // Refresh my bookings when any booking row changes
+  useEffect(() => {
+    if (!user) return;
+    const channel = supabase
+      .channel("my-bookings-feed")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "bookings", filter: `passenger_id=eq.${user.id}` },
+        () => queryClient.invalidateQueries({ queryKey: ["my-bookings"] }),
+      )
+      .subscribe();
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user, queryClient]);
+
+  const bookingByRide = useMemo(() => {
+    const map: Record<string, (typeof myBookings)[number]> = {};
+    myBookings.forEach((b) => {
+      map[b.ride_id] = b;
+    });
+    return map;
+  }, [myBookings]);
+
 
   const driverIds = [...new Set((rides ?? []).map((r) => r.driver_id))];
   const { data: avatarMap = {} } = useQuery({
