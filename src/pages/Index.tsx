@@ -215,6 +215,7 @@ const Index = () => {
                     ride={ride}
                     index={i}
                     driverAvatarUrl={avatarMap[ride.driver_id] || null}
+                    myBooking={bookingByRide[ride.id] ?? null}
                   />
                 </motion.div>
               ))}
