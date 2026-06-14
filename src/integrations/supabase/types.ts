@@ -377,6 +377,42 @@ export type Database = {
         }
         Relationships: []
       }
+      sync_outbox: {
+        Row: {
+          attempts: number
+          created_at: string
+          id: number
+          last_error: string | null
+          op: string
+          payload: Json | null
+          row_pk: string | null
+          sent_at: string | null
+          table_name: string
+        }
+        Insert: {
+          attempts?: number
+          created_at?: string
+          id?: number
+          last_error?: string | null
+          op: string
+          payload?: Json | null
+          row_pk?: string | null
+          sent_at?: string | null
+          table_name: string
+        }
+        Update: {
+          attempts?: number
+          created_at?: string
+          id?: number
+          last_error?: string | null
+          op?: string
+          payload?: Json | null
+          row_pk?: string | null
+          sent_at?: string | null
+          table_name?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string
