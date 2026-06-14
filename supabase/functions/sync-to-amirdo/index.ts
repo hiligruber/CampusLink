@@ -3,9 +3,9 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { corsHeaders } from "npm:@supabase/supabase-js@2/cors";
 
-const BATCH_SIZE = 5;
+const BATCH_SIZE = 1;
 const MAX_ATTEMPTS = 10;
-const AMIRDO_FETCH_TIMEOUT_MS = 4000;
+const AMIRDO_FETCH_TIMEOUT_MS = 3000;
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SERVICE_ROLE = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
