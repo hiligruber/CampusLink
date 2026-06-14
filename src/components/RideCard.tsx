@@ -1,7 +1,7 @@
 import { useState } from "react";
-import { Clock, Users, Map, CalendarPlus, Ban, MoreHorizontal, MapPin, Flag } from "lucide-react";
+import { Clock, Users, Map, CalendarPlus, Ban, MapPin, Flag, Check, Hourglass } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { RideRow, getDisplayStatus, joinRide, cancelRide } from "@/lib/rides-api";
+import { RideRow, getDisplayStatus, joinRide, cancelRide, cancelBooking, MyBooking } from "@/lib/rides-api";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "@/contexts/AuthContext";
@@ -25,9 +25,9 @@ interface RideCardProps {
   ride: RideRow;
   index: number;
   driverAvatarUrl?: string | null;
+  myBooking?: MyBooking | null;
 }
 
-// Deterministic gradient per driver name
 const gradients = [
   "from-emerald-600 to-green-500",
   "from-lime-600 to-emerald-500",
@@ -37,14 +37,16 @@ const gradients = [
   "from-green-600 to-lime-500",
 ];
 
-const RideCard = ({ ride, index, driverAvatarUrl }: RideCardProps) => {
+const RideCard = ({ ride, index, driverAvatarUrl, myBooking }: RideCardProps) => {
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const { t, lang } = useLang();
   const [showMap, setShowMap] = useState(false);
   const [confirmCancel, setConfirmCancel] = useState(false);
+  const [confirmLeave, setConfirmLeave] = useState(false);
   const [joinOpen, setJoinOpen] = useState(false);
   const [joining, setJoining] = useState(false);
+  const [leaving, setLeaving] = useState(false);
   const departureDate = new Date(ride.departure_time);
   const locale = lang === "EN" ? "en-US" : "he-IL";
   const timeStr = departureDate.toLocaleTimeString(locale, { hour: "2-digit", minute: "2-digit" });
@@ -57,6 +59,10 @@ const RideCard = ({ ride, index, driverAvatarUrl }: RideCardProps) => {
   const driverName = ride.driver_name || "סטודנט";
   const driverInitial = driverName.charAt(0).toUpperCase();
   const grad = gradients[(driverName.charCodeAt(0) || 0) % gradients.length];
+
+  const bookingStatus = myBooking?.status ?? null;
+  const hasJoined = bookingStatus === "accepted";
+  const isPending = bookingStatus === "pending";
 
   const postedAgo = (() => {
     const created = new Date((ride as any).created_at || ride.departure_time).getTime();
@@ -88,6 +94,7 @@ const RideCard = ({ ride, index, driverAvatarUrl }: RideCardProps) => {
       await joinRide(ride.id, user.id, pickupLocation, pickupCoords);
       queryClient.invalidateQueries({ queryKey: ["rides"] });
       queryClient.invalidateQueries({ queryKey: ["bookings"] });
+      queryClient.invalidateQueries({ queryKey: ["my-bookings"] });
       toast.success(`הבקשה נשלחה ל${driverName}`, {
         description: `איסוף: ${pickupLocation}`,
       });
@@ -111,6 +118,23 @@ const RideCard = ({ ride, index, driverAvatarUrl }: RideCardProps) => {
     }
   };
 
+  const handleLeave = async () => {
+    if (!myBooking) return;
+    setLeaving(true);
+    try {
+      await cancelBooking(myBooking.id);
+      queryClient.invalidateQueries({ queryKey: ["rides"] });
+      queryClient.invalidateQueries({ queryKey: ["bookings"] });
+      queryClient.invalidateQueries({ queryKey: ["my-bookings"] });
+      toast.success(t("toast_participation_cancelled"));
+    } catch (e: any) {
+      toast.error(e?.message || "Failed");
+    } finally {
+      setLeaving(false);
+      setConfirmLeave(false);
+    }
+  };
+
   const statusBadge =
     display === "cancelled" ? (
       <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-destructive/10 text-destructive">{t("cancelled")}</span>
@@ -129,7 +153,6 @@ const RideCard = ({ ride, index, driverAvatarUrl }: RideCardProps) => {
         display === "completed" ? "opacity-80 stamp-ended grayscale-[40%]" : ""
       } ${display === "cancelled" ? "opacity-60" : ""}`}
     >
-      {/* Author header — warm tint */}
       <div className="flex items-center gap-3 px-4 pt-4 pb-3 bg-gradient-to-br from-primary/[0.04] via-transparent to-primary/[0.06]">
         <div className="avatar-ring">
           <div className={`w-11 h-11 rounded-full bg-gradient-to-br ${grad} flex items-center justify-center text-white font-bold text-base overflow-hidden`}>
@@ -151,13 +174,9 @@ const RideCard = ({ ride, index, driverAvatarUrl }: RideCardProps) => {
         </div>
         <div className="flex items-center gap-1.5">
           {statusBadge}
-          <button className="text-muted-foreground hover:text-foreground p-1">
-            <MoreHorizontal className="w-4 h-4" />
-          </button>
         </div>
       </div>
 
-      {/* Origin → Destination flow */}
       <div className="px-4 pb-3">
         <div className="bg-secondary/40 rounded-xl p-4">
           <div className="flex items-start gap-3">
@@ -183,7 +202,6 @@ const RideCard = ({ ride, index, driverAvatarUrl }: RideCardProps) => {
           </div>
         </div>
 
-        {/* Meta chips */}
         <div className="flex items-center gap-2 mt-3 flex-wrap">
           <span className="inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-full bg-secondary text-secondary-foreground">
             <Clock className="w-3 h-3" />
@@ -193,6 +211,18 @@ const RideCard = ({ ride, index, driverAvatarUrl }: RideCardProps) => {
             <Users className="w-3 h-3" />
             {ride.available_seats}/{ride.total_seats} {t("seats")}
           </span>
+          {hasJoined && (
+            <span className="inline-flex items-center gap-1 text-xs font-bold px-2.5 py-1 rounded-full bg-primary/15 text-primary">
+              <Check className="w-3 h-3" />
+              {t("joined")}
+            </span>
+          )}
+          {isPending && (
+            <span className="inline-flex items-center gap-1 text-xs font-bold px-2.5 py-1 rounded-full bg-warning/15 text-warning">
+              <Hourglass className="w-3 h-3" />
+              {t("request_sent")}
+            </span>
+          )}
         </div>
 
         {ride.notes && (
@@ -200,7 +230,6 @@ const RideCard = ({ ride, index, driverAvatarUrl }: RideCardProps) => {
         )}
       </div>
 
-      {/* Action bar */}
       <div className="px-3 pb-3 pt-1 flex items-center gap-1.5 border-t border-border/60">
         <Button
           variant="ghost"
@@ -243,6 +272,17 @@ const RideCard = ({ ride, index, driverAvatarUrl }: RideCardProps) => {
               )}
             </>
           )
+        ) : hasJoined || isPending ? (
+          <Button
+            size="sm"
+            variant="outline"
+            disabled={leaving || isInactive}
+            onClick={() => setConfirmLeave(true)}
+            className="flex-[2] gap-1.5 rounded-xl text-xs font-bold h-9 border-destructive/40 text-destructive hover:bg-destructive/10 hover:text-destructive"
+          >
+            <Ban className="w-4 h-4" />
+            {t("cancel_participation")}
+          </Button>
         ) : (
           <Button
             size="sm"
@@ -293,6 +333,23 @@ const RideCard = ({ ride, index, driverAvatarUrl }: RideCardProps) => {
             <AlertDialogCancel className="rounded-xl">{t("back")}</AlertDialogCancel>
             <AlertDialogAction onClick={handleCancel} className="rounded-xl bg-destructive hover:bg-destructive/90">
               {t("cancel_ride")}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={confirmLeave} onOpenChange={setConfirmLeave}>
+        <AlertDialogContent className="rounded-3xl">
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t("cancel_participation_q")}</AlertDialogTitle>
+            <AlertDialogDescription>
+              {t("cancel_participation_desc")}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel className="rounded-xl">{t("back")}</AlertDialogCancel>
+            <AlertDialogAction onClick={handleLeave} className="rounded-xl bg-destructive hover:bg-destructive/90">
+              {t("cancel_participation")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
