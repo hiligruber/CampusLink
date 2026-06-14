@@ -95,6 +95,30 @@ export async function joinRide(
   if (error) throw error;
 }
 
+export async function cancelBooking(bookingId: string) {
+  const { error } = await supabase
+    .from("bookings")
+    .update({ status: "cancelled" })
+    .eq("id", bookingId);
+  if (error) throw error;
+}
+
+export interface MyBooking {
+  id: string;
+  ride_id: string;
+  status: "pending" | "accepted" | "rejected" | "cancelled";
+}
+
+export async function fetchMyBookings(userId: string): Promise<MyBooking[]> {
+  const { data, error } = await supabase
+    .from("bookings")
+    .select("id, ride_id, status")
+    .eq("passenger_id", userId)
+    .in("status", ["pending", "accepted"]);
+  if (error) throw error;
+  return (data ?? []) as MyBooking[];
+}
+
 export async function setRidePhase(rideId: string, phase: RidePhase) {
   const updates: Record<string, any> = { ride_phase: phase };
   if (phase === "in_progress") updates.started_at = new Date().toISOString();
