@@ -49,6 +49,15 @@ const dict = {
   cancelled: { EN: "Cancelled", HE: "בוטלה" },
   passed: { EN: "Ended", HE: "הסתיימה" },
   request_join: { EN: "Request to join", HE: "בקשת הצטרפות" },
+  request_sent: { EN: "Request sent", HE: "בקשה נשלחה" },
+  joined: { EN: "Joined", HE: "הצטרפת לנסיעה" },
+  cancel_participation: { EN: "Cancel participation", HE: "בטל הצטרפות" },
+  cancel_participation_q: { EN: "Cancel your participation?", HE: "לבטל את ההצטרפות?" },
+  cancel_participation_desc: {
+    EN: "Your seat will be released and the driver will be notified.",
+    HE: "המקום שלך ישוחרר והנהג יקבל הודעה.",
+  },
+  toast_participation_cancelled: { EN: "Participation cancelled", HE: "ההצטרפות בוטלה" },
   cancel_ride_q: { EN: "Cancel this ride?", HE: "לבטל את הנסיעה?" },
   cancel_ride_desc: {
     EN: "The ride will be marked as cancelled and no longer appear as active.",

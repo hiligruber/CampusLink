@@ -184,3 +184,24 @@
     border-radius: 4px;
   }
 }
+
+/* Google Places Autocomplete dropdown — make sure it's above Radix dialogs and clickable */
+.pac-container {
+  z-index: 10000 !important;
+  pointer-events: auto !important;
+  border-radius: 12px;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.12);
+  border: 1px solid hsl(var(--border));
+  background: hsl(var(--popover));
+  font-family: inherit;
+}
+.pac-item {
+  padding: 8px 12px;
+  cursor: pointer;
+  color: hsl(var(--popover-foreground));
+}
+.pac-item:hover,
+.pac-item-selected {
+  background: hsl(var(--accent) / 0.15);
+}
+

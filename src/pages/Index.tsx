@@ -1,6 +1,6 @@
-import { useState, useMemo } from "react";
-import { useQuery } from "@tanstack/react-query";
-import { fetchRides, getDisplayStatus } from "@/lib/rides-api";
+import { useEffect, useState, useMemo } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { fetchRides, getDisplayStatus, fetchMyBookings } from "@/lib/rides-api";
 import RideCard from "@/components/RideCard";
 import AppHeader from "@/components/AppHeader";
 import BottomNav from "@/components/BottomNav";
@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Loader2, Search, Sparkles, Plus, MapPin } from "lucide-react";
 import { useLang } from "@/contexts/LanguageContext";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
@@ -16,6 +17,8 @@ import { cn } from "@/lib/utils";
 const Index = () => {
   const { t } = useLang();
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const queryClient = useQueryClient();
   const [query, setQuery] = useState("");
   const [dateFilter, setDateFilter] = useState("");
   const [showEnded, setShowEnded] = useState(false);
@@ -24,6 +27,37 @@ const Index = () => {
     queryKey: ["rides"],
     queryFn: fetchRides,
   });
+
+  const { data: myBookings = [] } = useQuery({
+    queryKey: ["my-bookings", user?.id],
+    queryFn: () => fetchMyBookings(user!.id),
+    enabled: !!user,
+  });
+
+  // Refresh my bookings when any booking row changes
+  useEffect(() => {
+    if (!user) return;
+    const channel = supabase
+      .channel("my-bookings-feed")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "bookings", filter: `passenger_id=eq.${user.id}` },
+        () => queryClient.invalidateQueries({ queryKey: ["my-bookings"] }),
+      )
+      .subscribe();
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user, queryClient]);
+
+  const bookingByRide = useMemo(() => {
+    const map: Record<string, (typeof myBookings)[number]> = {};
+    myBookings.forEach((b) => {
+      map[b.ride_id] = b;
+    });
+    return map;
+  }, [myBookings]);
+
 
   const driverIds = [...new Set((rides ?? []).map((r) => r.driver_id))];
   const { data: avatarMap = {} } = useQuery({
@@ -181,6 +215,7 @@ const Index = () => {
                     ride={ride}
                     index={i}
                     driverAvatarUrl={avatarMap[ride.driver_id] || null}
+                    myBooking={bookingByRide[ride.id] ?? null}
                   />
                 </motion.div>
               ))}
